@@ -1,0 +1,47 @@
+{
+  "name": "[PLACEHOLDER NPC NAME]",
+  "start": [
+    {
+      "when": "npc1_met",
+      "node": "again"
+    },
+    {
+      "node": "greet"
+    }
+  ],
+  "nodes": {
+    "greet": {
+      "text": "[PLACEHOLDER greeting]",
+      "choices": [
+        {
+          "text": "[PLACEHOLDER choice A]",
+          "next": "a",
+          "set": {
+            "npc1_met": true,
+            "npc1_choice": 1
+          }
+        },
+        {
+          "text": "[PLACEHOLDER choice B]",
+          "next": "b",
+          "set": {
+            "npc1_met": true,
+            "npc1_choice": 2
+          }
+        }
+      ]
+    },
+    "a": {
+      "text": "[PLACEHOLDER reply A]",
+      "next": null
+    },
+    "b": {
+      "text": "[PLACEHOLDER reply B]",
+      "next": null
+    },
+    "again": {
+      "text": "[PLACEHOLDER repeat greeting]",
+      "next": null
+    }
+  }
+}
