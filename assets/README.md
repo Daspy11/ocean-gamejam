@@ -8,3 +8,4 @@ them exactly. Sheets are horizontal strips: frame 0 on the left, no padding, no 
 
 Aseprite: File > Export Sprite Sheet, Sheet Type "Horizontal Strip", untick Trim, export PNG to the path
 named in `src/assets.ts`.
+haaaaaai
