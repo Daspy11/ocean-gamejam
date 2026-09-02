@@ -1,0 +1,12 @@
+{
+  "name": "Mich",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "how did you not see this massive island?", "next": "2" },
+    "2": { "who": "", "text": "it was in my blind spot", "next": "3" },
+    "3": { "text": "you bumbling idiot. you buffoon. you broke our boat", "next": "4" },
+    "4": { "text": "...", "next": "5" },
+    "5": { "text": "at least we still have Lord Tarqualius' Orb Of Endless Burning", "next": "6" },
+    "6": { "text": "unless it exploded", "next": null }
+  }
+}

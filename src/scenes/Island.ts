@@ -1,69 +1,83 @@
 import Phaser from 'phaser'
-import type { Dir } from '../game/world'
+import { KINDS, tileAt, type Dir, type Tile } from '../game/world'
 import { dispatch, world } from '../store'
 
-const TILE = { water: 0, sand: 1, grass: 2 } // terrain.png frame per tile kind
-const FACE = { down: 0, up: 1, left: 2, right: 3 } // player.png frame per facing
+const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass'] // priority, lowest first; later fills draw over earlier ones
+const ROW = { down: 0, up: 1, left: 2, right: 3 } // character sheet row per facing
 
 export default class Island extends Phaser.Scene {
   private rev = -1
-  private layer!: Phaser.Tilemaps.TilemapLayer
+  private layers: Phaser.Tilemaps.TilemapLayer[] = []
   private player!: Phaser.GameObjects.Sprite
   private objects: Phaser.GameObjects.Sprite[] = []
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
+  private sent: { dir: Dir | null; run: boolean } = { dir: null, run: false }
 
   constructor() {
     super('island')
   }
 
   create() {
-    const map = this.make.tilemap({
-      tileWidth: 16,
-      tileHeight: 16,
-      width: world.width,
-      height: world.height,
+    this.scene.launch('ui') // so a direct scene.start('island') still brings the HUD along
+    GROUND.forEach((terrain, n) => {
+      // every terrain above the base is a dual grid: (W+1)x(H+1) cells shifted half a tile up and left
+      const map = this.make.tilemap({
+        tileWidth: 16,
+        tileHeight: 16,
+        width: world.width + (n ? 1 : 0),
+        height: world.height + (n ? 1 : 0),
+      })
+      const layer = map.createBlankLayer(terrain, map.addTilesetImage(`tiles/${terrain}`)!)!
+      if (n) layer.setPosition(-8, -8)
+      else layer.fill(0, 0, 0, world.width, world.height)
+      this.layers.push(layer)
     })
-    this.layer = map.createBlankLayer('ground', map.addTilesetImage('tiles/terrain')!)!
 
-    this.player = this.add
-      .sprite(world.player.x * 16, world.player.y * 16, 'sprites/player', 0)
-      .setOrigin(0)
+    this.player = this.add.sprite(0, 0, 'sprites/player', 0).setOrigin(0, 1)
 
     this.cameras.main.setZoom(2)
     this.cameras.main.setBounds(0, 0, world.width * 16, world.height * 16)
-    this.cameras.main.startFollow(this.player, true)
+    // the sprite's origin is its feet, so offset the follow back to the centre of the player's tile
+    this.cameras.main.startFollow(this.player, true, 1, 1, -8, 8)
 
-    this.keys = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,E,SPACE,ENTER') as Record<
-      string,
-      Phaser.Input.Keyboard.Key
-    >
+    this.keys = this.input.keyboard!.addKeys(
+      'UP,DOWN,LEFT,RIGHT,W,A,S,D,SHIFT,E,SPACE,ENTER,I,TAB,ESC',
+    ) as Record<string, Phaser.Input.Keyboard.Key>
 
     this.sync()
+    this.drawPlayer()
     this.rev = world.rev
   }
 
-  update(time: number, delta: number) {
-    const moves: [Dir, Phaser.Input.Keyboard.Key[]][] = [
+  update(_time: number, delta: number) {
+    const dirs: [Dir, Phaser.Input.Keyboard.Key[]][] = [
       ['up', [this.keys.UP, this.keys.W]],
       ['down', [this.keys.DOWN, this.keys.S]],
       ['left', [this.keys.LEFT, this.keys.A]],
       ['right', [this.keys.RIGHT, this.keys.D]],
     ]
-    for (const [dir, keys] of moves) {
-      // walking repeats while held (the reducer throttles); menu movement is one step per press
-      const pressed = world.dialogue
-        ? keys.some((key) => Phaser.Input.Keyboard.JustDown(key))
-        : keys.some((key) => key.isDown)
-      if (pressed) {
-        dispatch({ type: 'move', dir })
-        break
-      }
+    // the most recently pressed direction wins, so rolling from one key to another never sticks
+    let dir: Dir | null = null
+    let at = 0
+    for (const [d, keys] of dirs)
+      for (const key of keys)
+        if (key.isDown && key.timeDown >= at) {
+          at = key.timeDown
+          dir = d
+        }
+    const run = this.keys.SHIFT.isDown
+    if (dir !== this.sent.dir || run !== this.sent.run) {
+      this.sent = { dir, run }
+      dispatch({ type: 'move', dir, run })
     }
 
-    const interact = [this.keys.E, this.keys.SPACE, this.keys.ENTER]
-    if (interact.some((key) => Phaser.Input.Keyboard.JustDown(key))) dispatch({ type: 'interact' })
+    const down = (keys: Phaser.Input.Keyboard.Key[]) =>
+      keys.some((key) => Phaser.Input.Keyboard.JustDown(key))
+    if (down([this.keys.E, this.keys.SPACE, this.keys.ENTER])) dispatch({ type: 'interact' })
+    if (down([this.keys.I, this.keys.TAB, this.keys.ESC])) dispatch({ type: 'menu' })
 
     dispatch({ type: 'tick', dt: delta })
+    this.drawPlayer()
 
     if (world.rev !== this.rev) {
       this.rev = world.rev
@@ -71,29 +85,43 @@ export default class Island extends Phaser.Scene {
     }
   }
 
-  private sync() {
-    for (let y = 0; y < world.height; y++)
-      for (let x = 0; x < world.width; x++)
-        this.layer.putTileAt(TILE[world.tiles[y * world.width + x]], x, y)
+  // position and frame are pure functions of the world, so there are no tweens and no animations
+  private drawPlayer() {
+    const p = world.player
+    const x = (p.step ? p.x + (p.step.x - p.x) * p.step.t : p.x) * 16
+    const y = (p.step ? p.y + (p.step.y - p.y) * p.step.t : p.y) * 16
+    const col = p.step ? (p.step.t < 0.5 ? (p.parity ? 1 : 2) : 0) : 0
+    this.player
+      .setPosition(x, y + 16)
+      .setDepth(y + 16)
+      .setFrame(ROW[p.facing] * 3 + col)
+  }
 
-    this.player.setFrame(FACE[world.player.facing])
-    const x = world.player.x * 16
-    const y = world.player.y * 16
-    if (this.player.x !== x || this.player.y !== y)
-      this.tweens.add({ targets: this.player, x, y, duration: 150 })
+  private sync() {
+    for (let n = 1; n < GROUND.length; n++) {
+      const terrain = GROUND[n]
+      const is = (x: number, y: number, bit: number) => (tileAt(world, x, y) === terrain ? bit : 0)
+      for (let j = 0; j <= world.height; j++)
+        for (let i = 0; i <= world.width; i++)
+          // the dual cell's centre sits on the corner shared by these four logical tiles
+          this.layers[n].putTileAt(
+            is(i - 1, j - 1, 1) + is(i, j - 1, 2) + is(i - 1, j, 4) + is(i, j, 8),
+            i,
+            j,
+          )
+    }
 
     for (const sprite of this.objects) sprite.destroy()
-    this.objects = []
-    for (const pool of world.tidepools) {
-      this.objects.push(
-        this.add.sprite(pool.x * 16, pool.y * 16, 'sprites/objects', 0).setOrigin(0),
-      )
-      if (pool.stone)
-        this.objects.push(
-          this.add.sprite(pool.x * 16, pool.y * 16, 'sprites/objects', 1).setOrigin(0),
-        )
-    }
-    for (const npc of world.npcs)
-      this.objects.push(this.add.sprite(npc.x * 16, npc.y * 16, 'sprites/objects', 2).setOrigin(0))
+    this.objects = world.objects.map((o) => {
+      const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
+      let frame = 0 // frame 0 unless the kind has some state to show
+      if (o.kind === 'orb') frame = o.salt ? 1 : 0
+      if (o.kind === 'crate') frame = o.open ? 1 : 0
+      if (o.kind === 'npc') frame = ROW[o.facing] * 3
+      return this.add
+        .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
+        .setOrigin(0, 1)
+        .setDepth(feet)
+    })
   }
 }

@@ -1,0 +1,9 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "crate:open" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "you can press i to open the inventory", "next": "2" },
+    "2": { "who": "", "text": "what", "next": null }
+  }
+}

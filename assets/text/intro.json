@@ -1,0 +1,22 @@
+{
+  "cast": {
+    "mich": { "name": "Mich" },
+    "player": { "name": "" }
+  },
+  "lines": [
+    { "who": "mich", "text": "i knew we shouldn't have agreed to smuggle Lord Tarqualius' Orb Of Endless Burning." },
+    { "who": "mich", "text": "when we get off this boat i am going to destroy you" },
+    { "who": "mich", "text": "..." },
+    { "who": "mich", "text": "if we get off this boat" },
+    { "who": "player", "text": "shut up idiot i'm trying to row" },
+    { "who": "mich", "text": "i wonder if endless burning tastes good" },
+    { "who": "player", "text": "probably not" },
+    { "who": "mich", "text": "i wonder if this boat tastes good" },
+    { "who": "player", "text": "probably not" },
+    { "who": "mich", "text": "i wonder if-" },
+    { "who": "player", "text": "please don't" },
+    { "who": "mich", "text": "im hungry" },
+    { "who": "player", "text": "wanna see my new trick" },
+    { "who": "mich", "text": "ok" }
+  ]
+}

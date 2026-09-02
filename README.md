@@ -9,7 +9,9 @@ npm run dev                       # http://localhost:5173
 npm run check                     # typecheck + lint + unit + e2e
 ```
 
-Keys: arrows / WASD move, E / Space / Enter interact.
+Scene flow: menu → rowboat intro → island. `http://localhost:5173/?scene=island` skips straight to gameplay.
+
+Keys: arrows / WASD move (tap to turn, hold to walk), Shift run, E / Space / Enter interact, I / Tab / Esc inventory.
 
 Publish to itch.io: `npm run build` then `butler push dist USER/GAME:html5` (or push to `main` with the
 `BUTLER_CREDENTIALS` secret and `ITCH_USER` / `ITCH_GAME` repo variables set).

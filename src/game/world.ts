@@ -1,7 +1,31 @@
+import { MAP } from './map'
+
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
-export type Tile = 'water' | 'sand' | 'grass'
+export type Tile = 'water' | 'salt' | 'sand' | 'grass'
 export type Dir = 'up' | 'down' | 'left' | 'right'
-export type Item = 'stone'
+export type Item = 'salt' | 'orb'
+export const ITEMS: Item[] = ['salt', 'orb'] // icon frame order in sprites/items
+
+// Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
+// from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
+// objects overlap the tiles behind.
+export type Obj = { id: string; x: number; y: number } & (
+  | { kind: 'npc'; sprite: string; facing: Dir; dialogue: string }
+  | { kind: 'orb'; salt: boolean; nextAt: number } // the orb in the sea: boils a salt crust every few seconds
+  | { kind: 'tree' }
+  | { kind: 'hut' }
+  | { kind: 'boat' }
+  | { kind: 'crate'; open: boolean }
+)
+
+export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
+  npc: { w: 1, h: 1, solid: true },
+  orb: { w: 1, h: 1, solid: true },
+  tree: { w: 1, h: 1, solid: true },
+  hut: { w: 2, h: 2, solid: true },
+  boat: { w: 2, h: 1, solid: true },
+  crate: { w: 1, h: 1, solid: true },
+}
 
 export interface World {
   rev: number // bumped by apply() on every visible change; scenes resync when it moves
@@ -9,31 +33,51 @@ export interface World {
   width: number
   height: number
   tiles: Tile[] // row-major, index = y * width + x
-  player: { x: number; y: number; facing: Dir; cooldown: number }
+  player: {
+    x: number
+    y: number
+    facing: Dir
+    step: null | { x: number; y: number; t: number } // tile being walked to and progress 0..1
+    held: Dir | null // direction currently held on the controller
+    run: boolean
+    turnedAt: number // sim time facing last changed while standing; walking waits 100ms after a turn
+    parity: boolean // flips every step so the walk cycle alternates feet
+  }
   inventory: Partial<Record<Item, number>>
-  tidepools: { x: number; y: number; stone: boolean; nextAt: number }[]
-  npcs: { id: string; x: number; y: number; dialogue: string }[]
-  flags: Record<string, boolean | number>
-  dialogue: null | { npc: string; node: string; choice: number }
+  objects: Obj[]
+  // story state. Strings let dialogue rename things: flags['name:orb'] overrides the item's display name
+  flags: Record<string, boolean | number | string>
+  dialogue: null | { key: string; node: string; choice: number; item?: Item } // item fills {item} in text
+  queue: { key: string; item?: Item }[] // dialogues waiting for the open one to close, in order
+  menu: null | { screen: 'inventory'; cursor: number }
 }
 
 export type Action =
-  { type: 'tick'; dt: number } | { type: 'move'; dir: Dir } | { type: 'interact' }
+  | { type: 'tick'; dt: number }
+  | { type: 'move'; dir: Dir | null; run?: boolean } // the held direction changed; null = released
+  | { type: 'interact' }
+  | { type: 'talk'; key: string } // open a dialogue by key (scripted scenes; npcs go through interact)
+  | { type: 'menu' } // toggle the inventory screen
 
 export interface Dialogue {
   name: string
+  // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
+  // events: crate:open · menu:close · salt:spawn
+  trigger?: { event: string; when?: string }
   start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
   nodes: Record<string, DialogueNode>
 }
 export interface DialogueNode {
-  text: string
-  set?: Record<string, boolean | number>
+  text: string // may contain {item}, replaced with the display name of dialogue.item
+  who?: string // speaker name for this node; absent = the dialogue's name, '' = no name line
+  set?: Record<string, boolean | number | string>
   next?: string | null // used when there are no choices; null or missing closes the dialogue
-  choices?: { text: string; next: string | null; set?: Record<string, boolean | number> }[]
+  choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
 }
 
 export interface Content {
   dialogues: Record<string, Dialogue>
+  items: Partial<Record<Item, { name: string }>>
 }
 
 export const DIRS: Record<Dir, [number, number]> = {
@@ -48,24 +92,48 @@ export function tileAt(w: World, x: number, y: number): Tile | undefined {
   return w.tiles[y * w.width + x]
 }
 
+export function objectAt(w: World, x: number, y: number): Obj | undefined {
+  return w.objects.find((o) => {
+    const k = KINDS[o.kind]
+    return x >= o.x && x < o.x + k.w && y >= o.y && y < o.y + k.h
+  })
+}
+
 export function createWorld(): World {
   const width = 32
   const height = 32
-  const tiles: Tile[] = Array(width * height).fill('water')
-  for (let y = 14; y <= 18; y++)
-    for (let x = 14; x <= 18; x++)
-      tiles[y * width + x] = x === 14 || x === 18 || y === 14 || y === 18 ? 'sand' : 'grass'
+  if (MAP.length !== height || MAP.some((row) => row.length !== width))
+    throw new Error('map.ts must be 32 rows of 32 characters')
+  const glyph: Record<string, Tile> = { '~': 'water', '.': 'sand', '#': 'grass' }
+  const tiles = MAP.flatMap((row) => [...row].map((ch) => glyph[ch]))
   return {
     rev: 0,
     time: 0,
     width,
     height,
     tiles,
-    player: { x: 16, y: 16, facing: 'down', cooldown: 0 },
+    // the intro ends with the boat crashing into the west shore, so that is where everyone starts
+    player: {
+      x: 14,
+      y: 16,
+      facing: 'right',
+      step: null,
+      held: null,
+      run: false,
+      turnedAt: 0,
+      parity: false,
+    },
     inventory: {},
-    tidepools: [{ x: 14, y: 14, stone: false, nextAt: 3000 }],
-    npcs: [{ id: 'npc1', x: 18, y: 15, dialogue: 'npc1' }],
+    objects: [
+      { id: 'boat1', kind: 'boat', x: 12, y: 16 },
+      { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false },
+      { id: 'mich', kind: 'npc', sprite: 'mich', x: 13, y: 15, facing: 'right', dialogue: 'mich' },
+      { id: 'tree1', kind: 'tree', x: 15, y: 14 },
+      { id: 'hut1', kind: 'hut', x: 17, y: 17 },
+    ],
     flags: {},
     dialogue: null,
+    queue: [],
+    menu: null,
   }
 }

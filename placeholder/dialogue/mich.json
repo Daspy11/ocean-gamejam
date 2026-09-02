@@ -1,8 +1,8 @@
 {
-  "name": "[PLACEHOLDER NPC NAME]",
+  "name": "Mich",
   "start": [
     {
-      "when": "npc1_met",
+      "when": "mich_met",
       "node": "again"
     },
     {
@@ -17,16 +17,16 @@
           "text": "[PLACEHOLDER choice A]",
           "next": "a",
           "set": {
-            "npc1_met": true,
-            "npc1_choice": 1
+            "mich_met": true,
+            "mich_choice": 1
           }
         },
         {
           "text": "[PLACEHOLDER choice B]",
           "next": "b",
           "set": {
-            "npc1_met": true,
-            "npc1_choice": 2
+            "mich_met": true,
+            "mich_choice": 2
           }
         }
       ]

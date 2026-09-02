@@ -29,15 +29,43 @@ e2e/           Playwright specs.
 
 ## How the game works
 
-- `World` is one plain, JSON-safe object: tiles, player, inventory, tidepools, npcs, flags, dialogue.
+- `World` is one plain, JSON-safe object: tiles, player, inventory, objects, flags, dialogue, menu.
   Snapshot with `structuredClone`; save/load will be `JSON.stringify` when we need it.
-- Three actions: `tick`, `move`, `interact`. Input becomes actions; `apply` mutates `world` in place and
-  bumps `world.rev` on any visible change; scenes resync when `rev` moves. Idle ticks don't bump `rev`.
-- Movement is tile-grid. World coordinates are tiles; scenes multiply by 16.
+- Four actions: `tick`, `move` (the held direction changed), `interact`, `menu`. Input becomes actions;
+  `apply` mutates `world` in place and bumps `world.rev` on any visible change; scenes resync when `rev`
+  moves. Idle ticks and step progress don't bump `rev`.
+- Movement follows RPG Maker / Pokémon conventions and lives entirely in the sim: 4-direction grid walking
+  at 4 tiles/s (Shift runs at 2x), no gap between steps while held, tap to turn without moving, direction
+  changes at tile boundaries. `player.step` is the tile being walked to plus progress 0..1; scenes draw the
+  player every frame from that (no tweens, no Phaser animations). World coordinates are tiles; scenes
+  multiply by 16.
+- Everything standing on the ground is an `Obj` in `world.objects` with a `kind`. `KINDS` gives the tile
+  footprint and solidity. Sprites come from `sprites/<kind>`, are bottom-anchored, and are depth-sorted by
+  their feet Y, so tall things overlap what's behind them (top-down oblique). To add an object kind: one
+  union member, one `KINDS` row, one manifest entry, one placeholder entry.
+- Ground is drawn with layered dual-grid autotiling: `tiles/water` is the base, and each higher terrain
+  has one 16-frame sheet indexed by the corner mask (TL 1, TR 2, BL 4, BR 8) drawn over whatever is below.
+  One sheet per terrain covers every transition. Adding a terrain: add it to `Tile`, the draw order in
+  `Island.ts`, the manifest, and the placeholder script.
 - Dialogue is data (`Dialogue` json, see `src/game/world.ts`). Current node and choice cursor live in
-  `world.dialogue`, so the UI is stateless and every dialogue path is testable without Phaser.
+  `world.dialogue`; the inventory screen's cursor lives in `world.menu`. The UI is stateless, so every
+  dialogue path and menu state is testable without Phaser.
+- Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
+  sim emits that event (`crate:open`, `menu:close`, `salt:spawn`, add more in `apply`) and the `when` flag
+  is truthy; it sets `flags['fired:<key>']`. Dialogues that fire while a box is open wait in `world.queue`.
+  Node `set` may write strings; `flags['name:<item>']` renames an item. `{item}` in text becomes the name
+  of `dialogue.item`. The first pickup of each item plays `got.json`. To add a tutorial beat: write a
+  dialogue file with a trigger, and if it needs a new event, emit it from `apply`. No trigger system.
+- The infinite-resource loop: the orb placed on a water tile boils the sea and grows a salt crust every
+  3 s (`orb` object); salt placed on water becomes a `salt` tile. That is the Skyblock cobblestone
+  generator, thematically. The map is ASCII in `src/game/map.ts`; edit it by hand.
+- Scene flow: Boot → Menu → Intro (the rowboat cutscene, data in `assets/text/intro.json`) → Island,
+  which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it.
+- Cast so far: the main character (he/him, unnamed, says almost nothing) and his friend Mich (she/her,
+  red hair). Do not invent further characters, names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.
-- Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x.
+- Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24,
+  3 columns (stand, left foot, right foot) x 4 rows (down, up, left, right).
 
 ## Feature workflow (what "done" means)
 
@@ -68,11 +96,14 @@ Advance time with `dispatch({ type: 'tick', dt: 3000 })` instead of waiting in t
 Hard rule: nothing AI-generated ships. That covers art, animation, UI, VFX, dialogue, names, item
 descriptions, and any player-facing text.
 
-- Never create or edit anything under `assets/`. Humans only.
+- Never create or edit anything under `assets/`. Humans only. The one exception: text the user wrote
+  out in chat may be transcribed verbatim into `assets/text/` or `assets/dialogue/`. Never change a
+  word, never add lines, and say in the reply that you transcribed it.
 - Placeholders live in `placeholder/` and are produced only by `scripts/placeholders.mjs`. A placeholder is a
-  flat solid-colour rectangle. No outlines, shading, gradients, highlights, noise, texture, faces, or
-  decoration. The only allowed marking is one the gameplay needs (e.g. a bar on the edge the player faces).
-  Do not try to make it look good. If it looks like an attempt at art, it is wrong.
+  silhouette built from a few flat-colour rectangles that reads as the thing: head, body, two legs for a
+  person; trunk and canopy for a tree. Two or three flat colours at most. Tiles are single flat fills.
+  No outlines, shading, gradients, highlights, noise, texture, faces, or decoration. Do not try to make
+  it look good. If it looks like an attempt at art, it is wrong.
 - Placeholder text is always wrapped: `[PLACEHOLDER greeting]`, `[PLACEHOLDER NPC NAME]`. Do not write
   dialogue, names, lore, or flavour text, even as "temporary" suggestions, unless explicitly asked.
 - Every asset is a sprite sheet described in `src/assets.ts` (frame size, frame order). Adding an asset means

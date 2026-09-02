@@ -1,0 +1,16 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "menu:close", "when": "fired:inventory1" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "text": "fine. i will call it tarq's fire orb",
+      "set": { "name:orb": "tarq's fire orb" },
+      "next": "2"
+    },
+    "2": { "who": "", "text": "nice", "next": "3" },
+    "3": { "text": "...", "next": "4" },
+    "4": { "text": "so what am i meant to do with this now", "next": "5" },
+    "5": { "who": "", "text": "try throwing it in the sea", "next": null }
+  }
+}

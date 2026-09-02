@@ -2,12 +2,32 @@
 // resolve() prefers the real file and falls back to the placeholder, so dropping a PNG into
 // assets/ at the same path swaps it in with no other change.
 export const SHEETS = {
-  'tiles/terrain': { frameWidth: 16, frameHeight: 16 }, // 0 water · 1 sand · 2 grass
-  'sprites/player': { frameWidth: 16, frameHeight: 16 }, // 0 down · 1 up · 2 left · 3 right
-  'sprites/objects': { frameWidth: 16, frameHeight: 16 }, // 0 tidepool · 1 stone · 2 npc
+  'tiles/water': { frameWidth: 16, frameHeight: 16 }, // base fill under everything
+  'tiles/salt': { frameWidth: 16, frameHeight: 16 }, // 16 dual-grid frames, index = corner mask TL1 TR2 BL4 BR8, 0 empty, 15 full
+  'tiles/sand': { frameWidth: 16, frameHeight: 16 }, // same
+  'tiles/grass': { frameWidth: 16, frameHeight: 16 }, // same
+  // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
+  'sprites/player': { frameWidth: 16, frameHeight: 24 }, // rows down/up/left/right · cols stand/left foot/right foot
+  'sprites/mich': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
+  'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // 0 bare · 1 with a salt crust on top
+  'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
+  'sprites/hut': { frameWidth: 32, frameHeight: 40 }, // 2x2 footprint, bottom-anchored
+  'sprites/boat': { frameWidth: 32, frameHeight: 16 }, // 2x1 footprint, also the rowboat in the intro
+  'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
+  'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
 } as const
 
-export const JSONS = ['dialogue/npc1'] as const
+export const JSONS = [
+  'dialogue/crate',
+  'dialogue/firstsalt',
+  'dialogue/got',
+  'dialogue/inventory1',
+  'dialogue/inventory2',
+  'dialogue/landing',
+  'dialogue/mich',
+  'text/items',
+  'text/intro',
+] as const
 
 // Vite needs these two calls written out literally; it rewrites them at build time.
 const real = import.meta.glob<string>('/assets/**/*.{png,json}', {

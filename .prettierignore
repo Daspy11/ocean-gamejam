@@ -3,4 +3,5 @@ dist
 playwright-report
 test-results
 placeholder
+assets
 CLAUDE.md

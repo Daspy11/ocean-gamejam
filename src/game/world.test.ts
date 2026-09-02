@@ -1,18 +1,82 @@
 import { describe, expect, it } from 'vitest'
-import { createWorld, tileAt } from './world'
+import { KINDS, createWorld, objectAt, tileAt } from './world'
 
 describe('createWorld', () => {
-  it('builds a 5x5 island at 14..18: sand ring, grass centre, water elsewhere', () => {
+  it('parses map.ts into a 32x32 grid', () => {
     const w = createWorld()
-    expect(tileAt(w, 14, 14)).toBe('sand')
-    expect(tileAt(w, 18, 18)).toBe('sand')
-    expect(tileAt(w, 16, 14)).toBe('sand')
-    expect(tileAt(w, 14, 16)).toBe('sand')
-    expect(tileAt(w, 16, 16)).toBe('grass')
-    expect(tileAt(w, 15, 17)).toBe('grass')
-    expect(tileAt(w, 13, 16)).toBe('water')
-    expect(tileAt(w, 19, 16)).toBe('water')
-    expect(w.tiles.filter((t) => t !== 'water')).toHaveLength(25)
+    expect([w.width, w.height, w.tiles.length]).toEqual([32, 32, 32 * 32])
+    expect(tileAt(w, 16, 16)).toBe('grass') // the middle of the main island
+  })
+
+  it('lays out the wreck shore, the southern spit, and the gap to the second island', () => {
+    const w = createWorld()
+    expect(tileAt(w, 12, 16)).toBe('water') // the wreck's outer half is still in the sea
+    expect(tileAt(w, 13, 16)).toBe('sand')
+    expect(tileAt(w, 16, 21)).toBe('sand') // the tip of the southern spit
+    expect(tileAt(w, 20, 16)).toBe('sand') // the east beach the bridge starts from
+    expect(tileAt(w, 21, 16)).toBe('water') // exactly two tiles of open water
+    expect(tileAt(w, 22, 16)).toBe('water')
+    expect(tileAt(w, 23, 16)).toBe('sand') // the second island
+  })
+
+  it('stands every object on land, bar the half of the boat left in the water', () => {
+    const w = createWorld()
+    const wet = w.objects
+      .flatMap((o) => {
+        const k = KINDS[o.kind]
+        return Array.from({ length: k.w * k.h }, (_, i) => [
+          o.x + (i % k.w),
+          o.y + Math.floor(i / k.w),
+        ])
+      })
+      .filter(([x, y]) => tileAt(w, x, y) === 'water')
+    expect(wet).toEqual([[12, 16]])
+  })
+})
+
+describe('objectAt', () => {
+  it('covers every tile of a footprint and nothing else', () => {
+    const w = createWorld()
+    for (const [x, y] of [
+      [17, 17],
+      [18, 17],
+      [17, 18],
+      [18, 18],
+    ] as const)
+      expect(objectAt(w, x, y)?.id).toBe('hut1')
+
+    expect(objectAt(w, 15, 14)?.id).toBe('tree1')
+    expect(objectAt(w, 13, 15)?.id).toBe('mich')
+    expect(objectAt(w, 13, 17)?.id).toBe('crate1')
+    expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
+    expect(objectAt(w, 19, 17)).toBeUndefined() // just past the hut
+  })
+
+  it('finds the wrecked boat on both of its tiles', () => {
+    const w = createWorld()
+    expect(objectAt(w, 12, 16)?.id).toBe('boat1') // the half still in the water
+    expect(objectAt(w, 13, 16)?.id).toBe('boat1') // the half up on the sand
+    expect(objectAt(w, 14, 16)).toBeUndefined() // the player, one tile inland
+  })
+})
+
+describe('the intro landing', () => {
+  it('leaves the player on the west shore facing the island', () => {
+    const w = createWorld()
+    expect([w.player.x, w.player.y, w.player.facing]).toEqual([14, 16, 'right'])
+    const mich = w.objects.find((o) => o.id === 'mich')
+    expect(mich?.kind === 'npc' && mich.sprite).toBe('mich')
+    expect(mich?.kind === 'npc' && mich.dialogue).toBe('mich')
+  })
+
+  it('washes the crate ashore beside the wreck, still shut, with nothing carried', () => {
+    const w = createWorld()
+    const crate = w.objects.find((o) => o.id === 'crate1')
+    expect(crate?.kind === 'crate' && crate.open).toBe(false)
+    expect([crate?.x, crate?.y]).toEqual([13, 17])
+    expect(w.inventory).toEqual({})
+    expect(w.objects.some((o) => o.kind === 'orb')).toBe(false) // the orb is still in the crate
+    expect([w.dialogue, w.queue, w.flags]).toEqual([null, [], {}])
   })
 })
 

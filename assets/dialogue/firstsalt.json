@@ -1,0 +1,8 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "salt:spawn" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "wow it made salt", "next": null }
+  }
+}

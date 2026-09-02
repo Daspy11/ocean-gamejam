@@ -2,7 +2,7 @@ import { apply } from './game/actions'
 import { createWorld, type Action, type Content, type World } from './game/world'
 
 export let world = createWorld()
-export let content: Content = { dialogues: {} }
+export let content: Content = { dialogues: {}, items: {} }
 
 export function dispatch(a: Action) {
   apply(world, a, content)
