@@ -1,7 +1,8 @@
 import Phaser from 'phaser'
 import { JSONS, SHEETS, resolve } from '../assets'
-import type { Dialogue } from '../game/world'
-import { setContent } from '../store'
+import { MAPS } from '../game/map'
+import { createWorld, type Dialogue } from '../game/world'
+import { load, setContent } from '../store'
 
 export default class Boot extends Phaser.Scene {
   constructor() {
@@ -29,7 +30,15 @@ export default class Boot extends Phaser.Scene {
     const stubs = files.filter((file) => resolve(file).placeholder)
     console.info(`placeholders: ${stubs.join(' ') || 'none, all assets are real'}`)
 
+    const params = new URLSearchParams(location.search)
+    const map = params.get('map')
+    // ?map=<name> drops straight into gameplay on that map: ?map=gallery is the artist's proof sheet
+    if (map && map in MAPS) {
+      load(createWorld(map as keyof typeof MAPS))
+      this.scene.start('island')
+      return
+    }
     // ?scene=island skips the menu and the cutscene; tests and dev use it
-    this.scene.start(new URLSearchParams(location.search).get('scene') ?? 'menu')
+    this.scene.start(params.get('scene') ?? 'menu')
   }
 }

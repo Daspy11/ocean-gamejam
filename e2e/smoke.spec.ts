@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { DUAL_FRAME } from '../src/assets'
 
 // Phaser reads the keyboard on its own frame loop, so hold each key until the world reacts.
 async function press(page: Page, key: string, until: (arg: string) => boolean, arg = '') {
@@ -269,7 +270,13 @@ test('the dual-grid ground layers autotile the island edges', async ({ page }) =
       offsets: [salt.x, salt.y, sand.x, sand.y, grass.x, grass.y],
     }
   })
-  expect(grid).toEqual({ sandCorner: 8, sandEdge: 6, grassCorner: 8, offsets: Array(6).fill(-8) })
+  // the frame is no longer the mask itself: the 4x4 template puts each combination somewhere else
+  expect(grid).toEqual({
+    sandCorner: DUAL_FRAME[8],
+    sandEdge: DUAL_FRAME[6],
+    grassCorner: DUAL_FRAME[8],
+    offsets: Array(6).fill(-8),
+  })
 })
 
 test('objects sort by the bottom of their footprint', async ({ page }) => {

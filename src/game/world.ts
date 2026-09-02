@@ -1,4 +1,4 @@
-import { MAP } from './map'
+import { MAPS } from './map'
 
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
 export type Tile = 'water' | 'salt' | 'sand' | 'grass'
@@ -99,38 +99,63 @@ export function objectAt(w: World, x: number, y: number): Obj | undefined {
   })
 }
 
-export function createWorld(): World {
+export function createWorld(map: keyof typeof MAPS = 'island'): World {
   const width = 32
   const height = 32
-  if (MAP.length !== height || MAP.some((row) => row.length !== width))
-    throw new Error('map.ts must be 32 rows of 32 characters')
-  const glyph: Record<string, Tile> = { '~': 'water', '.': 'sand', '#': 'grass' }
-  const tiles = MAP.flatMap((row) => [...row].map((ch) => glyph[ch]))
+  const rows = MAPS[map]
+  if (rows.length !== height || rows.some((row) => row.length !== width))
+    throw new Error(`map.ts ${map} must be 32 rows of 32 characters`)
+  const glyph: Record<string, Tile> = { '~': 'water', s: 'salt', '.': 'sand', '#': 'grass' }
+  const tiles = rows.flatMap((row) => [...row].map((ch) => glyph[ch]))
+  // island: the intro ends with the boat crashing into the west shore, so that is where everyone
+  // starts. gallery: the middle of the object pad, facing the camera.
+  const spawn: { x: number; y: number; facing: Dir } =
+    map === 'gallery' ? { x: 8, y: 20, facing: 'down' } : { x: 14, y: 16, facing: 'right' }
+  const objects: Obj[] =
+    map === 'gallery'
+      ? [
+          { id: 'g-tree', kind: 'tree', x: 2, y: 18 },
+          { id: 'g-hut', kind: 'hut', x: 4, y: 17 },
+          { id: 'g-boat', kind: 'boat', x: 7, y: 18 },
+          { id: 'g-crate', kind: 'crate', x: 2, y: 20, open: false },
+          { id: 'g-crate-open', kind: 'crate', x: 4, y: 20, open: true },
+          {
+            id: 'g-mich',
+            kind: 'npc',
+            sprite: 'mich',
+            x: 6,
+            y: 20,
+            facing: 'down',
+            dialogue: 'mich',
+          },
+          // a day of sim time away, so the bare orb stays bare however long the gallery is left open
+          { id: 'g-orb', kind: 'orb', x: 12, y: 18, salt: false, nextAt: 86400000 },
+          { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, salt: true, nextAt: 86400000 },
+        ]
+      : [
+          { id: 'boat1', kind: 'boat', x: 12, y: 16 },
+          { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false },
+          {
+            id: 'mich',
+            kind: 'npc',
+            sprite: 'mich',
+            x: 13,
+            y: 15,
+            facing: 'right',
+            dialogue: 'mich',
+          },
+          { id: 'tree1', kind: 'tree', x: 15, y: 14 },
+          { id: 'hut1', kind: 'hut', x: 17, y: 17 },
+        ]
   return {
     rev: 0,
     time: 0,
     width,
     height,
     tiles,
-    // the intro ends with the boat crashing into the west shore, so that is where everyone starts
-    player: {
-      x: 14,
-      y: 16,
-      facing: 'right',
-      step: null,
-      held: null,
-      run: false,
-      turnedAt: 0,
-      parity: false,
-    },
+    player: { ...spawn, step: null, held: null, run: false, turnedAt: 0, parity: false },
     inventory: {},
-    objects: [
-      { id: 'boat1', kind: 'boat', x: 12, y: 16 },
-      { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false },
-      { id: 'mich', kind: 'npc', sprite: 'mich', x: 13, y: 15, facing: 'right', dialogue: 'mich' },
-      { id: 'tree1', kind: 'tree', x: 15, y: 14 },
-      { id: 'hut1', kind: 'hut', x: 17, y: 17 },
-    ],
+    objects,
     flags: {},
     dialogue: null,
     queue: [],

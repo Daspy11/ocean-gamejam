@@ -44,9 +44,11 @@ e2e/           Playwright specs.
   their feet Y, so tall things overlap what's behind them (top-down oblique). To add an object kind: one
   union member, one `KINDS` row, one manifest entry, one placeholder entry.
 - Ground is drawn with layered dual-grid autotiling: `tiles/water` is the base, and each higher terrain
-  has one 16-frame sheet indexed by the corner mask (TL 1, TR 2, BL 4, BR 8) drawn over whatever is below.
-  One sheet per terrain covers every transition. Adding a terrain: add it to `Tile`, the draw order in
-  `Island.ts`, the manifest, and the placeholder script.
+  has one 4x4 template sheet (frame for a corner mask via `DUAL_FRAME` in `src/assets.ts`) drawn over
+  whatever is below. One sheet per terrain covers every transition. Adding a terrain: add it to `Tile`,
+  the draw order in `Island.ts`, the manifest, the placeholder script, and `assets/README.md`.
+- `assets/README.md` is the artist's spec. Keep it true when a sheet layout changes. `?map=gallery`
+  renders every tile, transition, object, and character with the real game code.
 - Dialogue is data (`Dialogue` json, see `src/game/world.ts`). Current node and choice cursor live in
   `world.dialogue`; the inventory screen's cursor lives in `world.menu`. The UI is stateless, so every
   dialogue path and menu state is testable without Phaser.
@@ -64,8 +66,8 @@ e2e/           Playwright specs.
 - Cast so far: the main character (he/him, unnamed, says almost nothing) and his friend Mich (she/her,
   red hair). Do not invent further characters, names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.
-- Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24,
-  3 columns (stand, left foot, right foot) x 4 rows (down, up, left, right).
+- Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24
+  in the RPG Maker layout: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up).
 
 ## Feature workflow (what "done" means)
 
@@ -90,6 +92,8 @@ Advance time with `dispatch({ type: 'tick', dt: 3000 })` instead of waiting in t
 - Comments explain *why*, in one line. No doc-comment blocks restating a signature. No section banners.
 - Files ≤ 300 lines (lint-enforced). Split by feature (`fishing.ts`), not by layer (`FishingManager.ts`).
 - Prefer editing an existing file over creating a new one. Prettier owns formatting: `npm run format`.
+- Never run `git checkout`, `git restore`, `git stash`, `git clean`, or `git commit` unless the user asks.
+  Uncommitted changes you did not make belong to someone else; leave them. Check with `git status` only.
 
 ## Assets and content (non-negotiable)
 

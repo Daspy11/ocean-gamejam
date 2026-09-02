@@ -1,9 +1,10 @@
 import Phaser from 'phaser'
+import { DUAL_FRAME } from '../assets'
 import { KINDS, tileAt, type Dir, type Tile } from '../game/world'
 import { dispatch, world } from '../store'
 
 const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass'] // priority, lowest first; later fills draw over earlier ones
-const ROW = { down: 0, up: 1, left: 2, right: 3 } // character sheet row per facing
+const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
 
 export default class Island extends Phaser.Scene {
   private rev = -1
@@ -33,7 +34,7 @@ export default class Island extends Phaser.Scene {
       this.layers.push(layer)
     })
 
-    this.player = this.add.sprite(0, 0, 'sprites/player', 0).setOrigin(0, 1)
+    this.player = this.add.sprite(0, 0, 'sprites/player', 1).setOrigin(0, 1)
 
     this.cameras.main.setZoom(2)
     this.cameras.main.setBounds(0, 0, world.width * 16, world.height * 16)
@@ -90,7 +91,7 @@ export default class Island extends Phaser.Scene {
     const p = world.player
     const x = (p.step ? p.x + (p.step.x - p.x) * p.step.t : p.x) * 16
     const y = (p.step ? p.y + (p.step.y - p.y) * p.step.t : p.y) * 16
-    const col = p.step ? (p.step.t < 0.5 ? (p.parity ? 1 : 2) : 0) : 0
+    const col = p.step ? (p.step.t < 0.5 ? (p.parity ? 0 : 2) : 1) : 1 // 1 is standing
     this.player
       .setPosition(x, y + 16)
       .setDepth(y + 16)
@@ -105,7 +106,7 @@ export default class Island extends Phaser.Scene {
         for (let i = 0; i <= world.width; i++)
           // the dual cell's centre sits on the corner shared by these four logical tiles
           this.layers[n].putTileAt(
-            is(i - 1, j - 1, 1) + is(i, j - 1, 2) + is(i - 1, j, 4) + is(i, j, 8),
+            DUAL_FRAME[is(i - 1, j - 1, 1) + is(i, j - 1, 2) + is(i - 1, j, 4) + is(i, j, 8)],
             i,
             j,
           )
@@ -117,7 +118,7 @@ export default class Island extends Phaser.Scene {
       let frame = 0 // frame 0 unless the kind has some state to show
       if (o.kind === 'orb') frame = o.salt ? 1 : 0
       if (o.kind === 'crate') frame = o.open ? 1 : 0
-      if (o.kind === 'npc') frame = ROW[o.facing] * 3
+      if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // npcs always stand
       return this.add
         .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
         .setOrigin(0, 1)

@@ -89,3 +89,46 @@ describe('tileAt', () => {
     expect(tileAt(w, 16, w.height)).toBeUndefined()
   })
 })
+
+describe('the gallery map', () => {
+  it('lays the 5x5 corner template out in salt, sand and grass, a water column apart', () => {
+    const w = createWorld('gallery')
+    const rows = ['00110', '00110', '01100', '10011', '11001'] // must match DUAL_FRAME in src/assets
+    for (const [x, terrain] of [
+      [1, 'salt'],
+      [7, 'sand'],
+      [13, 'grass'],
+    ] as const)
+      for (let r = 0; r < 5; r++)
+        for (let c = 0; c < 5; c++)
+          expect(tileAt(w, x + c, 1 + r)).toBe(rows[r][c] === '1' ? terrain : 'water')
+    expect([tileAt(w, 6, 4), tileAt(w, 12, 4)]).toEqual(['water', 'water']) // the gaps between blocks
+  })
+
+  it('nests grass in sand in salt for the layering sampler', () => {
+    const w = createWorld('gallery')
+    expect([tileAt(w, 1, 11), tileAt(w, 2, 11), tileAt(w, 4, 11)]).toEqual([
+      'salt',
+      'sand',
+      'grass',
+    ])
+  })
+
+  it('stands one of every object on the pad, with the two orbs out on the water', () => {
+    const w = createWorld('gallery')
+    expect(w.objects.map((o) => o.id)).toEqual([
+      'g-tree',
+      'g-hut',
+      'g-boat',
+      'g-crate',
+      'g-crate-open',
+      'g-mich',
+      'g-orb',
+      'g-orb-salt',
+    ])
+    const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)
+    expect(wet).toEqual(['g-orb', 'g-orb-salt'])
+    expect([w.player.x, w.player.y, w.player.facing]).toEqual([8, 20, 'down'])
+    expect(objectAt(w, 8, 20)).toBeUndefined() // nothing standing where the player spawns
+  })
+})

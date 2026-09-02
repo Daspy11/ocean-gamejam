@@ -1,26 +1,47 @@
-// Regenerates placeholder/. Flat solid fills only: [x, y, w, h, colour] rects inside one frame, drawn
-// in order, transparent where nothing is drawn. A sprite is a silhouette of two or three flat colours
-// that reads as the thing; tiles are single flat fills. No outlines, shading, faces or decoration.
+// Regenerates placeholder/. Flat solid fills only: a frame is [x, y, w, h, colour] rects drawn in
+// order, or a (x, y) => colour | null pixel test, transparent where nothing is drawn. A sprite is a
+// silhouette of two or three flat colours that reads as the thing; tiles are single flat fills.
+// No outlines, shading, faces or decoration.
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 
-// Dual-grid terrain: frame index IS the corner mask (TL 1, TR 2, BL 4, BR 8), so a frame fills only
-// the quadrants whose corner is this terrain. Frame 0 is empty, frame 15 solid.
-const dual = (colour) =>
-  Array.from({ length: 16 }, (_, mask) =>
-    [
-      [0, 0, 8, 8],
-      [8, 0, 8, 8],
-      [0, 8, 8, 8],
-      [8, 8, 8, 8],
-    ]
-      .filter((_, corner) => mask & (1 << corner))
-      .map((rect) => [...rect, colour]),
-  )
+// Corner grid of the 4x4 terrain template: cell (row, col) of the sheet covers the 2x2 window at
+// (row, col), '1' meaning "this terrain". Must match DUAL_FRAME in src/assets.ts.
+const TEMPLATE = ['00110', '00110', '01100', '10011', '11001']
 
-// Character sheet: 3 columns (stand, left foot, right foot) x 4 rows (down, up, left, right). Facing
+// So a 64x64 terrain sheet fills the quadrants whose corner is '1', and the placeholder file *is*
+// the template picture the artist paints over: one continuous blob, every corner case once. The
+// quadrant corners at the cell centre are rounded so the autotiling actually reads in game.
+const dual = (colour) =>
+  Array.from({ length: 16 }, (_, frame) => {
+    const row = Math.floor(frame / 4)
+    const col = frame % 4
+    // quadrant order is top-left, top-right, bottom-left, bottom-right
+    const on = [0, 1, 2, 3].map((q) => TEMPLATE[row + (q >> 1)][col + (q % 2)] === '1')
+    const corners = on.filter(Boolean).length
+    return (x, y) => {
+      if (corners === 0) return null
+      if (corners === 4) return colour
+      const q = (y < 8 ? 0 : 2) + (x < 8 ? 0 : 1)
+      // two adjacent corners is a straight edge: keep it flat so it continues across cells
+      if (corners === 2 && on[0] !== on[3]) return on[q] ? colour : null
+      // the 4x4 square this quadrant touches the cell centre with, and that square's outer corner
+      const sx = x < 8 ? 4 : 8
+      const sy = y < 8 ? 4 : 8
+      const round =
+        x >= sx &&
+        x < sx + 4 &&
+        y >= sy &&
+        y < sy + 4 &&
+        Math.hypot(x + 0.5 - (x < 8 ? 4 : 12), y + 0.5 - (y < 8 ? 4 : 12)) > 4
+      // a lone quadrant loses that arc (a rounded tip); a lone gap gains it (an inner fillet)
+      return (corners === 3 ? on[q] || round : on[q] && !round) ? colour : null
+    }
+  })
+
+// Character sheet: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up). Facing
 // reads from where the hair sits; the two walk columns only shorten one leg by a pixel.
 const character = ({ hair, skin, shirt }) =>
   [
@@ -29,14 +50,6 @@ const character = ({ hair, skin, shirt }) =>
       body: [
         [4, 1, 8, 3, hair],
         [4, 4, 8, 5, skin],
-        [3, 9, 10, 9, shirt],
-      ],
-      legs: [4, 9],
-    },
-    {
-      // up: the hair covers the whole head
-      body: [
-        [4, 1, 8, 8, hair],
         [3, 9, 10, 9, shirt],
       ],
       legs: [4, 9],
@@ -61,19 +74,27 @@ const character = ({ hair, skin, shirt }) =>
       ],
       legs: [5, 8],
     },
+    {
+      // up: the hair covers the whole head
+      body: [
+        [4, 1, 8, 8, hair],
+        [3, 9, 10, 9, shirt],
+      ],
+      legs: [4, 9],
+    },
   ].flatMap(({ body, legs }) =>
     [
-      [6, 6], // stand
       [5, 6], // left foot forward
+      [6, 6], // stand
       [6, 5], // right foot forward
     ].map(([a, b]) => [...body, [legs[0], 18, 3, a, skin], [legs[1], 18, 3, b, skin]]),
   )
 
 const sheets = [
   { file: 'tiles/water.png', w: 16, h: 16, cols: 1, frames: [[[0, 0, 16, 16, '#3b6fb6']]] },
-  { file: 'tiles/salt.png', w: 16, h: 16, cols: 16, frames: dual('#c4ccd6') },
-  { file: 'tiles/sand.png', w: 16, h: 16, cols: 16, frames: dual('#d8c58e') },
-  { file: 'tiles/grass.png', w: 16, h: 16, cols: 16, frames: dual('#6da85a') },
+  { file: 'tiles/salt.png', w: 16, h: 16, cols: 4, frames: dual('#c4ccd6') },
+  { file: 'tiles/sand.png', w: 16, h: 16, cols: 4, frames: dual('#d8c58e') },
+  { file: 'tiles/grass.png', w: 16, h: 16, cols: 4, frames: dual('#6da85a') },
   {
     file: 'sprites/player.png',
     w: 16,
@@ -219,12 +240,21 @@ for (const sheet of sheets) {
   sheet.frames.forEach((frame, i) => {
     const ox = (i % sheet.cols) * sheet.w
     const oy = Math.floor(i / sheet.cols) * sheet.h
-    for (const [x, y, w, h, colour] of frame) {
-      const rgb = [1, 3, 5].map((k) => parseInt(colour.slice(k, k + 2), 16))
-      for (let py = oy + y; py < oy + y + h; py++)
-        for (let px = ox + x; px < ox + x + w; px++)
-          png.data.set([...rgb, 255], (py * png.width + px) * 4)
-    }
+    for (let y = 0; y < sheet.h; y++)
+      for (let x = 0; x < sheet.w; x++) {
+        // a rect frame is drawn in order, so the last rect covering the pixel is the one on top
+        const colour =
+          typeof frame === 'function'
+            ? frame(x, y)
+            : frame.reduce(
+                (c, [rx, ry, rw, rh, rc]) =>
+                  x >= rx && x < rx + rw && y >= ry && y < ry + rh ? rc : c,
+                null,
+              )
+        if (!colour) continue
+        const rgb = [1, 3, 5].map((k) => parseInt(colour.slice(k, k + 2), 16))
+        png.data.set([...rgb, 255], ((oy + y) * png.width + ox + x) * 4)
+      }
   })
   write(sheet.file, PNG.sync.write(png))
 }

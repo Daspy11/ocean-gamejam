@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { DUAL_FRAME } from '../assets'
 import { dispatch } from '../store'
 
 // assets/text/intro.json: human-written, read verbatim. The only thing here that touches `world`
@@ -32,16 +33,19 @@ export default class Intro extends Phaser.Scene {
 
     // no camera zoom here, so everything is drawn at 640x360 and the sprites carry the 2x scale
     this.water = this.add.tileSprite(0, 0, 640, 360, 'tiles/water').setOrigin(0).setTileScale(2)
-    this.add.tileSprite(540, 60, 200, 240, 'tiles/sand', 15).setOrigin(0).setTileScale(2)
+    this.add
+      .tileSprite(540, 60, 200, 240, 'tiles/sand', DUAL_FRAME[15])
+      .setOrigin(0)
+      .setTileScale(2)
 
     const boat = this.add.image(200, 210, 'sprites/boat').setOrigin(0, 1).setScale(2)
     this.actors = {
       mich: this.add
-        .image(boat.x + 8, SEAT, 'sprites/mich', 9)
+        .image(boat.x + 8, SEAT, 'sprites/mich', 7)
         .setOrigin(0, 1)
         .setScale(2),
       player: this.add
-        .image(boat.x + 40, SEAT, 'sprites/player', 9)
+        .image(boat.x + 40, SEAT, 'sprites/player', 7)
         .setOrigin(0, 1)
         .setScale(2),
     }
