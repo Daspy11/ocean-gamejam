@@ -187,22 +187,6 @@ const sheets = [
     ],
   },
   {
-    file: 'sprites/hut.png',
-    w: 32,
-    h: 40,
-    cols: 1,
-    frames: [
-      [
-        [2, 22, 28, 18, '#8a6a4a'], // walls
-        [0, 16, 32, 6, '#6a4a3a'], // roof, stepped to a point
-        [4, 10, 24, 6, '#6a4a3a'],
-        [8, 4, 16, 6, '#6a4a3a'],
-        [12, 0, 8, 4, '#6a4a3a'],
-        [13, 30, 6, 10, '#4a3a2a'], // door
-      ],
-    ],
-  },
-  {
     file: 'sprites/boat.png',
     w: 32,
     h: 16,

@@ -293,10 +293,11 @@ test('objects sort by the bottom of their footprint', async ({ page }) => {
   const depths = await page.evaluate(() => {
     const list = window.island.game.scene.getScene('island').children
       .list as Phaser.GameObjects.Sprite[]
-    const depth = (key: string) => list.find((o) => o.texture?.key === key)?.depth
-    return { tree: depth('sprites/tree'), hut: depth('sprites/hut'), mich: depth('sprites/mich') }
+    const feet = (k: string) => list.find((o) => o.texture?.key === `sprites/${k}`)?.depth
+    return { tree: feet('tree'), crate: feet('crate'), mich: feet('mich') }
   })
-  expect(depths).toEqual({ tree: (14 + 1) * 16, hut: (17 + 2) * 16, mich: (15 + 1) * 16 })
+  // tree1 at 16,16, crate1 at 13,17, mich at 13,15: each sorted by the tile its feet are on
+  expect(depths).toEqual({ tree: (16 + 1) * 16, crate: (17 + 1) * 16, mich: (15 + 1) * 16 })
 })
 
 test('the tutorial runs from the crate to the first salt out of the sea', async ({ page }) => {

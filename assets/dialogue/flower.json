@@ -275,9 +275,8 @@
       "walk": {
         "id": "walter",
         "path": [
-          "left",
-          "left",
-          "left",
+          "down",
+          "down",
           "left",
           "left",
           "left",

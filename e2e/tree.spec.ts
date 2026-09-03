@@ -15,13 +15,13 @@ const texts = (page: Page) =>
       .join('\n'),
   )
 
-// on the grass at 15,15, looking up at tree1
-async function atTree(page: Page, y = 15) {
+// on the grass at 16,17, looking up at tree1 in the middle of the island at 16,16
+async function atTree(page: Page, y = 17) {
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   await page.evaluate((at) => {
     const w = window.island.world()
-    window.island.load({ ...w, player: { ...w.player, x: 15, y: at, facing: 'up' } })
+    window.island.load({ ...w, player: { ...w.player, x: 16, y: at, facing: 'up' } })
   }, y)
   await page.locator('#game canvas').click()
 }
@@ -120,7 +120,7 @@ test('shaking the tree twelve times sends it away', async ({ page }) => {
 })
 
 test('a promised tree left alone invites a friend over when you come back', async ({ page }) => {
-  await atTree(page, 18)
+  await atTree(page, 20)
   // promised, and last shaken over a minute ago: four tiles away it still says nothing
   await page.evaluate(() => {
     const w = window.island.world()
@@ -136,7 +136,7 @@ test('a promised tree left alone invites a friend over when you come back', asyn
 
   await page.evaluate(() => {
     const w = window.island.world()
-    window.island.load({ ...w, player: { ...w.player, y: 17 } }) // three tiles: close enough
+    window.island.load({ ...w, player: { ...w.player, y: 19 } }) // three tiles: close enough
     window.island.dispatch({ type: 'tick', dt: 16 })
   })
   expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('treefriend')
@@ -154,7 +154,7 @@ test('a promised tree left alone invites a friend over when you come back', asyn
     return { tree2: w.objects.find((o) => o.id === 'tree2'), dialogue: w.dialogue }
   })
   expect(after.dialogue).toBe(null)
-  expect(after.tree2).toMatchObject({ kind: 'tree', x: 15, y: 19 })
+  expect(after.tree2).toMatchObject({ kind: 'tree', x: 16, y: 15 })
 
   const drawn = () =>
     page.evaluate(
@@ -166,7 +166,32 @@ test('a promised tree left alone invites a friend over when you come back', asyn
   await expect.poll(drawn).toBe(2) // the old tree and the friend it called over
 })
 
-test('Walter walking to a tree that already left stops where it stood', async ({ page }) => {
+test('the friend tree is talked to, and renames itself once the tree has gone', async ({
+  page,
+}) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.evaluate(() => {
+    const w = window.island.world() // the friend alone on the island, the player on the grass above it
+    w.objects = w.objects.filter((o) => o.id !== 'tree1')
+    w.objects.push({ id: 'tree2', kind: 'tree', x: 16, y: 15, dialogue: 'tree2' })
+    window.island.load({
+      ...w,
+      flags: { 'tree:gone': true },
+      player: { ...w.player, x: 16, y: 14, facing: 'down' },
+    })
+  })
+  await page.locator('#game canvas').click()
+
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'tree2')
+  await expect.poll(() => texts(page)).toContain('fragile tree is being')
+  await playOut(page) // no choices and no shake: it just talks itself round to the new name
+
+  await press(page, 'e', () => window.island.world().dialogue?.node === 'again')
+  await expect.poll(() => texts(page)).toContain('blast off into space')
+})
+
+test('Walter walking to a tree that already left stops short of it', async ({ page }) => {
   test.setTimeout(90000)
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
@@ -186,7 +211,7 @@ test('Walter walking to a tree that already left stops where it stood', async ({
   const walter = await page.evaluate(() =>
     window.island.world().objects.find((o) => o.id === 'walter'),
   )
-  expect(walter).toMatchObject({ x: 15, y: 14 }) // the tile the tree used to be on, not under it
+  expect(walter).toMatchObject({ x: 18, y: 16 }) // he stops short rather than walking on under it
   const left = seen.findIndex((line) => line.includes('made the tree leave'))
   const hat = seen.findIndex((line) => line.includes('oh yeah'))
   expect(left).toBeGreaterThan(-1) // the branch the tree:gone flag picked
@@ -198,13 +223,13 @@ test('the tree leaving from over Walter head carries on into his sunburn', async
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   await page.evaluate(() => {
-    const w = window.island.world() // Walter settled under tree1, the player at 15,15 looking up
+    const w = window.island.world() // Walter settled beside tree1, the player at 16,17 looking up
     w.objects.push({
       id: 'walter',
       kind: 'npc',
       sprite: 'walter',
-      x: 14,
-      y: 14,
+      x: 17,
+      y: 16,
       facing: 'down',
       dialogue: 'walter',
     })
@@ -212,7 +237,7 @@ test('the tree leaving from over Walter head carries on into his sunburn', async
       ...w,
       flags: { 'tree:promised': false, 'walter:under': true, 'score:on': true },
       objects: w.objects.map((o) => (o.id === 'tree1' ? { ...o, shakes: 11 } : o)),
-      player: { ...w.player, x: 15, y: 15, facing: 'up' },
+      player: { ...w.player, x: 16, y: 17, facing: 'up' },
     })
   })
   await page.locator('#game canvas').click()

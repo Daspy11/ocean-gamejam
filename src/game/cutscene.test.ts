@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, type Content, type World } from './world'
 
-// mich starts at 13,15; the walk goes up to 13,14 then right over the player at 14,14 and on to
-// tree1 at 15,14, so the whole path crosses things a walking player could never cross
+// mich starts at 13,15; the walk goes right over the player at 15,15 and on down onto tree1 at
+// 16,16, so the whole path crosses things a walking player could never cross
 const content: Content = {
   dialogues: {
     scene: {
@@ -11,7 +11,7 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: {
         '1': { text: '[PLACEHOLDER scene 1]', next: 'walk' },
-        walk: { walk: { id: 'mich', path: ['up', 'right', 'right'] }, next: 'wait' },
+        walk: { walk: { id: 'mich', path: ['right', 'right', 'right', 'down'] }, next: 'wait' },
         wait: { wait: 500, next: 'spawn' },
         spawn: { spawn: { id: 'tree2', kind: 'tree', x: 18, y: 12 }, next: 'end' },
         end: { text: '[PLACEHOLDER scene 2]', next: null },
@@ -48,8 +48,8 @@ const node = (w: World) =>
 // the scene opened and stepped past its first line, so the walk act is running
 function walking(): World {
   const w = createWorld()
-  w.player.x = 14
-  w.player.y = 14
+  w.player.x = 15
+  w.player.y = 15
   apply(w, { type: 'talk', key: 'scene' }, content)
   apply(w, { type: 'interact' }, content)
   return w
@@ -60,7 +60,7 @@ describe('act nodes', () => {
     const w = walking()
     expect(w.dialogue?.node).toBe('walk')
     expect(node(w)?.text).toBeUndefined() // no text: the UI draws no box
-    expect(mich(w).step).toEqual({ x: 13, y: 14, t: 0 })
+    expect(mich(w).step).toEqual({ x: 14, y: 15, t: 0 })
 
     apply(w, { type: 'tick', dt: 125 }, content)
     apply(w, { type: 'interact' }, content)
@@ -71,13 +71,16 @@ describe('act nodes', () => {
   it('walks the npc a tile every 250 ms, through the player and a tree', () => {
     const w = walking()
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y]).toEqual([13, 14])
+    expect([mich(w).x, mich(w).y]).toEqual([14, 15])
 
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y]).toEqual([14, 14]) // straight over the player's tile
+    expect([mich(w).x, mich(w).y]).toEqual([15, 15]) // straight over the player's tile
 
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y, mich(w).facing]).toEqual([15, 14, 'right']) // and over tree1
+    expect([mich(w).x, mich(w).y]).toEqual([16, 15])
+
+    apply(w, { type: 'tick', dt: 250 }, content)
+    expect([mich(w).x, mich(w).y, mich(w).facing]).toEqual([16, 16, 'down']) // and down onto tree1
     expect(mich(w).step).toBe(null)
     expect(w.dialogue?.node).toBe('wait') // arrived, so the node moved on by itself
   })
@@ -92,7 +95,7 @@ describe('act nodes', () => {
 
   it('holds on a wait until the time has passed, then spawns once and closes', () => {
     const w = walking()
-    for (let n = 0; n < 3; n++) apply(w, { type: 'tick', dt: 250 }, content) // the walk
+    for (let n = 0; n < 4; n++) apply(w, { type: 'tick', dt: 250 }, content) // the walk
     expect(w.dialogue?.node).toBe('wait')
 
     apply(w, { type: 'tick', dt: 400 }, content)

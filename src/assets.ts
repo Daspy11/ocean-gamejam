@@ -15,7 +15,6 @@ export const SHEETS = {
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
-  'sprites/hut': { frameWidth: 32, frameHeight: 40 }, // 2x2 footprint, bottom-anchored
   'sprites/boat': { frameWidth: 32, frameHeight: 16 }, // 2x1 footprint, also the rowboat in the intro
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
@@ -33,6 +32,7 @@ export const SHEETS = {
 export const DUAL_FRAME = [-1, 12, 10, 11, 2, 7, 13, 3, 0, 14, 5, 4, 1, 8, 9, 6]
 
 export const JSONS = [
+  'dialogue/boat',
   'dialogue/crate',
   'dialogue/firstsalt',
   'dialogue/flower',
@@ -46,6 +46,7 @@ export const JSONS = [
   'dialogue/shake7',
   'dialogue/sign',
   'dialogue/tree',
+  'dialogue/tree2',
   'dialogue/treealive',
   'dialogue/treefriend',
   'dialogue/walter',

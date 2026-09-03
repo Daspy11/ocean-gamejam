@@ -273,8 +273,12 @@ export function apply(w: World, a: Action, c: Content): void {
     open(obj.dialogue) // a sign just reads out; nothing turns and no one is talked to
     return
   }
+  if (obj?.kind === 'boat') {
+    open('boat') // the wreck reads out like a sign, with no one speaking
+    return
+  }
   if (obj?.kind === 'tree') {
-    open('tree') // one tree dialogue: there is only the one kind, and a flown one is not there to face
+    open(obj.dialogue ?? 'tree') // the shaking one by default; a tree with its own dialogue is talked to
     return
   }
   if (obj?.kind === 'crate') {

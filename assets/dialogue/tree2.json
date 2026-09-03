@@ -1,0 +1,46 @@
+{
+  "name": "tree 2",
+  "start": [
+    {
+      "when": "tree2:renamed",
+      "node": "again"
+    },
+    {
+      "when": "tree:gone",
+      "node": "1"
+    },
+    {
+      "node": "hi"
+    }
+  ],
+  "nodes": {
+    "hi": {
+      "text": "[PLACEHOLDER tree 2 greeting]",
+      "next": null
+    },
+    "1": {
+      "text": "i can't believe how fragile tree is being",
+      "next": "2"
+    },
+    "2": {
+      "text": "now i'm the only tree it doesn't really make much sense for me to be called tree 2",
+      "next": "3"
+    },
+    "3": {
+      "text": "...",
+      "next": "4"
+    },
+    "4": {
+      "text": "ok i think i will be tree now",
+      "set": {
+        "tree2:renamed": true
+      },
+      "next": null
+    },
+    "again": {
+      "who": "tree",
+      "text": "ooooo, i'm tree, i'm veeery fragile, i will blast off into space if you shake me",
+      "next": null
+    }
+  }
+}

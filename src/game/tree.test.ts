@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { createWorld, type Content, type World } from './world'
+import { createWorld, tileAt, type Content, type World } from './world'
 
 // the shape of the five tree files: tree.json asks, shake3/shake7 are Mich's asides, treealive is
 // the tree speaking up on the twelfth shake, and treefriend the reunion a minute after the promise
@@ -74,31 +74,50 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: {
         '1': { text: '[PLACEHOLDER treefriend 1]', next: '2' },
-        '2': { spawn: { id: 'tree2', kind: 'tree', x: 15, y: 19 }, next: '3' },
+        '2': {
+          spawn: { id: 'tree2', kind: 'tree', x: 16, y: 15, dialogue: 'tree2' },
+          next: '3',
+        },
         '3': { land: 'tree2', next: '4' },
         '4': { who: '[PLACEHOLDER NPC NAME]', text: '[PLACEHOLDER treefriend 4]', next: '5' },
         '5': { text: '[PLACEHOLDER treefriend 5]', next: '6' },
         '6': { text: '[PLACEHOLDER treefriend 6]', next: null },
       },
     },
+    tree2: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [
+        { when: 'tree2:renamed', node: 'again' },
+        { when: 'tree:gone', node: '1' },
+        { node: 'hi' },
+      ],
+      nodes: {
+        hi: { text: '[PLACEHOLDER tree2 hi]', next: null },
+        '1': { text: '[PLACEHOLDER tree2 1]', next: '2' },
+        '2': { text: '[PLACEHOLDER tree2 2]', next: '3' },
+        '3': { text: '[PLACEHOLDER tree2 3]', next: '4' },
+        '4': { text: '[PLACEHOLDER tree2 4]', set: { 'tree2:renamed': true }, next: null },
+        again: { who: '[PLACEHOLDER NPC NAME]', text: '[PLACEHOLDER tree2 again]', next: null },
+      },
+    },
   },
   items: { twig: { name: '[PLACEHOLDER twig]' } },
 }
 
-function tree1(w: World) {
-  const o = w.objects.find((o) => o.id === 'tree1')
-  if (o?.kind !== 'tree') throw new Error('tree1 is not a tree')
+function tree(w: World, id = 'tree1') {
+  const o = w.objects.find((o) => o.id === id)
+  if (o?.kind !== 'tree') throw new Error(`${id} is not a tree`)
   return o
 }
 const gone = (w: World, id: string) => !w.objects.some((o) => o.id === id)
 // key and node together: the got box and Mich's asides all start on a node '1'
 const at = (w: World) => (w.dialogue ? `${w.dialogue.key}/${w.dialogue.node}` : null)
 
-// on the grass at 15,15, looking up at tree1 at 15,14
+// on the grass at 16,17, looking up at tree1 in the middle of the island at 16,16
 function atTree(): World {
   const w = createWorld()
-  w.player.x = 15
-  w.player.y = 15
+  w.player.x = 16
+  w.player.y = 17
   w.player.facing = 'up'
   return w
 }
@@ -128,7 +147,7 @@ describe('shaking the tree', () => {
     apply(w, { type: 'interact' }, content) // the first choice is yes
     expect(at(w)).toBe('tree/shake')
     expect(w.inventory.twig).toBe(1)
-    expect(tree1(w)).toMatchObject({ shakes: 1, shookAt: 0 })
+    expect(tree(w)).toMatchObject({ shakes: 1, shookAt: 0 })
     expect(w.queue).toEqual([{ key: 'got', item: 'twig' }]) // it waits for the tree's own box
 
     apply(w, { type: 'tick', dt: 400 }, content)
@@ -147,7 +166,7 @@ describe('shaking the tree', () => {
       else expect(w.dialogue).toBe(null) // a line that has played never comes back
       dismiss(w)
     }
-    expect(tree1(w)).toMatchObject({ shakes: 7 })
+    expect(tree(w)).toMatchObject({ shakes: 7 })
     expect(w.inventory.twig).toBe(7)
   })
 
@@ -160,7 +179,7 @@ describe('shaking the tree', () => {
     expect(at(w)).toBe('treealive/no')
     apply(w, { type: 'interact' }, content)
     expect(at(w)).toBe('treealive/fly')
-    expect(tree1(w).flyAt).toBe(w.time)
+    expect(tree(w).flyAt).toBe(w.time)
 
     apply(w, { type: 'tick', dt: 1499 }, content)
     expect(gone(w, 'tree1')).toBe(false)
@@ -202,12 +221,12 @@ describe('shaking the tree', () => {
   })
 })
 
-// promised, with tree1 last shaken at time 0 and the player `y` tiles down the grass from it
+// promised, with tree1 last shaken at time 0 and the player standing at 16,`y` south of it
 function promised(y: number): World {
   const w = atTree()
   w.player.y = y
   w.flags['tree:promised'] = true
-  tree1(w).shookAt = 0
+  tree(w).shookAt = 0
   return w
 }
 const minute = (w: World) => {
@@ -226,11 +245,11 @@ describe('the tree that was left alone', () => {
   })
 
   it('stays quiet four tiles away and calls out once the player is three', () => {
-    const w = promised(18)
+    const w = promised(20)
     minute(w)
     expect(w.dialogue).toBe(null)
 
-    w.player.y = 17 // one step closer: three tiles from the tree
+    w.player.y = 19 // one step closer: three tiles from the tree
     apply(w, { type: 'tick', dt: 16 }, content)
     expect(at(w)).toBe('treefriend/1')
   })
@@ -242,7 +261,7 @@ describe('the tree that was left alone', () => {
 
     apply(w, { type: 'interact' }, content)
     expect(at(w)).toBe('treefriend/2')
-    expect(w.objects.find((o) => o.id === 'tree2')).toMatchObject({ kind: 'tree', x: 15, y: 19 })
+    expect(tree(w, 'tree2')).toMatchObject({ kind: 'tree', x: 16, y: 15 })
 
     apply(w, { type: 'tick', dt: 16 }, content) // a spawn is done the moment it opens
     expect(at(w)).toBe('treefriend/3')
@@ -260,10 +279,57 @@ describe('the tree that was left alone', () => {
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue).toBe(null)
 
-    w.player.y = 18 // away and back again: the reunion only ever happens once
+    w.player.y = 20 // away and back again: the reunion only ever happens once
     apply(w, { type: 'tick', dt: 1000 }, content)
-    w.player.y = 17
+    w.player.y = 19
     apply(w, { type: 'tick', dt: 1000 }, content)
     expect(w.dialogue).toBe(null)
+  })
+})
+
+// the reunion played out, and the player at 16,14 looking down at tree2 at 16,15
+function friend(): World {
+  const w = promised(17)
+  minute(w)
+  for (let n = 0; n < 20 && w.dialogue; n++) {
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 250 }, content)
+  }
+  w.player.y = 14
+  w.player.facing = 'down'
+  return w
+}
+
+describe('the friend the tree called over', () => {
+  it('is talked to rather than shaken', () => {
+    const w = friend()
+    expect(tileAt(w, 16, 14)).toBe('grass') // the friend stands between the player and the tree
+
+    apply(w, { type: 'interact' }, content)
+    expect(at(w)).toBe('tree2/hi')
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBe(null)
+    expect(w.inventory.twig).toBeUndefined()
+    expect(tree(w, 'tree2').shakes).toBeUndefined()
+  })
+
+  it('renames itself once the tree has gone, and goes by the name after', () => {
+    const w = friend()
+    w.flags['tree:gone'] = true
+
+    apply(w, { type: 'interact' }, content)
+    expect(at(w)).toBe('tree2/1')
+    for (const node of ['2', '3', '4']) {
+      apply(w, { type: 'interact' }, content)
+      expect(at(w)).toBe(`tree2/${node}`)
+    }
+    expect(w.flags['tree2:renamed']).toBe(true)
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBe(null)
+
+    apply(w, { type: 'interact' }, content)
+    expect(at(w)).toBe('tree2/again') // the renamed start wins over the tree:gone one
+    expect(w.inventory.twig).toBeUndefined()
+    expect(tree(w, 'tree2').shakes).toBeUndefined()
   })
 })

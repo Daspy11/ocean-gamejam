@@ -18,20 +18,20 @@ function at(x: number, y: number, facing: Dir = 'down'): World {
 
 describe('walking', () => {
   it('takes 250 ms per tile and keeps going while the key is held', () => {
-    const w = createWorld() // 14,16 facing right
+    const w = at(14, 15, 'right') // the clear grass row north of the tree
     apply(w, { type: 'move', dir: 'right' }, content)
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([w.player.x, w.player.y]).toEqual([15, 16])
-    expect(w.player.step).toEqual({ x: 16, y: 16, t: 0 }) // held: the next step starts at once
+    expect([w.player.x, w.player.y]).toEqual([15, 15])
+    expect(w.player.step).toEqual({ x: 16, y: 15, t: 0 }) // held: the next step starts at once
 
     apply(w, { type: 'move', dir: null }, content) // release
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([w.player.x, w.player.y]).toEqual([16, 16])
+    expect([w.player.x, w.player.y]).toEqual([16, 15])
     expect(w.player.step).toBe(null)
   })
 
   it('holds a constant speed across tile boundaries', () => {
-    const w = createWorld()
+    const w = at(14, 15, 'right')
     apply(w, { type: 'move', dir: 'right' }, content)
     const before = w.rev
     for (let i = 0; i < 6; i++) apply(w, { type: 'tick', dt: 100 }, content) // 600 ms = 2.4 tiles
@@ -97,12 +97,12 @@ describe('blocked', () => {
 
   it('does not walk into solid objects', () => {
     const cases = [
-      [16, 14, 'left'], // tree1 at 15,14
+      [15, 16, 'right'], // tree1 in the middle of the island at 16,16
+      [16, 17, 'up'],
       [14, 15, 'left'], // mich at 13,15
-      [16, 18, 'right'], // hut1 covers 17..18 x 17..18
-      [18, 16, 'down'],
       [14, 16, 'left'], // the wrecked boat covers 12..13 x 16, right where the player spawns
       [14, 17, 'left'], // crate1 at 13,17
+      [24, 16, 'down'], // crate2 at 24,17, over on the second island
     ] as const
     for (const [x, y, dir] of cases) {
       const w = at(x, y)

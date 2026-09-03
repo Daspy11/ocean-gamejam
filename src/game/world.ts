@@ -24,8 +24,15 @@ export type Obj = { id: string; x: number; y: number } &
       }
     | { kind: 'orb'; doneAt: number } // thrown into the sea it boils its tile into salt once w.time reaches doneAt
     // shaken for twigs; flyAt/landAt are when it started leaving / arriving, 1500 ms each
-    | { kind: 'tree'; shakes?: number; shookAt?: number; flyAt?: number; landAt?: number }
-    | { kind: 'hut' }
+    // a tree with its own dialogue is talked to, not shaken
+    | {
+        kind: 'tree'
+        dialogue?: string
+        shakes?: number
+        shookAt?: number
+        flyAt?: number
+        landAt?: number
+      }
     | { kind: 'boat' }
     | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
     | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
@@ -37,7 +44,6 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   npc: { w: 1, h: 1, solid: true },
   orb: { w: 1, h: 1, solid: true },
   tree: { w: 1, h: 1, solid: true },
-  hut: { w: 2, h: 2, solid: true },
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
   sign: { w: 1, h: 1, solid: true },
@@ -149,7 +155,6 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     map === 'gallery'
       ? [
           { id: 'g-tree', kind: 'tree', x: 2, y: 18 },
-          { id: 'g-hut', kind: 'hut', x: 4, y: 17 },
           { id: 'g-boat', kind: 'boat', x: 7, y: 18 },
           { id: 'g-crate', kind: 'crate', x: 2, y: 20, open: false, item: 'orb' },
           { id: 'g-crate-open', kind: 'crate', x: 4, y: 20, open: true, item: 'orb' },
@@ -193,8 +198,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
             facing: 'right',
             dialogue: 'mich',
           },
-          { id: 'tree1', kind: 'tree', x: 15, y: 14 },
-          { id: 'hut1', kind: 'hut', x: 17, y: 17 },
+          { id: 'tree1', kind: 'tree', x: 16, y: 16 },
           { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
         ]
   return {

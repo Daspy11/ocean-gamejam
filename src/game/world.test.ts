@@ -43,23 +43,15 @@ describe('createWorld', () => {
 })
 
 describe('objectAt', () => {
-  it('covers every tile of a footprint and nothing else', () => {
+  it('finds each object on its tile, and nothing on the free ones', () => {
     const w = createWorld()
-    for (const [x, y] of [
-      [17, 17],
-      [18, 17],
-      [17, 18],
-      [18, 18],
-    ] as const)
-      expect(objectAt(w, x, y)?.id).toBe('hut1')
-
-    expect(objectAt(w, 15, 14)?.id).toBe('tree1')
+    expect(objectAt(w, 16, 16)?.id).toBe('tree1') // the middle of the island
     expect(objectAt(w, 13, 15)?.id).toBe('mich')
     expect(objectAt(w, 13, 17)?.id).toBe('crate1')
     expect(objectAt(w, 24, 17)?.id).toBe('crate2') // the far island, past the sign
     expect(objectAt(w, 25, 16)?.id).toBe('sign1') // on the second island's grass
     expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
-    expect(objectAt(w, 19, 17)).toBeUndefined() // just past the hut
+    expect(objectAt(w, 16, 15)).toBeUndefined() // the tile the tree's canopy hangs over
   })
 
   it('finds the wrecked boat on both of its tiles', () => {
@@ -139,7 +131,6 @@ describe('the gallery map', () => {
     const w = createWorld('gallery')
     expect(w.objects.map((o) => o.id)).toEqual([
       'g-tree',
-      'g-hut',
       'g-boat',
       'g-crate',
       'g-crate-open',

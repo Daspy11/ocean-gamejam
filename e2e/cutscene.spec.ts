@@ -96,7 +96,7 @@ test('opening the second crate plays the flower scene and brings Walter in', asy
   expect(after.world.dialogue).toBe(null)
   expect(after.mich).toMatchObject({ x: 24, y: 15, facing: 'right' })
   expect(after.flower).toMatchObject({ x: 25, y: 15, white: true })
-  expect(after.walter).toMatchObject({ x: 14, y: 14 })
+  expect(after.walter).toMatchObject({ x: 17, y: 16 }) // settled in beside tree1 at 16,16
   expect(after.world.score).toBe(10)
   expect(after.world.inventory.electrolytes).toBe(1) // she never got to eat them on this route
   expect(after.world.flags['score:on']).toBe(true)
@@ -161,6 +161,20 @@ test('reading the sign on the second island', async ({ page }) => {
   })
   expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('sign')
   await expect.poll(() => texts(page, 'ui')).toContain('NO pirates')
+})
+
+test('examining the wreck the intro left you beside', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.evaluate(() => {
+    const w = window.island.world() // the spawn at 14,16, turned back to the wreck at 12..13,16
+    window.island.load({ ...w, player: { ...w.player, facing: 'left' } })
+  })
+  await page.locator('#game canvas').click()
+
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'boat')
+  await expect.poll(() => texts(page, 'ui')).toContain('smashed in')
+  await press(page, 'e', () => window.island.world().dialogue === null)
 })
 
 test('terrains meeting on a diagonal leave no water notch between them', async ({ page }) => {
