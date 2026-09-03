@@ -3,9 +3,9 @@
 // assets/ at the same path swaps it in with no other change.
 export const SHEETS = {
   'tiles/water': { frameWidth: 16, frameHeight: 16 }, // base fill under everything
-  'tiles/salt': { frameWidth: 16, frameHeight: 16 }, // 64x64: 4x4 template, see assets/README.md
-  'tiles/sand': { frameWidth: 16, frameHeight: 16 }, // 4x4 template, see assets/README.md
-  'tiles/grass': { frameWidth: 16, frameHeight: 16 }, // 4x4 template, see assets/README.md
+  'tiles/salt': { frameWidth: 16, frameHeight: 16 }, // 80x48: 5x3 terrain layout, see assets/README.md
+  'tiles/sand': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
+  'tiles/grass': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
   'sprites/player': { frameWidth: 16, frameHeight: 24 }, // rows down/left/right/up · cols left foot/stand/right foot
   'sprites/mich': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
@@ -17,12 +17,14 @@ export const SHEETS = {
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
 } as const
 
-// A terrain sheet is one 4x4 template, so the frame index is no longer the corner mask. Cell
-// (row, col) covers the 2x2 window at (row, col) of this corner grid, '1' meaning "this terrain",
-// so all 16 combinations appear exactly once and the artist paints one continuous blob:
-//   00110 / 00110 / 01100 / 10011 / 11001   (frame = row * 4 + col)
-// Index below is the corner mask (TL 1, TR 2, BL 4, BR 8); the value is the frame that draws it.
-export const DUAL_FRAME = [0, 7, 14, 9, 13, 3, 8, 6, 4, 10, 1, 15, 11, 12, 5, 2]
+// A terrain sheet is 5x3 frames laid out as three pictures the artist paints whole. Each number is
+// the corner mask that frame draws (TL 1, TR 2, BL 4, BR 8); frame = row * 5 + col:
+//   [ 8][12][ 4]  [ 7][11]     cols 0..2: a 3x3 island, solid in the middle, edges and corners around
+//   [10][15][ 5]  [13][14]     cols 3..4, rows 0..1: a 2x2 block with a hole, the four inner corners
+//   [ 2][ 3][ 1]  [ 6][ 9]     cols 3..4, row 2: the two diagonals
+// Index below is the corner mask; the value is the frame. Mask 0 is nothing of this terrain, so it
+// has no frame: -1 leaves the tilemap cell empty.
+export const DUAL_FRAME = [-1, 12, 10, 11, 2, 7, 13, 3, 0, 14, 5, 4, 1, 8, 9, 6]
 
 export const JSONS = [
   'dialogue/crate',

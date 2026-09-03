@@ -267,14 +267,16 @@ test('the dual-grid ground layers autotile the island edges', async ({ page }) =
       sandCorner: sand.getTileAt(15, 12).index, // only the bottom-right logical tile is sand
       sandEdge: sand.getTileAt(15, 13).index, // sand top-right and bottom-left, grass bottom-right
       grassCorner: grass.getTileAt(15, 13).index,
+      open: sand.getTileAt(0, 0, true).index, // open sea: no sand at any corner, so no frame
       offsets: [salt.x, salt.y, sand.x, sand.y, grass.x, grass.y],
     }
   })
-  // the frame is no longer the mask itself: the 4x4 template puts each combination somewhere else
+  // the frame is not the mask itself: the 5x3 sheet layout puts each combination somewhere else
   expect(grid).toEqual({
     sandCorner: DUAL_FRAME[8],
     sandEdge: DUAL_FRAME[6],
     grassCorner: DUAL_FRAME[8],
+    open: -1,
     offsets: Array(6).fill(-8),
   })
 })

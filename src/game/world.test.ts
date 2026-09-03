@@ -91,18 +91,20 @@ describe('tileAt', () => {
 })
 
 describe('the gallery map', () => {
-  it('lays the 5x5 corner template out in salt, sand and grass, a water column apart', () => {
+  it('lays an island, a ring and a checkerboard out in salt, sand and grass, a water column apart', () => {
     const w = createWorld('gallery')
-    const rows = ['00110', '00110', '01100', '10011', '11001'] // must match DUAL_FRAME in src/assets
+    // a 2x2 block, a 3x3 ring with a hole and a checkerboard: together they draw every frame of the
+    // 5x3 terrain sheet (see DUAL_FRAME in src/assets) exactly once
+    const rows = ['ss~sss', 'ss~s~s', '~~~sss', '~~~~~~', '~s~~~~', 's~s~~~']
     for (const [x, terrain] of [
       [1, 'salt'],
-      [7, 'sand'],
-      [13, 'grass'],
+      [8, 'sand'],
+      [15, 'grass'],
     ] as const)
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++)
-          expect(tileAt(w, x + c, 1 + r)).toBe(rows[r][c] === '1' ? terrain : 'water')
-    expect([tileAt(w, 6, 4), tileAt(w, 12, 4)]).toEqual(['water', 'water']) // the gaps between blocks
+      for (let r = 0; r < 6; r++)
+        for (let c = 0; c < 6; c++)
+          expect(tileAt(w, x + c, 1 + r)).toBe(rows[r][c] === 's' ? terrain : 'water')
+    expect([tileAt(w, 7, 1), tileAt(w, 14, 1)]).toEqual(['water', 'water']) // the gaps between blocks
   })
 
   it('nests grass in sand in salt for the layering sampler', () => {

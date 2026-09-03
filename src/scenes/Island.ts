@@ -104,7 +104,8 @@ export default class Island extends Phaser.Scene {
       const is = (x: number, y: number, bit: number) => (tileAt(world, x, y) === terrain ? bit : 0)
       for (let j = 0; j <= world.height; j++)
         for (let i = 0; i <= world.width; i++)
-          // the dual cell's centre sits on the corner shared by these four logical tiles
+          // the dual cell's centre sits on the corner shared by these four logical tiles; -1 (none
+          // of them is this terrain) clears the cell
           this.layers[n].putTileAt(
             DUAL_FRAME[is(i - 1, j - 1, 1) + is(i, j - 1, 2) + is(i - 1, j, 4) + is(i, j, 8)],
             i,

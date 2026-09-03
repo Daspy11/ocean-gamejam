@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-// Where each 5x5 corner block starts in MAPS.gallery. The dual cell at (x+1, y+1) is template cell
-// (0, 0), so a correct sheet makes the block redraw frames 0..15 in reading order.
+// Where each terrain's block starts in MAPS.gallery: a 2x2 at (x, y) draws the sheet's 3x3 island
+// from dual cell (x, y), the ring beside it draws the 2x2 hole from (x+4, y+1), and the checkerboard
+// under them draws the diagonals at (x+1, y+5). A correct sheet redraws frames 0..14 in reading order.
 const BLOCKS = [
   { layer: 'salt', x: 1, y: 1 },
-  { layer: 'sand', x: 7, y: 1 },
-  { layer: 'grass', x: 13, y: 1 },
+  { layer: 'sand', x: 8, y: 1 },
+  { layer: 'grass', x: 15, y: 1 },
 ]
 
 test('?map=gallery draws every terrain template and every object with the game code', async ({
@@ -31,11 +32,18 @@ test('?map=gallery draws every terrain template and every object with the game c
     return {
       templates: blocks.map(({ layer, x, y }) => {
         const found = layers.find((o) => o.layer?.name === layer)!
-        // reading order across the 4x4 template: frame f sits at cell (f % 4, f / 4)
-        return Array.from(
-          { length: 16 },
-          (_, f) => found.getTileAt(x + 1 + (f % 4), y + 1 + Math.floor(f / 4)).index,
-        )
+        // reading order across the 5x3 sheet: the island fills cols 0..2, the hole and diagonals col 3..4
+        return Array.from({ length: 15 }, (_, f) => {
+          const row = Math.floor(f / 5)
+          const col = f % 5
+          const cell =
+            col < 3
+              ? [x + col, y + row]
+              : row < 2
+                ? [x + 1 + col, y + 1 + row]
+                : [x - 2 + col, y + 5]
+          return found.getTileAt(cell[0], cell[1]).index
+        })
       }),
       sprites: [
         ...new Set(
@@ -47,7 +55,7 @@ test('?map=gallery draws every terrain template and every object with the game c
     }
   }, BLOCKS)
 
-  const template = Array.from({ length: 16 }, (_, f) => f)
+  const template = Array.from({ length: 15 }, (_, f) => f)
   for (const block of drawn.templates) expect(block).toEqual(template)
   expect(drawn.sprites).toEqual([
     'sprites/boat',

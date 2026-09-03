@@ -7,22 +7,24 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 
-// Corner grid of the 4x4 terrain template: cell (row, col) of the sheet covers the 2x2 window at
-// (row, col), '1' meaning "this terrain". Must match DUAL_FRAME in src/assets.ts.
-const TEMPLATE = ['00110', '00110', '01100', '10011', '11001']
+// The 5x3 terrain sheet: each entry is the corner mask its frame draws (TL 1, TR 2, BL 4, BR 8).
+// Left, a 3x3 island; right, a 2x2 block with a hole and, under it, the two diagonals. Must match
+// DUAL_FRAME in src/assets.ts.
+const LAYOUT = [
+  [8, 12, 4, 7, 11],
+  [10, 15, 5, 13, 14],
+  [2, 3, 1, 6, 9],
+]
 
-// So a 64x64 terrain sheet fills the quadrants whose corner is '1', and the placeholder file *is*
-// the template picture the artist paints over: one continuous blob, every corner case once. The
+// So an 80x48 terrain sheet fills the quadrants whose corner is on, and the placeholder file *is*
+// the picture the artist paints over: an island, a hole, two diagonals, every corner case once. The
 // quadrant corners at the cell centre are rounded so the autotiling actually reads in game.
 const dual = (colour) =>
-  Array.from({ length: 16 }, (_, frame) => {
-    const row = Math.floor(frame / 4)
-    const col = frame % 4
+  LAYOUT.flat().map((mask) => {
     // quadrant order is top-left, top-right, bottom-left, bottom-right
-    const on = [0, 1, 2, 3].map((q) => TEMPLATE[row + (q >> 1)][col + (q % 2)] === '1')
+    const on = [1, 2, 4, 8].map((bit) => (mask & bit) !== 0)
     const corners = on.filter(Boolean).length
     return (x, y) => {
-      if (corners === 0) return null
       if (corners === 4) return colour
       const q = (y < 8 ? 0 : 2) + (x < 8 ? 0 : 1)
       // two adjacent corners is a straight edge: keep it flat so it continues across cells
@@ -92,9 +94,9 @@ const character = ({ hair, skin, shirt }) =>
 
 const sheets = [
   { file: 'tiles/water.png', w: 16, h: 16, cols: 1, frames: [[[0, 0, 16, 16, '#3b6fb6']]] },
-  { file: 'tiles/salt.png', w: 16, h: 16, cols: 4, frames: dual('#c4ccd6') },
-  { file: 'tiles/sand.png', w: 16, h: 16, cols: 4, frames: dual('#d8c58e') },
-  { file: 'tiles/grass.png', w: 16, h: 16, cols: 4, frames: dual('#6da85a') },
+  { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
+  { file: 'tiles/sand.png', w: 16, h: 16, cols: 5, frames: dual('#d8c58e') },
+  { file: 'tiles/grass.png', w: 16, h: 16, cols: 5, frames: dual('#6da85a') },
   {
     file: 'sprites/player.png',
     w: 16,

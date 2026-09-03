@@ -1,10 +1,11 @@
 // Every map is 32x32. `~` water · `s` salt · `.` sand · `#` grass. Hand-edit freely; createWorld() parses it.
 // island: the starting world. The wreck sits at 12..13,16 (half in the water). The east island is
 // exactly two water tiles away at rows 15..17.
-// gallery: `?map=gallery`, the artist's proof sheet. Top row, left to right: the 4x4 terrain template
-// laid out as its 5x5 corner grid in salt, then sand, then grass, so a correct sheet redraws the
-// template picture in game. Below it salt/sand/grass nested, to show the layering. Below that the
-// 9x5 pad every object stands on, with the two orbs floating in the water beside it.
+// gallery: `?map=gallery`, the artist's proof sheet. Top, left to right in salt, sand and grass: a
+// 2x2 block (the sheet's 3x3 island), a 3x3 ring (its 2x2 hole) and a checkerboard (its diagonals),
+// so a correct sheet redraws every frame of the 5x3 layout in game. Below it salt/sand/grass nested,
+// to show the layering. Below that the 9x5 pad every object stands on, with the two orbs floating in
+// the water beside it.
 export const MAPS = {
   island: [
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
@@ -42,12 +43,12 @@ export const MAPS = {
   ],
   gallery: [
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
-    '~~~ss~~~~..~~~~##~~~~~~~~~~~~~~~',
-    '~~~ss~~~~..~~~~##~~~~~~~~~~~~~~~',
-    '~~ss~~~~..~~~~##~~~~~~~~~~~~~~~~',
-    '~s~~ss~.~~..~#~~##~~~~~~~~~~~~~~',
-    '~ss~~s~..~~.~##~~#~~~~~~~~~~~~~~',
+    '~ss~sss~..~...~##~###~~~~~~~~~~~',
+    '~ss~s~s~..~.~.~##~#~#~~~~~~~~~~~',
+    '~~~~sss~~~~...~~~~###~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+    '~~s~~~~~~.~~~~~~#~~~~~~~~~~~~~~~',
+    '~s~s~~~~.~.~~~~#~#~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
     '~sssssss~~~~~~~~~~~~~~~~~~~~~~~~',
     '~s.....s~~~~~~~~~~~~~~~~~~~~~~~~',
