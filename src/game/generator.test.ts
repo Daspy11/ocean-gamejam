@@ -51,6 +51,17 @@ describe('throwing the orb in the sea', () => {
     expect(tileAt(w, 21, 16)).toBe('water') // it boils the tile, it does not fill it in yet
   })
 
+  it('records the tile it was thrown from, and again on the throw after that', () => {
+    const w = shore()
+    apply(w, { type: 'interact' }, content)
+    expect(orbAt(w)?.thrown).toEqual({ x: 20, y: 16, at: 0 })
+
+    apply(w, { type: 'interact' }, content) // pick it straight back up
+    apply(w, { type: 'tick', dt: 500 }, content)
+    apply(w, { type: 'interact' }, content) // and throw it again, half a second on
+    expect(orbAt(w)?.thrown).toEqual({ x: 20, y: 16, at: 500 })
+  })
+
   it('comes straight back to the inventory before it has boiled', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)

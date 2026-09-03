@@ -321,8 +321,8 @@ test('the tutorial runs from the crate to the first salt out of the sea', async 
   // 2. closing the inventory is what plays the next beat, and the beat renames the orb
   await press(page, 'i', () => window.island.world().menu !== null)
   await press(page, 'i', () => window.island.world().dialogue?.key === 'inventory1')
-  await press(page, 'e', () => window.island.world().dialogue?.node === '2')
-  await press(page, 'e', () => window.island.world().dialogue?.node === '3')
+  for (const node of ['2', '3', '4', '5'])
+    await press(page, 'e', (at) => window.island.world().dialogue?.node === at, node)
   await press(page, 'e', () => window.island.world().dialogue === null)
   const named = () => page.evaluate(() => window.island.world().flags['name:orb'])
   expect(await named()).toBe("tarq's Orb Of Endless Burning")
@@ -330,10 +330,9 @@ test('the tutorial runs from the crate to the first salt out of the sea', async 
   // 3. and again, for the shorter name
   await press(page, 'i', () => window.island.world().menu !== null)
   await press(page, 'i', () => window.island.world().dialogue?.key === 'inventory2')
-  for (const node of ['2', '3', '4', '5'])
-    await press(page, 'e', (at) => window.island.world().dialogue?.node === at, node)
+  await press(page, 'e', () => window.island.world().dialogue?.node === '2')
   await press(page, 'e', () => window.island.world().dialogue === null)
-  expect(await named()).toBe("tarq's fire orb")
+  expect(await named()).toBe('fire orb')
 
   // 4. stand on the south-west shore, throw it at the water tile at 13,18, and wait out the boil
   const sea = await page.evaluate(() => {

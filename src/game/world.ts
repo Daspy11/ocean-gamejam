@@ -22,7 +22,9 @@ export type Obj = { id: string; x: number; y: number } &
         run?: boolean
         parity?: boolean
       }
-    | { kind: 'orb'; doneAt: number } // thrown into the sea it boils its tile into salt once w.time reaches doneAt
+    // thrown into the sea it boils its tile into salt once w.time reaches doneAt; `thrown` is the
+    // tile it left the hand on and when, so the scene can arc it over for the first 300 ms
+    | { kind: 'orb'; doneAt: number; thrown?: { x: number; y: number; at: number } }
     // shaken for twigs; flyAt/landAt are when it started leaving / arriving, 1500 ms each
     // a tree with its own dialogue is talked to, not shaken
     | {

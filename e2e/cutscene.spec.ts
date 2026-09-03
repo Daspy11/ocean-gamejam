@@ -37,12 +37,12 @@ const at = (page: Page) =>
 const openCrate2 = async (page: Page) => {
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.locator('#game canvas').click() // focus first: a click on an open box advances it
   await page.evaluate(() => {
     const w = window.island.world()
     window.island.load({ ...w, player: { ...w.player, x: 23, y: 17, facing: 'right' } })
     window.island.dispatch({ type: 'interact' })
   })
-  await page.locator('#game canvas').click()
 }
 
 // hold 'e' until the box has moved off `id` (or closed); an act node has no text and takes ticks
@@ -130,13 +130,13 @@ test('saying yes to Mich feeds her the electrolytes out of the inventory', async
 test('paving the sea over costs a beauty and Mich says so', async ({ page }) => {
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.locator('#game canvas').click() // focus first: a click on an open box advances it
   await page.evaluate(() => {
     const w = window.island.world() // east beach, facing the open water at 21,16
     w.player = { ...w.player, x: 20, y: 16, facing: 'right' }
     window.island.load({ ...w, inventory: { salt: 1 }, score: 10, flags: { 'score:on': true } })
     window.island.dispatch({ type: 'interact' })
   })
-  await page.locator('#game canvas').click()
 
   const after = await page.evaluate(() => {
     const w = window.island.world()
@@ -175,6 +175,25 @@ test('examining the wreck the intro left you beside', async ({ page }) => {
   await press(page, 'e', () => window.island.world().dialogue?.key === 'boat')
   await expect.poll(() => texts(page, 'ui')).toContain('smashed in')
   await press(page, 'e', () => window.island.world().dialogue === null)
+})
+
+test('clicking the game advances an open box and never opens one', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  const canvas = page.locator('#game canvas')
+
+  await canvas.click() // nothing open: the click must not interact with the world at all
+  await page.waitForTimeout(100)
+  expect(await page.evaluate(() => window.island.world().dialogue)).toBe(null)
+
+  await page.evaluate(() => {
+    const w = window.island.world() // the spawn at 14,16, turned back on the wreck at 12..13,16
+    window.island.load({ ...w, player: { ...w.player, facing: 'left' } })
+    window.island.dispatch({ type: 'interact' })
+  })
+  expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('boat')
+  await canvas.click()
+  await expect.poll(() => page.evaluate(() => window.island.world().dialogue)).toBe(null)
 })
 
 test('terrains meeting on a diagonal leave no water notch between them', async ({ page }) => {

@@ -21,6 +21,7 @@ export default class Intro extends Phaser.Scene {
   private who!: Phaser.GameObjects.Text
   private body!: Phaser.GameObjects.Text
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
+  private clicked = false // a click advances the line on the next update, exactly like [E]
 
   constructor() {
     super('intro')
@@ -70,6 +71,8 @@ export default class Intro extends Phaser.Scene {
       string,
       Phaser.Input.Keyboard.Key
     >
+    this.clicked = false
+    this.input.on('pointerdown', () => (this.clicked = true))
     this.show()
   }
 
@@ -80,9 +83,12 @@ export default class Intro extends Phaser.Scene {
       this.land()
       return
     }
-    const advance = [this.keys.E, this.keys.SPACE, this.keys.ENTER].some((key) =>
-      Phaser.Input.Keyboard.JustDown(key),
-    )
+    const advance =
+      this.clicked ||
+      [this.keys.E, this.keys.SPACE, this.keys.ENTER].some((key) =>
+        Phaser.Input.Keyboard.JustDown(key),
+      )
+    this.clicked = false
     if (!advance) return
     this.line++
     if (this.line < this.script.lines.length) this.show()

@@ -316,7 +316,15 @@ export function apply(w: World, a: Action, c: Content): void {
   }
   if ((w.inventory.orb ?? 0) > 0) {
     w.inventory.orb = (w.inventory.orb ?? 0) - 1
-    w.objects.push({ id: `orb${x}-${y}`, kind: 'orb', x, y, doneAt: w.time + 2000 }) // 2 s to boil
+    // 2 s to boil, and where it was thrown from so the scene can arc it over
+    w.objects.push({
+      id: `orb${x}-${y}`,
+      kind: 'orb',
+      x,
+      y,
+      doneAt: w.time + 2000,
+      thrown: { x: p.x, y: p.y, at: w.time },
+    })
     w.rev++
   }
 }

@@ -8,7 +8,9 @@
     "3": {
       "text": "i am shortening his name to tarq",
       "set": { "name:orb": "tarq's Orb Of Endless Burning" },
-      "next": null
-    }
+      "next": "4"
+    },
+    "4": { "who": "", "text": "so what am i meant to do with this now", "next": "5" },
+    "5": { "text": "try throwing it in the sea", "next": null }
   }
 }

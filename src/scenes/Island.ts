@@ -21,8 +21,9 @@ export default class Island extends Phaser.Scene {
   private layers: Phaser.Tilemaps.TilemapLayer[] = []
   private player!: Phaser.GameObjects.Sprite
   private objects: Phaser.GameObjects.Sprite[] = []
-  // one per orb still boiling its tile, with the bottom of that tile to rise from
-  private smoke: { sprite: Phaser.GameObjects.Sprite; bottom: number }[] = []
+  // one per orb still boiling its tile, with the bottom of that tile to rise from and the time the
+  // orb was thrown, if it was: nothing boils until it has landed
+  private smoke: { sprite: Phaser.GameObjects.Sprite; bottom: number; thrownAt?: number }[] = []
   // one per flower mid-bloom: a white copy fading in over the coloured sprite, both vibrating
   private blooms: {
     base: Phaser.GameObjects.Sprite
@@ -76,6 +77,10 @@ export default class Island extends Phaser.Scene {
     this.keys = this.input.keyboard!.addKeys(
       'UP,DOWN,LEFT,RIGHT,W,A,S,D,SHIFT,E,SPACE,ENTER,I,TAB,ESC',
     ) as Record<string, Phaser.Input.Keyboard.Key>
+    // a click only ever advances the box on screen: it must never interact with the world
+    this.input.on('pointerdown', () => {
+      if (world.dialogue) dispatch({ type: 'interact' })
+    })
 
     this.sync()
     this.drawActors()
@@ -119,11 +124,22 @@ export default class Island extends Phaser.Scene {
 
     // clouds off the boiling sea: a 900 ms rise, driven from sim time so there is nothing to tween
     const rise = (world.time % 900) / 900
-    for (const { sprite, bottom } of this.smoke)
+    for (const { sprite, bottom, thrownAt } of this.smoke)
       sprite
         .setFrame(Math.floor(world.time / 200) % 3)
         .setY(bottom - 8 - rise * 10)
         .setAlpha(1 - rise)
+        .setVisible(thrownAt === undefined || world.time - thrownAt >= 300) // it boils once it lands
+
+    // a thrown orb flies over from the tile it left on, on a 300 ms arc 12 px high
+    world.objects.forEach((o, i) => {
+      if (o.kind !== 'orb' || o.thrown === undefined || !this.objects[i]) return
+      const t = Math.min(1, (world.time - o.thrown.at) / 300)
+      this.objects[i].setPosition(
+        (o.thrown.x + (o.x - o.thrown.x) * t) * 16,
+        (o.thrown.y + (o.y - o.thrown.y) * t + 1) * 16 - 4 * t * (1 - t) * 12,
+      )
+    })
 
     // a bloom crossfades to white over its 1500 ms and shakes a pixel each way, both off sim time
     for (const { base, white, bloomAt, x } of this.blooms) {
@@ -211,16 +227,17 @@ export default class Island extends Phaser.Scene {
         .setDepth(10000) // score pops always read over everything
       return { text, at: p.at, baseY }
     })
-    this.smoke = world.objects
-      .filter((o) => o.kind === 'orb' && tileAt(world, o.x, o.y) === 'water') // still boiling
-      .map((o) => {
-        const bottom = (o.y + 1) * 16
-        const sprite = this.add
-          .sprite(o.x * 16, bottom, 'sprites/smoke')
-          .setOrigin(0, 1)
-          .setDepth(bottom + 1) // just over the orb it rises from
-        return { sprite, bottom }
-      })
+    this.smoke = []
+    for (const o of world.objects) {
+      if (o.kind !== 'orb' || tileAt(world, o.x, o.y) !== 'water') continue // still boiling
+      const bottom = (o.y + 1) * 16
+      const sprite = this.add
+        .sprite(o.x * 16, bottom, 'sprites/smoke')
+        .setOrigin(0, 1)
+        .setDepth(bottom + 1) // just over the orb it rises from
+        .setVisible(false) // update() shows it as soon as the orb has landed
+      this.smoke.push({ sprite, bottom, thrownAt: o.thrown?.at })
+    }
     this.objects = world.objects.map((o) => {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
       let frame = 0 // frame 0 unless the kind has some state to show
