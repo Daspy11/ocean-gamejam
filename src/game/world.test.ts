@@ -49,6 +49,7 @@ describe('objectAt', () => {
     expect(objectAt(w, 13, 15)?.id).toBe('mich')
     expect(objectAt(w, 13, 17)?.id).toBe('crate1')
     expect(objectAt(w, 19, 14)?.id).toBe('crate2')
+    expect(objectAt(w, 25, 16)?.id).toBe('sign1') // on the second island's grass
     expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
     expect(objectAt(w, 19, 17)).toBeUndefined() // just past the hut
   })
@@ -140,6 +141,7 @@ describe('the gallery map', () => {
       'g-walter',
       'g-flower',
       'g-flower-white',
+      'g-sign',
     ])
     // one orb still boiling its water tile, one already sat on the salt it made
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)

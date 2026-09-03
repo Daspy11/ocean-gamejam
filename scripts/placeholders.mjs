@@ -113,6 +113,12 @@ const crab = () => {
   )
 }
 
+// the sign's one frame, out here so the sheets list below stays inside the file's line budget
+const signpost = [
+  [7, 8, 2, 8, '#7a5a3a'], // post
+  [2, 2, 12, 7, '#a08050'], // board
+]
+
 const sheets = [
   { file: 'tiles/water.png', w: 16, h: 16, cols: 1, frames: [[[0, 0, 16, 16, '#3b6fb6']]] },
   { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
@@ -243,6 +249,7 @@ const sheets = [
       ], // 1 gone white
     ],
   },
+  { file: 'sprites/sign.png', w: 16, h: 16, cols: 1, frames: [signpost] },
   {
     file: 'sprites/items.png',
     w: 16,

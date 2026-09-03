@@ -65,6 +65,7 @@ test('?map=gallery draws every terrain template and every object with the game c
     'sprites/mich',
     'sprites/orb',
     'sprites/player',
+    'sprites/sign',
     'sprites/smoke',
     'sprites/tree',
     'sprites/walter',

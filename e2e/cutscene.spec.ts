@@ -101,3 +101,15 @@ test('paving the sea over costs a beauty and Mich says so', async ({ page }) => 
   await expect.poll(() => texts(page, 'ui')).toContain('how insalting')
   await press(page, 'e', () => window.island.world().dialogue === null)
 })
+
+test('reading the sign on the second island', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.evaluate(() => {
+    const w = window.island.world() // just south of sign1 at 25,16, looking up at it
+    window.island.load({ ...w, player: { ...w.player, x: 25, y: 17, facing: 'up' } })
+    window.island.dispatch({ type: 'interact' })
+  })
+  expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('sign')
+  await expect.poll(() => texts(page, 'ui')).toContain('NO pirates')
+})

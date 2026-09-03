@@ -33,6 +33,8 @@ const content: Content = {
         '6': { text: '[PLACEHOLDER landing 6]', next: null },
       },
     },
+    // the shape of assets/dialogue/sign.json: one line, and no speaker name to draw
+    sign: { name: '', start: [{ node: '1' }], nodes: { '1': { text: '[PLACEHOLDER sign 1]' } } },
     got: {
       name: '',
       start: [{ node: '1' }],
@@ -325,5 +327,17 @@ describe('the scripted tutorial', () => {
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.key).toBe('crate')
     expect(w.queue).toEqual([])
+  })
+})
+
+describe('reading a sign', () => {
+  it('opens its dialogue with no speaker name and closes on a second interact', () => {
+    const w = createWorld() // south of sign1 (25,16) on the second island, looking at it
+    w.player = { ...w.player, x: 25, y: 17, facing: 'up' }
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toEqual({ key: 'sign', node: '1', choice: 0 })
+    expect(content.dialogues.sign.name).toBe('') // no one is speaking: the box draws no name
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBe(null)
   })
 })

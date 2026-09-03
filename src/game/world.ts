@@ -27,6 +27,7 @@ export type Obj = { id: string; x: number; y: number } &
     | { kind: 'hut' }
     | { kind: 'boat' }
     | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
+    | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
     // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
     | { kind: 'flower'; bloomAt?: number; white?: boolean }
   )
@@ -38,6 +39,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   hut: { w: 2, h: 2, solid: true },
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
+  sign: { w: 1, h: 1, solid: true },
   flower: { w: 1, h: 1, solid: true },
 }
 
@@ -167,6 +169,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           },
           { id: 'g-flower', kind: 'flower', x: 9, y: 20, white: false },
           { id: 'g-flower-white', kind: 'flower', x: 10, y: 20, white: true },
+          { id: 'g-sign', kind: 'sign', x: 3, y: 20, dialogue: 'sign' },
         ]
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
@@ -184,6 +187,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           },
           { id: 'tree1', kind: 'tree', x: 15, y: 14 },
           { id: 'hut1', kind: 'hut', x: 17, y: 17 },
+          { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
         ]
   return {
     rev: 0,

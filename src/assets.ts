@@ -19,6 +19,7 @@ export const SHEETS = {
   'sprites/boat': { frameWidth: 32, frameHeight: 16 }, // 2x1 footprint, also the rowboat in the intro
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
+  'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
 } as const
 
@@ -42,6 +43,7 @@ export const JSONS = [
   'dialogue/inventory2',
   'dialogue/landing',
   'dialogue/mich',
+  'dialogue/sign',
   'dialogue/walter',
   'text/items',
   'text/intro',

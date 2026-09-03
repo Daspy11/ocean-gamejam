@@ -243,6 +243,10 @@ export function apply(w: World, a: Action, c: Content): void {
     obj.facing = OPP[p.facing] // the npc looks back at the player
     return
   }
+  if (obj?.kind === 'sign') {
+    open(obj.dialogue) // a sign just reads out; nothing turns and no one is talked to
+    return
+  }
   if (obj?.kind === 'crate') {
     if (obj.open) return // a crate hands over what it holds exactly once
     obj.open = true
