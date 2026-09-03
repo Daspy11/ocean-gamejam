@@ -69,7 +69,7 @@ export interface World {
     parity: boolean // flips every step so the walk cycle alternates feet
   }
   inventory: Partial<Record<Item, number>>
-  score: number // beauty; hidden until flags['score:on']
+  score: number // beauty: -1 per salt block placed, +10 a bloomed flower; hidden until flags['score:on']
   pops: { x: number; y: number; text: string; at: number }[] // floating score text over tile x,y, gone 1500 ms after `at`
   objects: Obj[]
   // story state. Strings let dialogue rename things: flags['name:orb'] overrides the item's display name
@@ -90,7 +90,8 @@ export type Action =
 export interface Dialogue {
   name: string
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
-  // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id> · tree:shake:<n> · tree:near
+  // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id> · tree:shake:<n> ·
+  // tree:near · score:negative (beauty has gone below zero)
   trigger?: { event: string; when?: string }
   start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
   nodes: Record<string, DialogueNode>
@@ -132,6 +133,12 @@ export const DIRS: Record<Dir, [number, number]> = {
 export function tileAt(w: World, x: number, y: number): Tile | undefined {
   if (x < 0 || y < 0 || x >= w.width || y >= w.height) return undefined
   return w.tiles[y * w.width + x]
+}
+
+// beauty counts every salt block on the map, from the start; the floating pop waits for score:on
+export function beauty(w: World, n: number, x: number, y: number): void {
+  w.score += n
+  if (w.flags['score:on']) w.pops.push({ x, y, text: n > 0 ? `+${n}` : `${n}`, at: w.time })
 }
 
 export function objectAt(w: World, x: number, y: number): Obj | undefined {

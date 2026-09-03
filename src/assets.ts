@@ -42,6 +42,7 @@ export const JSONS = [
   'dialogue/inventory2',
   'dialogue/landing',
   'dialogue/mich',
+  'dialogue/negative',
   'dialogue/shake3',
   'dialogue/shake7',
   'dialogue/sign',

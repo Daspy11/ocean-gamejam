@@ -1,0 +1,33 @@
+{
+  "name": "Etarp",
+  "trigger": { "event": "arrive:north" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "rumble": 800, "next": "2" },
+    "2": { "spawn": { "id": "ship", "kind": "boat", "x": 30, "y": 8 }, "next": "3" },
+    "3": {
+      "spawn": {
+        "id": "etarp",
+        "kind": "npc",
+        "sprite": "etarp",
+        "facing": "left",
+        "dialogue": "etarp",
+        "x": 30,
+        "y": 8,
+        "ride": "ship"
+      },
+      "next": "4"
+    },
+    "4": {
+      "walk": {
+        "id": "ship",
+        "path": ["left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left", "left"],
+        "run": true
+      },
+      "next": "5"
+    },
+    "5": { "rumble": 500, "next": "6" },
+    "6": { "text": "YARR WHO PUT THIS MASSIVE WALL OF SALT HERE", "next": "7" },
+    "7": { "walk": { "id": "etarp", "path": ["left"] }, "next": null }
+  }
+}

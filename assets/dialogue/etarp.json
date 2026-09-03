@@ -1,0 +1,7 @@
+{
+  "name": "Etarp",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "[PLACEHOLDER etarp greeting]", "next": null }
+  }
+}

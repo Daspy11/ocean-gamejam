@@ -151,6 +151,30 @@ test('paving the sea over costs a beauty and Mich says so', async ({ page }) => 
   await press(page, 'e', () => window.island.world().dialogue === null)
 })
 
+test('paving beauty into the red brings Mich back for another word', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.locator('#game canvas').click() // focus first: a click on an open box advances it
+  await page.evaluate(() => {
+    const w = window.island.world() // east beach at 20,16, one salt in hand and beauty already at 0
+    w.player = { ...w.player, x: 20, y: 16, facing: 'right' }
+    window.island.load({ ...w, inventory: { salt: 1 }, score: 0, flags: { 'score:on': true } })
+    window.island.dispatch({ type: 'interact' })
+  })
+
+  const after = await page.evaluate(() => {
+    const w = window.island.world()
+    return { score: w.score, key: w.dialogue?.key }
+  })
+  expect(after).toEqual({ score: -1, key: 'insalting' })
+  await expect.poll(() => texts(page, 'ui')).toContain('beauty: -1')
+
+  // the negative line is queued by the first tick and comes in as the complaint closes
+  await press(page, 'e', () => window.island.world().dialogue?.node === '2')
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'negative')
+  await expect.poll(() => texts(page, 'ui')).toContain('look what you did')
+})
+
 test('reading the sign on the second island', async ({ page }) => {
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))

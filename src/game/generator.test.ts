@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, tileAt, type Content, type Obj, type World } from './world'
 
-// only the two boxes the generator opens; the real lines live in assets/dialogue
+// only the boxes the generator opens; the real lines live in assets/dialogue
 const content: Content = {
   dialogues: {
     got: {
@@ -21,6 +21,12 @@ const content: Content = {
       trigger: { event: 'salt:place', when: 'score:on' },
       start: [{ node: '1' }],
       nodes: { '1': { text: '[PLACEHOLDER insalting]', next: null } },
+    },
+    negative: {
+      name: '[PLACEHOLDER NPC NAME]',
+      trigger: { event: 'score:negative', when: 'score:on' },
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER beauty below zero]', next: null } },
     },
   },
   items: { salt: { name: '[PLACEHOLDER salt]' }, orb: { name: '[PLACEHOLDER orb]' } },
@@ -153,11 +159,11 @@ describe('digging up the boiled salt', () => {
 })
 
 describe('paving the sea over once beauty is on', () => {
-  it('costs nothing and says nothing before the score is a thing', () => {
+  it('costs a beauty silently before the score is a thing', () => {
     const w = shore()
     w.inventory.salt = 1
     apply(w, { type: 'interact' }, content)
-    expect([w.score, w.pops.length, w.dialogue]).toEqual([0, 0, null])
+    expect([w.score, w.pops.length, w.dialogue]).toEqual([-1, 0, null])
   })
 
   it('costs a beauty per tile, with Mich complaining the first time only', () => {
@@ -177,5 +183,69 @@ describe('paving the sea over once beauty is on', () => {
     apply(w, { type: 'interact' }, content)
     expect([tileAt(w, 21, 15), w.score, w.pops.length]).toEqual(['salt', 8, 2])
     expect(w.dialogue).toBe(null) // she only says it once
+  })
+})
+
+describe('beauty counts every salt block on the map', () => {
+  it('costs one to boil a tile, with no pop until beauty is on', () => {
+    const w = shore()
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    expect([w.score, w.pops.length]).toEqual([-1, 0])
+  })
+
+  it('pops the -1 over the boiled tile once beauty is on', () => {
+    const w = shore()
+    w.score = 10
+    w.flags['score:on'] = true
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    expect(w.score).toBe(9)
+    expect(w.pops).toEqual([{ x: 21, y: 16, text: '-1', at: 2000 }])
+  })
+
+  it('refunds the beauty when the crust is dug back up', () => {
+    const w = shore()
+    w.score = 10
+    w.flags['score:on'] = true
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    apply(w, { type: 'interact' }, content) // dismiss the triggered line
+    apply(w, { type: 'interact' }, content) // take the orb off the salt
+
+    apply(w, { type: 'interact' }, content)
+    expect(w.score).toBe(10)
+    expect(w.pops.at(-1)).toEqual({ x: 21, y: 16, text: '+1', at: 2000 })
+  })
+})
+
+describe('beauty going negative', () => {
+  it('plays the line once, on the tick after the score drops below zero', () => {
+    const w = shore()
+    w.inventory.salt = 1
+    w.flags['score:on'] = true
+    apply(w, { type: 'interact' }, content) // paves a tile: beauty goes to -1
+    expect([w.score, w.dialogue?.key]).toEqual([-1, 'insalting'])
+
+    apply(w, { type: 'tick', dt: 1 }, content) // queues up behind Mich's complaint
+    expect(w.flags['fired:negative']).toBe(true)
+    apply(w, { type: 'interact' }, content) // dismiss the complaint, and the queue comes in
+    expect(w.dialogue?.key).toBe('negative')
+
+    apply(w, { type: 'interact' }, content) // dismiss it too
+    apply(w, { type: 'tick', dt: 1 }, content)
+    expect(w.dialogue).toBe(null) // still negative, but she only says it once
+  })
+
+  it('waits for beauty to be introduced before saying anything', () => {
+    const w = shore()
+    w.inventory.salt = 1
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 1 }, content)
+    expect([w.score, w.dialogue]).toEqual([-1, null])
+
+    w.flags['score:on'] = true
+    apply(w, { type: 'tick', dt: 1 }, content)
+    expect(w.dialogue?.key).toBe('negative')
   })
 })

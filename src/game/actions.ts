@@ -1,6 +1,6 @@
 import { shakeTree, startTree, tickTrees, treeDone } from './tree'
-import { DIRS, KINDS, objectAt, tileAt, type Action, type Content, type World } from './world'
-import type { DialogueNode, Item, Obj } from './world'
+import { DIRS, KINDS, beauty, objectAt, tileAt } from './world'
+import type { Action, Content, DialogueNode, Item, Obj, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 type Npc = Extract<Obj, { kind: 'npc' }>
@@ -144,6 +144,7 @@ export function apply(w: World, a: Action, c: Content): void {
     for (const o of w.objects)
       if (o.kind === 'orb' && tileAt(w, o.x, o.y) === 'water' && w.time >= o.doneAt) {
         w.tiles[o.y * w.width + o.x] = 'salt' // the orb stays put, now sitting on the crust it boiled
+        beauty(w, -1, o.x, o.y)
         w.rev++
         fire('salt:spawn')
       }
@@ -159,6 +160,7 @@ export function apply(w: World, a: Action, c: Content): void {
         w.pops.push({ x: o.x, y: o.y, text: '+10', at: w.time })
         w.rev++
       }
+    if (w.score < 0) fire('score:negative') // fires once, whenever beauty first reads below zero
     if (tickTrees(w)) fire('tree:near') // the promised tree, rested and back within three tiles
     const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
     if (live.length !== w.pops.length) {
@@ -297,6 +299,7 @@ export function apply(w: World, a: Action, c: Content): void {
   const tile = tileAt(w, x, y)
   if (tile === 'salt') {
     w.tiles[y * w.width + x] = 'water' // the crust the orb boiled is the salt: scoop it back up
+    beauty(w, 1, x, y)
     gain('salt')
     return
   }
@@ -306,12 +309,8 @@ export function apply(w: World, a: Action, c: Content): void {
     w.tiles[y * w.width + x] = 'salt' // salt goes first, so the orb is never thrown out by accident
     w.inventory.salt = salt - 1
     w.rev++
-    // once beauty is a thing, paving the sea over costs some of it
-    if (w.flags['score:on']) {
-      w.score -= 1
-      w.pops.push({ x, y, text: '-1', at: w.time })
-      fire('salt:place')
-    }
+    beauty(w, -1, x, y) // paving the sea over costs beauty, same as any other salt block
+    fire('salt:place') // Mich's line is the one gated on score:on, by its own trigger
     return
   }
   if ((w.inventory.orb ?? 0) > 0) {

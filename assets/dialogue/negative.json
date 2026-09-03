@@ -1,0 +1,12 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "score:negative", "when": "score:on" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "idiot look what you did", "next": "2" },
+    "2": { "who": "", "text": "im erecting", "next": "3" },
+    "3": { "text": "i can't believe you made the beauty score negative.", "next": "4" },
+    "4": { "text": "you can't just spray everything with poo from the poo machine", "next": "5" },
+    "5": { "who": "", "text": "that's tarq's poo machine actually", "next": null }
+  }
+}
