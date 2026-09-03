@@ -1,22 +1,46 @@
 {
   "name": "tree",
-  "trigger": { "event": "tree:shake:12" },
-  "start": [{ "node": "1" }],
+  "trigger": {
+    "event": "tree:shake:12"
+  },
+  "start": [
+    {
+      "node": "1"
+    }
+  ],
   "nodes": {
     "1": {
       "text": "please can you stop doing that",
       "choices": [
-        { "text": "no", "next": "no" },
-        { "text": "yes", "next": "yes" }
+        {
+          "text": "no",
+          "next": "no"
+        },
+        {
+          "text": "yes",
+          "next": "yes"
+        }
       ]
     },
-    "no": { "text": "ok then i'm out of here", "next": "fly" },
-    "fly": { "fly": "tree1", "next": "gone" },
+    "no": {
+      "text": "ok then i'm out of here",
+      "next": "fly"
+    },
+    "fly": {
+      "fly": "tree1",
+      "next": "gone"
+    },
     "gone": {
       "who": "Mich",
-      "text": "this is how unlikable you are. not even the tree wanted to stay",
+      "text": "wow i didn't know trees could do that",
       "next": null
     },
-    "yes": { "text": "thank you", "set": { "tree:promised": true }, "next": null }
+    "yes": {
+      "text": "thank you",
+      "set": {
+        "tree:promised": true
+      },
+      "next": null
+    }
   }
 }

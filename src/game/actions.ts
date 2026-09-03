@@ -123,6 +123,8 @@ export function apply(w: World, a: Action, c: Content): void {
     w.rev++
     if (w.flags[`had:${item}`]) return
     w.flags[`had:${item}`] = true
+    // the orb tutorial talks to whatever the cursor starts on, so the orb keeps the first slot
+    if (item === 'orb') w.inventory = { orb: w.inventory.orb, ...w.inventory }
     play('got', item) // the first of anything ever picked up gets a "you got X" box
   }
 

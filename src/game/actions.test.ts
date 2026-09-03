@@ -141,6 +141,22 @@ describe('the crate', () => {
     expect(w.inventory.orb).toBe(1)
     expect(w.rev).toBe(before)
   })
+
+  it('gives the orb the first inventory slot however late it is found', () => {
+    const w = at(14, 17, 'left') // crate1 at 13,17
+    w.inventory = { salt: 2, twig: 1 }
+    apply(w, { type: 'interact' }, content)
+    expect(Object.keys(w.inventory)).toEqual(['orb', 'salt', 'twig'])
+    expect(w.inventory).toEqual({ orb: 1, salt: 2, twig: 1 })
+  })
+
+  it('leaves the slot order alone once the orb has been had', () => {
+    const w = at(14, 17, 'left')
+    w.inventory = { salt: 2, twig: 1 }
+    w.flags['had:orb'] = true
+    apply(w, { type: 'interact' }, content)
+    expect(Object.keys(w.inventory)).toEqual(['salt', 'twig', 'orb'])
+  })
 })
 
 describe('placing salt', () => {

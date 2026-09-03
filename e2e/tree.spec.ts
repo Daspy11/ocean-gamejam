@@ -76,7 +76,7 @@ test('shaking the tree twelve times sends it away', async ({ page }) => {
   })
   expect(after.tree1).toBeUndefined()
   expect(after.node).toBe('gone')
-  await expect.poll(() => texts(page)).toContain('not even the tree wanted to stay')
+  await expect.poll(() => texts(page)).toContain("didn't know trees")
 })
 
 test('a promised tree left alone invites a friend over when you come back', async ({ page }) => {
