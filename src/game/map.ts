@@ -4,8 +4,8 @@
 // gallery: `?map=gallery`, the artist's proof sheet. Top, left to right in salt, sand and grass: a
 // 2x2 block (the sheet's 3x3 island), a 3x3 ring (its 2x2 hole) and a checkerboard (its diagonals),
 // so a correct sheet redraws every frame of the 5x3 layout in game. Below it salt/sand/grass nested,
-// to show the layering. Below that the 9x5 pad every object stands on, with the two orbs floating in
-// the water beside it.
+// to show the layering. Below that the 9x5 pad every object stands on, with two orbs beside it: one
+// still boiling the water it sits in, one on the salt tile it finished.
 export const MAPS = {
   island: [
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
@@ -62,7 +62,7 @@ export const MAPS = {
     '~~.........~~~~~~~~~~~~~~~~~~~~~',
     '~~.........~~~~~~~~~~~~~~~~~~~~~',
     '~~.........~~~~~~~~~~~~~~~~~~~~~',
-    '~~.........~~~~~~~~~~~~~~~~~~~~~',
+    '~~.........~s~~~~~~~~~~~~~~~~~~~',
     '~~.........~~~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',

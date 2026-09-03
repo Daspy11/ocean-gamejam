@@ -62,8 +62,8 @@ export function apply(w: World, a: Action, c: Content): void {
   if (a.type === 'tick') {
     w.time += a.dt
     for (const o of w.objects)
-      if (o.kind === 'orb' && !o.salt && w.time >= o.nextAt) {
-        o.salt = true
+      if (o.kind === 'orb' && tileAt(w, o.x, o.y) === 'water' && w.time >= o.doneAt) {
+        w.tiles[o.y * w.width + o.x] = 'salt' // the orb stays put, now sitting on the crust it boiled
         w.rev++
         fire('salt:spawn')
       }
@@ -168,14 +168,18 @@ export function apply(w: World, a: Action, c: Content): void {
     return
   }
   if (obj?.kind === 'orb') {
-    const item = obj.salt ? 'salt' : 'orb' // a crust on it: take the salt; empty: take the orb
-    if (obj.salt) obj.nextAt = w.time + 3000
-    else w.objects.splice(w.objects.indexOf(obj), 1)
-    obj.salt = false
-    gain(item)
+    w.objects.splice(w.objects.indexOf(obj), 1) // boiling or finished, it always comes back to hand
+    gain('orb')
     return
   }
-  if (obj || tileAt(w, x, y) !== 'water') return
+  if (obj) return
+  const tile = tileAt(w, x, y)
+  if (tile === 'salt') {
+    w.tiles[y * w.width + x] = 'water' // the crust the orb boiled is the salt: scoop it back up
+    gain('salt')
+    return
+  }
+  if (tile !== 'water') return
   const salt = w.inventory.salt ?? 0
   if (salt > 0) {
     w.tiles[y * w.width + x] = 'salt' // salt goes first, so the orb is never thrown out by accident
@@ -185,7 +189,7 @@ export function apply(w: World, a: Action, c: Content): void {
   }
   if ((w.inventory.orb ?? 0) > 0) {
     w.inventory.orb = (w.inventory.orb ?? 0) - 1
-    w.objects.push({ id: `orb${x}-${y}`, kind: 'orb', x, y, salt: false, nextAt: w.time + 3000 })
+    w.objects.push({ id: `orb${x}-${y}`, kind: 'orb', x, y, doneAt: w.time + 2000 }) // 2 s to boil
     w.rev++
   }
 }

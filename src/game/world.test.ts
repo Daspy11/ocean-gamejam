@@ -116,7 +116,7 @@ describe('the gallery map', () => {
     ])
   })
 
-  it('stands one of every object on the pad, with the two orbs out on the water', () => {
+  it('stands one of every object on the pad, with the orbs out beside it', () => {
     const w = createWorld('gallery')
     expect(w.objects.map((o) => o.id)).toEqual([
       'g-tree',
@@ -128,8 +128,10 @@ describe('the gallery map', () => {
       'g-orb',
       'g-orb-salt',
     ])
+    // one orb still boiling its water tile, one already sat on the salt it made
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)
-    expect(wet).toEqual(['g-orb', 'g-orb-salt'])
+    expect(wet).toEqual(['g-orb'])
+    expect(tileAt(w, 12, 20)).toBe('salt')
     expect([w.player.x, w.player.y, w.player.facing]).toEqual([8, 20, 'down'])
     expect(objectAt(w, 8, 20)).toBeUndefined() // nothing standing where the player spawns
   })

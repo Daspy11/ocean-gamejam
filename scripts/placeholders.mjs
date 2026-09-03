@@ -115,18 +115,32 @@ const sheets = [
     file: 'sprites/orb.png',
     w: 16,
     h: 16,
-    cols: 2,
+    cols: 1,
     frames: [
       [
         [5, 3, 6, 10, '#e07020'],
         [3, 5, 10, 6, '#e07020'],
-      ], // 0 bare
+      ],
+    ],
+  },
+  {
+    file: 'sprites/smoke.png',
+    w: 16,
+    h: 16,
+    cols: 3,
+    frames: [
       [
-        [5, 3, 6, 10, '#e07020'],
-        [3, 5, 10, 6, '#e07020'],
-        [2, 9, 12, 2, '#c4ccd6'],
-        [0, 11, 16, 3, '#c4ccd6'],
-      ], // 1 with a salt crust grown around it
+        [5, 9, 6, 4, '#d8dde3'],
+        [6, 8, 4, 6, '#d8dde3'],
+      ], // 0 a small puff
+      [
+        [4, 8, 8, 6, '#d8dde3'],
+        [5, 7, 6, 8, '#d8dde3'],
+      ], // 1 bigger
+      [
+        [3, 8, 10, 6, '#d8dde3'],
+        [4, 7, 8, 8, '#d8dde3'],
+      ], // 2 bigger still
     ],
   },
   {

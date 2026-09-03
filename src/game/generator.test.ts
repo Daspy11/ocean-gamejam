@@ -35,17 +35,17 @@ const orbAt = (w: World): Extract<Obj, { kind: 'orb' }> | undefined =>
   w.objects.find((o) => o.kind === 'orb') as Extract<Obj, { kind: 'orb' }> | undefined
 
 describe('throwing the orb in the sea', () => {
-  it('leaves it floating on the water tile it was thrown at', () => {
+  it('leaves it on the water tile it was thrown at, boiling', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)
     const orb = orbAt(w)
-    expect([orb?.x, orb?.y, orb?.salt]).toEqual([21, 16, false])
-    expect(orb?.nextAt).toBe(w.time + 3000)
+    expect([orb?.x, orb?.y]).toEqual([21, 16])
+    expect(orb?.doneAt).toBe(w.time + 2000)
     expect(w.inventory.orb).toBe(0)
-    expect(tileAt(w, 21, 16)).toBe('water') // the orb floats, it does not fill the tile in
+    expect(tileAt(w, 21, 16)).toBe('water') // it boils the tile, it does not fill it in yet
   })
 
-  it('comes back to the inventory when there is nothing on it', () => {
+  it('comes straight back to the inventory before it has boiled', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)
     apply(w, { type: 'interact' }, content)
@@ -56,42 +56,74 @@ describe('throwing the orb in the sea', () => {
 })
 
 describe('the salt generator', () => {
-  it('boils out salt after 3 s and plays the triggered line once', () => {
+  it('boils the tile into salt after 2 s and plays the triggered line once', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)
-    apply(w, { type: 'tick', dt: 2999 }, content)
-    expect(orbAt(w)?.salt).toBe(false)
+    apply(w, { type: 'tick', dt: 1999 }, content)
+    expect(tileAt(w, 21, 16)).toBe('water')
 
     const before = w.rev
     apply(w, { type: 'tick', dt: 1 }, content)
-    expect(orbAt(w)?.salt).toBe(true)
+    expect(tileAt(w, 21, 16)).toBe('salt')
     expect(w.rev).toBeGreaterThan(before)
     expect(w.dialogue?.key).toBe('firstsalt')
     expect(w.flags['fired:firstsalt']).toBe(true)
   })
 
-  it('hands over the salt, restarts the timer, and shows the got box only the first time', () => {
+  it('leaves the orb sitting on its finished salt, ready to be picked up again', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)
-    apply(w, { type: 'tick', dt: 3000 }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
     apply(w, { type: 'interact' }, content) // dismiss the triggered line
+    expect(orbAt(w)?.x).toBe(21)
+
+    apply(w, { type: 'interact' }, content)
+    expect(orbAt(w)).toBeUndefined()
+    expect(w.inventory.orb).toBe(1)
+    expect(tileAt(w, 21, 16)).toBe('salt') // taking the orb does not take the crust with it
+  })
+
+  it('does not replay the triggered line the second time round', () => {
+    const w = shore()
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    apply(w, { type: 'interact' }, content) // dismiss the triggered line
+    apply(w, { type: 'interact' }, content) // take the orb back
+
+    w.player.y = 15 // the water tile north-east of the beach, an untouched patch of sea
+    w.player.facing = 'right'
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    expect(tileAt(w, 21, 15)).toBe('salt')
     expect(w.dialogue).toBe(null)
+  })
+})
+
+describe('digging up the boiled salt', () => {
+  it('turns the crust back into water and hands over one salt, with the got box once', () => {
+    const w = shore()
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    apply(w, { type: 'interact' }, content) // dismiss the triggered line
+    apply(w, { type: 'interact' }, content) // take the orb off the salt
 
     apply(w, { type: 'interact' }, content)
     expect(w.inventory.salt).toBe(1)
+    expect(tileAt(w, 21, 16)).toBe('water')
     expect(w.dialogue).toEqual({ key: 'got', node: '1', choice: 0, item: 'salt' })
     expect(w.flags['had:salt']).toBe(true)
-    expect(orbAt(w)?.salt).toBe(false)
-    expect(orbAt(w)?.nextAt).toBe(w.time + 3000)
 
     apply(w, { type: 'interact' }, content) // dismiss the got box
-    apply(w, { type: 'tick', dt: 3000 }, content)
-    expect(orbAt(w)?.salt).toBe(true)
-    expect(w.dialogue).toBe(null) // the trigger has already fired, so no second line
+    apply(w, { type: 'interact' }, content) // spend that salt on the tile the orb had boiled
+    expect([tileAt(w, 21, 16), w.inventory.salt]).toEqual(['salt', 0])
 
+    w.player.y = 15 // an untouched patch of sea, to run the whole loop a second time
     apply(w, { type: 'interact' }, content)
-    expect(w.inventory.salt).toBe(2)
-    expect(w.dialogue).toBe(null) // and no second got box
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    apply(w, { type: 'interact' }, content) // take the orb
+    apply(w, { type: 'interact' }, content) // and dig the second salt
+    expect(w.inventory.salt).toBe(1)
+    expect(w.dialogue).toBe(null) // no second got box
   })
 
   it('feeds the salt straight back into growing the island', () => {

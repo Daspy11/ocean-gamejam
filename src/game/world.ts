@@ -11,7 +11,7 @@ export const ITEMS: Item[] = ['salt', 'orb'] // icon frame order in sprites/item
 // objects overlap the tiles behind.
 export type Obj = { id: string; x: number; y: number } & (
   | { kind: 'npc'; sprite: string; facing: Dir; dialogue: string }
-  | { kind: 'orb'; salt: boolean; nextAt: number } // the orb in the sea: boils a salt crust every few seconds
+  | { kind: 'orb'; doneAt: number } // thrown into the sea it boils its tile into salt once w.time reaches doneAt
   | { kind: 'tree' }
   | { kind: 'hut' }
   | { kind: 'boat' }
@@ -128,9 +128,9 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
             facing: 'down',
             dialogue: 'mich',
           },
-          // a day of sim time away, so the bare orb stays bare however long the gallery is left open
-          { id: 'g-orb', kind: 'orb', x: 12, y: 18, salt: false, nextAt: 86400000 },
-          { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, salt: true, nextAt: 86400000 },
+          // a day of sim time away, so this one keeps smoking however long the gallery is left open
+          { id: 'g-orb', kind: 'orb', x: 12, y: 18, doneAt: 86400000 },
+          { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, doneAt: 0 }, // already sat on its finished salt
         ]
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },

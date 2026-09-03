@@ -9,7 +9,8 @@ export const SHEETS = {
   // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
   'sprites/player': { frameWidth: 16, frameHeight: 24 }, // rows down/left/right/up · cols left foot/stand/right foot
   'sprites/mich': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
-  'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // 0 bare · 1 with a salt crust on top
+  'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
+  'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
   'sprites/hut': { frameWidth: 32, frameHeight: 40 }, // 2x2 footprint, bottom-anchored
   'sprites/boat': { frameWidth: 32, frameHeight: 16 }, // 2x1 footprint, also the rowboat in the intro

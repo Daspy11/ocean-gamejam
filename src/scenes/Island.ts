@@ -11,6 +11,8 @@ export default class Island extends Phaser.Scene {
   private layers: Phaser.Tilemaps.TilemapLayer[] = []
   private player!: Phaser.GameObjects.Sprite
   private objects: Phaser.GameObjects.Sprite[] = []
+  // one per orb still boiling its tile, with the bottom of that tile to rise from
+  private smoke: { sprite: Phaser.GameObjects.Sprite; bottom: number }[] = []
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
   private sent: { dir: Dir | null; run: boolean } = { dir: null, run: false }
 
@@ -84,6 +86,14 @@ export default class Island extends Phaser.Scene {
       this.rev = world.rev
       this.sync()
     }
+
+    // clouds off the boiling sea: a 900 ms rise, driven from sim time so there is nothing to tween
+    const rise = (world.time % 900) / 900
+    for (const { sprite, bottom } of this.smoke)
+      sprite
+        .setFrame(Math.floor(world.time / 200) % 3)
+        .setY(bottom - 8 - rise * 10)
+        .setAlpha(1 - rise)
   }
 
   // position and frame are pure functions of the world, so there are no tweens and no animations
@@ -114,10 +124,20 @@ export default class Island extends Phaser.Scene {
     }
 
     for (const sprite of this.objects) sprite.destroy()
+    for (const { sprite } of this.smoke) sprite.destroy()
+    this.smoke = world.objects
+      .filter((o) => o.kind === 'orb' && tileAt(world, o.x, o.y) === 'water') // still boiling
+      .map((o) => {
+        const bottom = (o.y + 1) * 16
+        const sprite = this.add
+          .sprite(o.x * 16, bottom, 'sprites/smoke')
+          .setOrigin(0, 1)
+          .setDepth(bottom + 1) // just over the orb it rises from
+        return { sprite, bottom }
+      })
     this.objects = world.objects.map((o) => {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
       let frame = 0 // frame 0 unless the kind has some state to show
-      if (o.kind === 'orb') frame = o.salt ? 1 : 0
       if (o.kind === 'crate') frame = o.open ? 1 : 0
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // npcs always stand
       return this.add

@@ -148,25 +148,24 @@ test('tapping a direction turns the player without walking', async ({ page }) =>
   expect([player.x, player.y, player.step]).toEqual([start.x, start.y, null])
 })
 
-test('an orb floating in the sea grows salt and interact collects it', async ({ page }) => {
+test('an orb thrown in the sea boils its tile into salt', async ({ page }) => {
   await openIsland(page)
 
   const result = await page.evaluate(() => {
     const w = window.island.world()
     w.player = { ...w.player, x: 20, y: 16, facing: 'right' } // the east beach, facing the gap
-    w.objects.push({ id: 'orb1', kind: 'orb', x: 21, y: 16, salt: false, nextAt: w.time + 3000 })
-    w.flags = { 'fired:firstsalt': true, 'had:salt': true } // both boxes are the tutorial test's job
+    w.objects.push({ id: 'orb1', kind: 'orb', x: 21, y: 16, doneAt: w.time + 2000 })
+    w.flags = { 'fired:firstsalt': true, 'had:orb': true } // both boxes are the tutorial test's job
     window.island.load(w)
-    window.island.dispatch({ type: 'tick', dt: 3000 })
-    const crust = () => {
-      const o = window.island.world().objects.find((o) => o.kind === 'orb')
-      return o && o.kind === 'orb' ? o.salt : undefined
-    }
-    const grew = crust()
-    window.island.dispatch({ type: 'interact' })
-    return { grew, salt: window.island.world().inventory.salt, orb: crust() }
+    window.island.dispatch({ type: 'tick', dt: 2000 })
+    const orbs = () => window.island.world().objects.filter((o) => o.kind === 'orb').length
+    const boiled = window.island.world()
+    const still = orbs() // the orb stays put, now sitting on the crust it boiled
+    window.island.dispatch({ type: 'interact' }) // and comes back off the salt on interact
+    const orb = window.island.world().inventory.orb
+    return { tile: boiled.tiles[16 * boiled.width + 21], still, left: orbs(), orb }
   })
-  expect(result).toEqual({ grew: true, salt: 1, orb: false })
+  expect(result).toEqual({ tile: 'salt', still: 1, left: 0, orb: 1 })
 })
 
 test('two salt bridge the gap to the second island', async ({ page }) => {
@@ -328,35 +327,35 @@ test('the tutorial runs from the crate to the first salt out of the sea', async 
   await press(page, 'e', () => window.island.world().dialogue === null)
   expect(await named()).toBe("tarq's fire orb")
 
-  // 4. stand on the south-west shore, throw it at the water tile at 13,18, and wait out the 3 s
+  // 4. stand on the south-west shore, throw it at the water tile at 13,18, and wait out the boil
   const sea = await page.evaluate(() => {
     const w = window.island.world()
     w.player = { ...w.player, x: 14, y: 18, facing: 'left', step: null, held: null }
     window.island.load(w)
     window.island.dispatch({ type: 'interact' })
     const at = window.island.world().objects.find((o) => o.kind === 'orb')
-    window.island.dispatch({ type: 'tick', dt: 3000 })
+    window.island.dispatch({ type: 'tick', dt: 2000 })
     const after = window.island.world()
-    const orb = after.objects.find((o) => o.kind === 'orb')
-    const salt = orb?.kind === 'orb' && orb.salt
-    return { thrown: [at?.x, at?.y], orb: after.inventory.orb, salt, box: after.dialogue?.key }
+    const tile = after.tiles[18 * after.width + 13]
+    return { thrown: [at?.x, at?.y], orb: after.inventory.orb, tile, box: after.dialogue?.key }
   })
-  expect(sea).toEqual({ thrown: [13, 18], orb: 0, salt: true, box: 'firstsalt' })
+  expect(sea).toEqual({ thrown: [13, 18], orb: 0, tile: 'salt', box: 'firstsalt' })
   await press(page, 'e', () => window.island.world().dialogue === null)
 
-  // 5. collect the salt, then take the orb itself back off the water
-  const collected = await page.evaluate(() => {
-    window.island.dispatch({ type: 'interact' })
+  // 5. take the orb back off its crust, then dig the bare salt tile up
+  const dug = await page.evaluate(() => {
+    window.island.dispatch({ type: 'interact' }) // the orb
+    const left = window.island.world().objects.filter((o) => o.kind === 'orb').length
+    window.island.dispatch({ type: 'interact' }) // and the crust it left behind
     const w = window.island.world()
-    return { salt: w.inventory.salt, key: w.dialogue?.key, item: w.dialogue?.item }
+    return {
+      left,
+      orb: w.inventory.orb,
+      salt: w.inventory.salt,
+      tile: w.tiles[18 * w.width + 13],
+      got: w.dialogue?.item,
+    }
   })
-  expect(collected).toEqual({ salt: 1, key: 'got', item: 'salt' })
+  expect(dug).toEqual({ left: 0, orb: 1, salt: 1, tile: 'water', got: 'salt' })
   await press(page, 'e', () => window.island.world().dialogue === null)
-
-  const retrieved = await page.evaluate(() => {
-    window.island.dispatch({ type: 'interact' })
-    const w = window.island.world()
-    return { left: w.objects.filter((o) => o.kind === 'orb').length, orb: w.inventory.orb }
-  })
-  expect(retrieved).toEqual({ left: 0, orb: 1 })
 })
