@@ -24,7 +24,10 @@
     },
     "no": {
       "text": "ok then i'm out of here",
-      "next": "fly"
+      "next": "fly",
+      "set": {
+        "tree:gone": true
+      }
     },
     "fly": {
       "fly": "tree1",
@@ -33,13 +36,33 @@
     "gone": {
       "who": "Mich",
       "text": "wow i didn't know trees could do that",
-      "next": null
+      "next": [
+        {
+          "when": "walter:under",
+          "node": "sun1"
+        }
+      ]
     },
     "yes": {
       "text": "thank you",
       "set": {
         "tree:promised": true
       },
+      "next": null
+    },
+    "sun1": {
+      "who": "Walter",
+      "text": "now i'm gonna get sunburned",
+      "next": "sun2"
+    },
+    "sun2": {
+      "who": "Mich",
+      "text": "but you have a hat",
+      "next": "sun3"
+    },
+    "sun3": {
+      "who": "Walter",
+      "text": "oh yeah",
       "next": null
     }
   }

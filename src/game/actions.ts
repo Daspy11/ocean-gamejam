@@ -46,10 +46,14 @@ export function apply(w: World, a: Action, c: Content): void {
     o.facing = dir
     o.step = { x: o.x + DIRS[dir][0], y: o.y + DIRS[dir][1], t }
   }
+  // both `start` and a branching `next` are read this way: first entry with no `when`, or whose
+  // flag is truthy. Nothing matching means there is nowhere to go.
+  const pick = (list: { when?: string; node: string }[] | undefined) =>
+    list?.find((s) => !s.when || !!w.flags[s.when])?.node
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item) => {
     const dlg = c.dialogues[key]
-    const at = node ?? dlg?.start.find((s) => !s.when || !!w.flags[s.when])?.node
+    const at = node ?? pick(dlg?.start)
     const to = at === undefined ? undefined : dlg?.nodes[at]
     if (at === undefined || !to) return false
     Object.assign(w.flags, to.set)
@@ -89,8 +93,9 @@ export function apply(w: World, a: Action, c: Content): void {
     const chosen = node?.choices?.[d.choice]
     if (chosen) Object.assign(w.flags, chosen.set)
     // a missing node is broken content: close rather than throw, a human fixes the json
-    const next = (node ? (chosen ? chosen.next : node.next) : null) ?? null
-    if (next !== null && open(d.key, next, d.item)) return
+    const next = node ? (chosen ? chosen.next : node.next) : null
+    const to = (Array.isArray(next) ? pick(next) : next) ?? null
+    if (to !== null && open(d.key, to, d.item)) return
     w.dialogue = null
     w.rev++
     const queued = w.queue.shift()

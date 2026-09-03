@@ -103,7 +103,9 @@ export interface DialogueNode {
   land?: string // id of a tree: it comes down out of the sky over 1500 ms
   take?: Item // spends one of the item as the node opens; the mirror of a crate's gain, with no got box
   set?: Record<string, boolean | number | string>
-  next?: string | null // used when there are no choices; null or missing closes the dialogue
+  // used when there are no choices; null or missing closes the dialogue. A list is read like `start`:
+  // the first entry with no `when` or whose flag is truthy wins, and none matching closes it.
+  next?: string | null | { when?: string; node: string }[]
   choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
 }
 

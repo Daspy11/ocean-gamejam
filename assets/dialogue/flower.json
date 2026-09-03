@@ -196,12 +196,12 @@
     },
     "21": {
       "who": "Walter",
-      "text": "ANYWAY",
+      "text": "ANYWAY nice beauty score",
       "next": "22"
     },
     "22": {
-      "text": "you can't quantify beauty, it's purposiveness without purpose apprehended in disinterested subjective universality",
-      "next": "23"
+      "text": "you can't quantify beauty",
+      "next": "22b"
     },
     "23": {
       "who": "Walter",
@@ -283,10 +283,56 @@
           "left",
           "left",
           "left",
-          "left",
           "left"
         ]
       },
+      "next": [
+        {
+          "when": "tree:gone",
+          "node": "noTree"
+        },
+        {
+          "node": "under"
+        }
+      ]
+    },
+    "22b": {
+      "text": "Beauty is merely the Spiritual making itself known sensuously",
+      "next": "23"
+    },
+    "under": {
+      "walk": {
+        "id": "walter",
+        "path": [
+          "left"
+        ]
+      },
+      "set": {
+        "walter:under": true
+      },
+      "next": null
+    },
+    "noTree": {
+      "who": "Walter",
+      "text": "i can't believe you made the tree leave",
+      "next": "noTree2"
+    },
+    "noTree2": {
+      "text": "yeah sorry about that",
+      "next": "sun1"
+    },
+    "sun1": {
+      "who": "Walter",
+      "text": "now i'm gonna get sunburned",
+      "next": "sun2"
+    },
+    "sun2": {
+      "text": "but you have a hat",
+      "next": "sun3"
+    },
+    "sun3": {
+      "who": "Walter",
+      "text": "oh yeah",
       "next": null
     }
   }
