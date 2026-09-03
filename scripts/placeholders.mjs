@@ -92,6 +92,27 @@ const character = ({ hair, skin, shirt }) =>
     ].map(([a, b]) => [...body, [legs[0], 18, 3, a, skin], [legs[1], 18, 3, b, skin]]),
   )
 
+// Walter's sheet, in the same 3x4 character layout. A crab looks much the same from every side, so
+// all four rows share one picture; the walk columns lift alternate legs a pixel so the walk reads.
+const crab = () => {
+  const red = '#c8402a'
+  const brown = '#7a5a3a'
+  const body = [
+    [1, 8, 14, 2, brown], // hat brim
+    [5, 4, 6, 4, brown], // crown
+    [4, 10, 2, 2, red], // eye stalks
+    [10, 10, 2, 2, red],
+    [2, 12, 12, 6, red], // body
+  ]
+  const legs = [2, 5, 9, 12]
+  return [0, 1, 2, 3].flatMap(() =>
+    [0, 1, 2].map((col) => [
+      ...body,
+      ...legs.map((x, i) => [x, col !== 1 && i % 2 === (col ? 1 : 0) ? 17 : 18, 2, 3, red]),
+    ]),
+  )
+}
+
 const sheets = [
   { file: 'tiles/water.png', w: 16, h: 16, cols: 1, frames: [[[0, 0, 16, 16, '#3b6fb6']]] },
   { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
@@ -111,6 +132,7 @@ const sheets = [
     cols: 3,
     frames: character({ hair: '#c04040', skin: '#c8c0b8', shirt: '#e0e0e0' }),
   },
+  { file: 'sprites/walter.png', w: 16, h: 24, cols: 3, frames: crab() },
   {
     file: 'sprites/orb.png',
     w: 16,

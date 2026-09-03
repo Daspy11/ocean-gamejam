@@ -9,6 +9,9 @@ export const SHEETS = {
   // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
   'sprites/player': { frameWidth: 16, frameHeight: 24 }, // rows down/left/right/up · cols left foot/stand/right foot
   'sprites/mich': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
+  // character sheet layout; the crab only ever walks sideways, so the left/right rows are the walk
+  // and the down row is how he stands
+  'sprites/walter': { frameWidth: 16, frameHeight: 24 },
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
@@ -31,12 +34,14 @@ export const DUAL_FRAME = [-1, 12, 10, 11, 2, 7, 13, 3, 0, 14, 5, 4, 1, 8, 9, 6]
 export const JSONS = [
   'dialogue/crate',
   'dialogue/firstsalt',
+  'dialogue/flower',
   'dialogue/got',
   'dialogue/horse',
   'dialogue/inventory1',
   'dialogue/inventory2',
   'dialogue/landing',
   'dialogue/mich',
+  'dialogue/walter',
   'text/items',
   'text/intro',
 ] as const

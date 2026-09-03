@@ -67,6 +67,7 @@ test('?map=gallery draws every terrain template and every object with the game c
     'sprites/player',
     'sprites/smoke',
     'sprites/tree',
+    'sprites/walter',
   ])
 
   // zoom out to fit the whole proof sheet in the shot; the shipped camera stays at 2x

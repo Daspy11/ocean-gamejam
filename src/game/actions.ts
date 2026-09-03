@@ -238,7 +238,9 @@ export function apply(w: World, a: Action, c: Content): void {
   const y = p.y + DIRS[p.facing][1]
   const obj = objectAt(w, x, y)
   if (obj?.kind === 'npc') {
-    if (open(obj.dialogue)) obj.facing = OPP[p.facing] // the npc looks back at the player
+    fire(`talk:${obj.id}`) // a scene waiting on this npc cuts in ahead of their own lines
+    if (!w.dialogue) open(obj.dialogue)
+    obj.facing = OPP[p.facing] // the npc looks back at the player
     return
   }
   if (obj?.kind === 'crate') {

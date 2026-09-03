@@ -208,3 +208,59 @@ describe('bloom act', () => {
     expect(w.dialogue?.node).toBe('end')
   })
 })
+
+// a scene that waits on an npc: talking to mich fires talk:mich before her own lines get a look in
+const talkContent: Content = {
+  dialogues: {
+    mich: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER mich 1]', next: null } },
+    },
+    cutin: {
+      name: '[PLACEHOLDER NPC NAME]',
+      trigger: { event: 'talk:mich', when: 'had:x' },
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER cutin 1]', next: null } },
+    },
+  },
+  items: {},
+}
+
+// on the sand at 13,14, facing mich at 13,15
+function atMich(flag = false): World {
+  const w = createWorld()
+  w.player.x = 13
+  w.player.y = 14
+  w.player.facing = 'down'
+  if (flag) w.flags['had:x'] = true
+  return w
+}
+
+describe('the talk:<npc id> event', () => {
+  it('opens the npc own dialogue while the scene is not due', () => {
+    const w = atMich()
+    apply(w, { type: 'interact' }, talkContent)
+    expect(w.dialogue?.key).toBe('mich')
+    expect(mich(w).facing).toBe('up')
+  })
+
+  it('lets a due scene cut in instead, and still turns the npc', () => {
+    const w = atMich(true)
+    apply(w, { type: 'interact' }, talkContent)
+    expect(w.dialogue?.key).toBe('cutin')
+    expect(w.flags['fired:cutin']).toBe(true)
+    expect(w.queue).toEqual([]) // it cut in, so her own lines never queued up behind it
+    expect(mich(w).facing).toBe('up')
+  })
+
+  it('goes back to the npc own dialogue once the scene has played', () => {
+    const w = atMich(true)
+    apply(w, { type: 'interact' }, talkContent)
+    apply(w, { type: 'interact' }, talkContent) // close the scene
+    expect(w.dialogue).toBe(null)
+
+    apply(w, { type: 'interact' }, talkContent)
+    expect(w.dialogue?.key).toBe('mich')
+  })
+})

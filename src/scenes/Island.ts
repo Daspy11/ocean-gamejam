@@ -130,19 +130,21 @@ export default class Island extends Phaser.Scene {
   private drawActors() {
     this.draw(this.player, world.player)
     world.objects.forEach((o, i) => {
-      if (o.kind === 'npc' && this.objects[i]) this.draw(this.objects[i], o)
+      if (o.kind === 'npc' && this.objects[i]) this.draw(this.objects[i], o, o.sprite === 'walter')
     })
   }
 
   // position and frame are pure functions of the world, so there are no tweens and no animations
-  private draw(sprite: Phaser.GameObjects.Sprite, a: Actor) {
+  private draw(sprite: Phaser.GameObjects.Sprite, a: Actor, crab = false) {
     const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
     const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
     const col = a.step ? (a.step.t < 0.5 ? (a.parity ? 0 : 2) : 1) : 1 // 1 is standing
+    // a crab scuttles sideways whichever way he is going, and turns to face you when he stops
+    const facing = crab ? (!a.step ? 'down' : a.facing === 'left' ? 'left' : 'right') : a.facing
     sprite
       .setPosition(x, y + 16)
       .setDepth(y + 16)
-      .setFrame(ROW[a.facing] * 3 + col)
+      .setFrame(ROW[facing] * 3 + col)
   }
 
   private sync() {

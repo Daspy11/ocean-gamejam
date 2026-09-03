@@ -60,9 +60,11 @@ export default class UI extends Phaser.Scene {
       const lines = node.choices
         ? node.choices.map((c, i) => `${i === open.choice ? '> ' : '  '}${c.text}`)
         : ['[E] continue']
-      this.body.setText(
-        [open.item ? text.replaceAll('{item}', name(open.item)) : text, '', ...lines].join('\n'),
+      const filled = (open.item ? text.replaceAll('{item}', name(open.item)) : text).replaceAll(
+        '{score}',
+        `${world.score}`,
       )
+      this.body.setText([filled, '', ...lines].join('\n'))
     }
 
     const menu = world.menu

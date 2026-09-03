@@ -79,7 +79,7 @@ export type Action =
 export interface Dialogue {
   name: string
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
-  // events: crate:open · menu:close · salt:spawn
+  // events: crate:open · menu:close · salt:spawn · talk:<npc id>
   trigger?: { event: string; when?: string }
   start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
   nodes: Record<string, DialogueNode>
@@ -155,6 +155,16 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           // a day of sim time away, so this one keeps smoking however long the gallery is left open
           { id: 'g-orb', kind: 'orb', x: 12, y: 18, doneAt: 86400000 },
           { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, doneAt: 0 }, // already sat on its finished salt
+          // 8,18 is under g-boat's 2x1 footprint, so Walter stands in the next free slot along
+          {
+            id: 'g-walter',
+            kind: 'npc',
+            sprite: 'walter',
+            x: 9,
+            y: 18,
+            facing: 'down',
+            dialogue: 'walter',
+          },
           { id: 'g-flower', kind: 'flower', x: 9, y: 20, white: false },
           { id: 'g-flower-white', kind: 'flower', x: 10, y: 20, white: true },
         ]

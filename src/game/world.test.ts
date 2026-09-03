@@ -137,6 +137,7 @@ describe('the gallery map', () => {
       'g-mich',
       'g-orb',
       'g-orb-salt',
+      'g-walter',
       'g-flower',
       'g-flower-white',
     ])
