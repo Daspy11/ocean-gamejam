@@ -30,6 +30,17 @@ export default class Island extends Phaser.Scene {
     bloomAt: number
     x: number
   }[] = []
+  // one per tree, with the times it was last shaken and started flying off or coming down, and the
+  // upside-down smoke a tree in flight rides on
+  private trees: {
+    sprite: Phaser.GameObjects.Sprite
+    smoke: Phaser.GameObjects.Sprite | null
+    x: number
+    feet: number
+    shookAt?: number
+    flyAt?: number
+    landAt?: number
+  }[] = []
   // one per world.pops entry, with the sim time it started and the y it floats up from
   private pops: { text: Phaser.GameObjects.Text; at: number; baseY: number }[] = []
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
@@ -121,6 +132,21 @@ export default class Island extends Phaser.Scene {
       white.setX(at).setAlpha(Math.min(1, Math.max(0, (world.time - bloomAt) / 1500)))
     }
 
+    // a shaken tree jitters for 400 ms, and one in flight rides 96 px up or down over its 1500 ms
+    // on the sea's own steam turned upside down, so the cloud drifts away below it
+    for (const { sprite, smoke, x, feet, shookAt, flyAt, landAt } of this.trees) {
+      const trip = flyAt ?? landAt
+      const p = trip === undefined ? 1 : Math.min(1, Math.max(0, (world.time - trip) / 1500))
+      const lift = (flyAt !== undefined ? p : landAt !== undefined ? 1 - p : 0) * 96
+      const shaking = shookAt !== undefined && world.time - shookAt < 400
+      sprite.setX(x + (shaking ? (Math.floor(world.time / 40) % 2 ? 1 : -1) : 0)).setY(feet - lift)
+      smoke
+        ?.setFrame(Math.floor(world.time / 200) % 3)
+        .setY(feet - lift + 2 + rise * 10)
+        .setAlpha(1 - rise)
+        .setVisible(p < 1)
+    }
+
     // a pop drifts 12 px up over its 1500 ms life, fading out; sim time drives it, so no tweens
     for (const { text, at, baseY } of this.pops) {
       const age = world.time - at
@@ -170,6 +196,7 @@ export default class Island extends Phaser.Scene {
     for (const sprite of this.objects) sprite.destroy()
     for (const { sprite } of this.smoke) sprite.destroy()
     for (const { white } of this.blooms) white.destroy() // the base is in this.objects, destroyed above
+    for (const { smoke } of this.trees) smoke?.destroy() // ditto the tree itself
     for (const { text } of this.pops) text.destroy()
     this.pops = world.pops.map((p) => {
       const baseY = p.y * 16
@@ -205,6 +232,22 @@ export default class Island extends Phaser.Scene {
         .setOrigin(0, 1)
         .setDepth(feet)
     })
+    this.trees = []
+    world.objects.forEach((o, i) => {
+      if (o.kind !== 'tree') return
+      const base = this.objects[i]
+      const flying = o.flyAt !== undefined || o.landAt !== undefined
+      const smoke = !flying
+        ? null
+        : this.add
+            .sprite(base.x, base.y, 'sprites/smoke')
+            .setOrigin(0, 0) // it hangs under the trunk rather than rising from the ground
+            .setFlipY(true)
+            .setDepth(base.depth + 1)
+      const { shookAt, flyAt, landAt } = o
+      this.trees.push({ sprite: base, smoke, x: o.x * 16, feet: base.y, shookAt, flyAt, landAt })
+    })
+
     this.blooms = []
     world.objects.forEach((o, i) => {
       if (o.kind !== 'flower' || o.bloomAt === undefined || o.white) return

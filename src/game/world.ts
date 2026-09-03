@@ -23,7 +23,8 @@ export type Obj = { id: string; x: number; y: number } &
         parity?: boolean
       }
     | { kind: 'orb'; doneAt: number } // thrown into the sea it boils its tile into salt once w.time reaches doneAt
-    | { kind: 'tree' }
+    // shaken for twigs; flyAt/landAt are when it started leaving / arriving, 1500 ms each
+    | { kind: 'tree'; shakes?: number; shookAt?: number; flyAt?: number; landAt?: number }
     | { kind: 'hut' }
     | { kind: 'boat' }
     | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
@@ -81,7 +82,7 @@ export type Action =
 export interface Dialogue {
   name: string
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
-  // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id>
+  // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id> · tree:shake:<n> · tree:near
   trigger?: { event: string; when?: string }
   start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
   nodes: Record<string, DialogueNode>
@@ -90,12 +91,16 @@ export interface DialogueNode {
   text?: string // may contain {item}, replaced with the display name of dialogue.item
   who?: string // speaker name for this node; absent = the dialogue's name, '' = no name line
   // A node without text is an act: the box hides, the act runs, and the node advances to `next` by
-  // itself once it is done (walk: the npc has arrived; wait: the time has passed; spawn: at once).
-  // Interact and move are ignored while an act runs.
+  // itself once it is done (walk: the npc has arrived; wait: the time has passed; spawn and shake:
+  // at once; fly: the tree has gone; land: it has come down). Interact and move are ignored while
+  // an act runs.
   walk?: { id: string; path: Dir[]; run?: boolean }
   wait?: number // ms
   spawn?: Obj
   bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
+  shake?: string // id of a tree: one more shake, and the twig it drops
+  fly?: string // id of a tree: it lifts off and is gone 1500 ms later
+  land?: string // id of a tree: it comes down out of the sky over 1500 ms
   take?: Item // spends one of the item as the node opens; the mirror of a crate's gain, with no got box
   set?: Record<string, boolean | number | string>
   next?: string | null // used when there are no choices; null or missing closes the dialogue

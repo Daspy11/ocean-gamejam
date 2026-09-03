@@ -1,3 +1,4 @@
+import { shakeTree, startTree, tickTrees, treeDone } from './tree'
 import { DIRS, KINDS, objectAt, tileAt, type Action, type Content, type World } from './world'
 import type { DialogueNode, Item, Obj } from './world'
 
@@ -16,6 +17,7 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
     const f = w.objects.find((o) => o.id === bloom)
     return !f || f.kind !== 'flower' || !!f.white
   }
+  if (node.fly !== undefined || node.land !== undefined) return treeDone(w, node)
   if (node.wait !== undefined) return w.time >= (d.until ?? 0)
   return true // a spawn lands the moment the node opens, and a node with no act at all is over too
 }
@@ -71,6 +73,14 @@ export function apply(w: World, a: Action, c: Content): void {
       const f = w.objects.find((o) => o.id === bloom) // a missing flower just ends the act at once
       if (f?.kind === 'flower') f.bloomAt = w.time
     }
+    if (to.shake !== undefined) {
+      const shakes = shakeTree(w, to.shake)
+      if (shakes) {
+        gain('twig') // the first twig's got box queues up behind the tree's own box
+        fire(`tree:shake:${shakes}`)
+      }
+    }
+    if (to.fly !== undefined || to.land !== undefined) startTree(w, to)
     return true
   }
   // leaving the open node: follow `next`, or close and let the queue in. Shared by an interact on
@@ -142,6 +152,7 @@ export function apply(w: World, a: Action, c: Content): void {
         w.pops.push({ x: o.x, y: o.y, text: '+10', at: w.time })
         w.rev++
       }
+    if (tickTrees(w)) fire('tree:near') // the promised tree, rested and back within three tiles
     const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
     if (live.length !== w.pops.length) {
       w.pops = live
@@ -253,6 +264,10 @@ export function apply(w: World, a: Action, c: Content): void {
   }
   if (obj?.kind === 'sign') {
     open(obj.dialogue) // a sign just reads out; nothing turns and no one is talked to
+    return
+  }
+  if (obj?.kind === 'tree') {
+    open('tree') // one tree dialogue: there is only the one kind, and a flown one is not there to face
     return
   }
   if (obj?.kind === 'crate') {
