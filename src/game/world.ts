@@ -79,7 +79,7 @@ export type Action =
 export interface Dialogue {
   name: string
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
-  // events: crate:open · menu:close · salt:spawn · talk:<npc id>
+  // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id>
   trigger?: { event: string; when?: string }
   start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
   nodes: Record<string, DialogueNode>

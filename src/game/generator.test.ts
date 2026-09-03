@@ -16,6 +16,12 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: { '1': { text: '[PLACEHOLDER first salt]', next: null } },
     },
+    insalting: {
+      name: '[PLACEHOLDER NPC NAME]',
+      trigger: { event: 'salt:place', when: 'score:on' },
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER insalting]', next: null } },
+    },
   },
   items: { salt: { name: '[PLACEHOLDER salt]' }, orb: { name: '[PLACEHOLDER orb]' } },
 }
@@ -132,5 +138,33 @@ describe('digging up the boiled salt', () => {
     apply(w, { type: 'interact' }, content) // salt in hand wins, so the orb stays in the bag
     expect(tileAt(w, 21, 16)).toBe('salt')
     expect(w.inventory).toEqual({ orb: 1, salt: 0 })
+  })
+})
+
+describe('paving the sea over once beauty is on', () => {
+  it('costs nothing and says nothing before the score is a thing', () => {
+    const w = shore()
+    w.inventory.salt = 1
+    apply(w, { type: 'interact' }, content)
+    expect([w.score, w.pops.length, w.dialogue]).toEqual([0, 0, null])
+  })
+
+  it('costs a beauty per tile, with Mich complaining the first time only', () => {
+    const w = shore()
+    w.inventory.salt = 2
+    w.score = 10
+    w.flags['score:on'] = true
+
+    apply(w, { type: 'interact' }, content)
+    expect([tileAt(w, 21, 16), w.score]).toEqual(['salt', 9])
+    expect(w.pops).toEqual([{ x: 21, y: 16, text: '-1', at: w.time }])
+    expect(w.dialogue?.key).toBe('insalting')
+    expect(w.flags['fired:insalting']).toBe(true)
+
+    apply(w, { type: 'interact' }, content) // dismiss the complaint
+    w.player.y = 15 // another patch of sea
+    apply(w, { type: 'interact' }, content)
+    expect([tileAt(w, 21, 15), w.score, w.pops.length]).toEqual(['salt', 8, 2])
+    expect(w.dialogue).toBe(null) // she only says it once
   })
 })

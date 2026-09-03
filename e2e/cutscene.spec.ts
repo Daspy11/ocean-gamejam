@@ -77,3 +77,27 @@ test('talking to Mich with the electrolytes plays the flower scene and brings Wa
 
   await expect.poll(() => texts(page, 'ui')).toContain('beauty: 10') // the hud counts beauty now
 })
+
+test('paving the sea over costs a beauty and Mich says so', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.evaluate(() => {
+    const w = window.island.world() // east beach, facing the open water at 21,16
+    w.player = { ...w.player, x: 20, y: 16, facing: 'right' }
+    window.island.load({ ...w, inventory: { salt: 1 }, score: 10, flags: { 'score:on': true } })
+    window.island.dispatch({ type: 'interact' })
+  })
+  await page.locator('#game canvas').click()
+
+  const after = await page.evaluate(() => {
+    const w = window.island.world()
+    return { tile: w.tiles[16 * w.width + 21], score: w.score, key: w.dialogue?.key }
+  })
+  expect(after).toEqual({ tile: 'salt', score: 9, key: 'insalting' })
+  await expect.poll(() => texts(page, 'ui')).toContain('making the island ugly')
+  await expect.poll(() => texts(page, 'ui')).toContain('beauty: 9')
+
+  await press(page, 'e', () => window.island.world().dialogue?.node === '2')
+  await expect.poll(() => texts(page, 'ui')).toContain('how insalting')
+  await press(page, 'e', () => window.island.world().dialogue === null)
+})

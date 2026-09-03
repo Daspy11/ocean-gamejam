@@ -268,6 +268,12 @@ export function apply(w: World, a: Action, c: Content): void {
     w.tiles[y * w.width + x] = 'salt' // salt goes first, so the orb is never thrown out by accident
     w.inventory.salt = salt - 1
     w.rev++
+    // once beauty is a thing, paving the sea over costs some of it
+    if (w.flags['score:on']) {
+      w.score -= 1
+      w.pops.push({ x, y, text: '-1', at: w.time })
+      fire('salt:place')
+    }
     return
   }
   if ((w.inventory.orb ?? 0) > 0) {
