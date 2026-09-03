@@ -113,7 +113,7 @@ test('saying yes to Mich feeds her the electrolytes out of the inventory', async
   // every choice defaults to its first option, which is yes, so the box walks itself to the eat node
   for (let n = 0; n < 100; n++) {
     const on = await at(page)
-    if (!on || on.id === 'flower/1') break
+    if (!on || on.id === 'flower/2') break
     if (on.text !== null) await nextNode(page, on.id)
     else await page.evaluate(() => window.island.dispatch({ type: 'tick', dt: 250 }))
   }
@@ -124,7 +124,7 @@ test('saying yes to Mich feeds her the electrolytes out of the inventory', async
   })
   expect(fed.left).toBeUndefined() // the last of them went, so the slot went with it
   expect(fed.ate).toBe(true)
-  expect(fed.node).toMatchObject({ key: 'flower', node: '1' })
+  expect(fed.node).toMatchObject({ key: 'flower', node: '2' })
 })
 
 test('paving the sea over costs a beauty and Mich says so', async ({ page }) => {
