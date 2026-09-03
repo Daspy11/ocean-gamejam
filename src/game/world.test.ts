@@ -19,6 +19,14 @@ describe('createWorld', () => {
     expect(tileAt(w, 23, 16)).toBe('sand') // the second island
   })
 
+  it('hides a third, empty island far north of anything the camera reaches', () => {
+    const w = createWorld()
+    expect(tileAt(w, 22, 3)).toBe('grass') // its core
+    expect(tileAt(w, 22, 1)).toBe('sand') // its north rim
+    expect(tileAt(w, 22, 6)).toBe('water') // open sea between it and the main island
+    expect(tileAt(w, 22, 0)).toBe('water') // a clear margin at the map edge
+  })
+
   it('stands every object on land, bar the half of the boat left in the water', () => {
     const w = createWorld()
     const wet = w.objects

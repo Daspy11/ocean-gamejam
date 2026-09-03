@@ -1,6 +1,7 @@
 // Every map is 32x32. `~` water · `s` salt · `.` sand · `#` grass. Hand-edit freely; createWorld() parses it.
 // island: the starting world. The wreck sits at 12..13,16 (half in the water). The east island is
-// exactly two water tiles away at rows 15..17.
+// exactly two water tiles away at rows 15..17. A third, empty island sits far north at rows 1..5,
+// x 19..25 — above everything the camera can reach from either island, so you only find it by building.
 // gallery: `?map=gallery`, the artist's proof sheet. Top, left to right in salt, sand and grass: a
 // 2x2 block (the sheet's 3x3 island), a 3x3 ring (its 2x2 hole) and a checkerboard (its diagonals),
 // so a correct sheet redraws every frame of the 5x3 layout in game. Below it salt/sand/grass nested,
@@ -9,11 +10,11 @@
 export const MAPS = {
   island: [
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~~....~~~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~.####.~~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~.#####.~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~.####.~~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~~....~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
