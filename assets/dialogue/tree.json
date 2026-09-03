@@ -1,0 +1,26 @@
+{
+  "name": "",
+  "start": [
+    { "when": "tree:promised", "node": "ask2" },
+    { "node": "ask" }
+  ],
+  "nodes": {
+    "ask": {
+      "text": "it's a tree. shake it?",
+      "choices": [
+        { "text": "yes", "next": "shake" },
+        { "text": "no", "next": null }
+      ]
+    },
+    "shake": { "shake": "tree1", "next": null },
+    "ask2": {
+      "text": "it's a tree. shake it?",
+      "choices": [
+        { "text": "yes", "next": "lied" },
+        { "text": "no", "next": null }
+      ]
+    },
+    "lied": { "who": "tree", "text": "i can't believe you lied", "next": "fly" },
+    "fly": { "fly": "tree1", "next": null }
+  }
+}

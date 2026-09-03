@@ -3,8 +3,8 @@ import { MAPS } from './map'
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
 export type Tile = 'water' | 'salt' | 'sand' | 'grass'
 export type Dir = 'up' | 'down' | 'left' | 'right'
-export type Item = 'salt' | 'orb' | 'electrolytes'
-export const ITEMS: Item[] = ['salt', 'orb', 'electrolytes'] // icon frame order in sprites/items
+export type Item = 'salt' | 'orb' | 'electrolytes' | 'twig'
+export const ITEMS: Item[] = ['salt', 'orb', 'electrolytes', 'twig'] // icon frame order in sprites/items
 
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
@@ -96,6 +96,7 @@ export interface DialogueNode {
   wait?: number // ms
   spawn?: Obj
   bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
+  take?: Item // spends one of the item as the node opens; the mirror of a crate's gain, with no got box
   set?: Record<string, boolean | number | string>
   next?: string | null // used when there are no choices; null or missing closes the dialogue
   choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
@@ -174,8 +175,8 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
           { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false, item: 'orb' },
-          // the second crate, up on the north-east sand
-          { id: 'crate2', kind: 'crate', x: 19, y: 14, open: false, item: 'electrolytes' },
+          // the second crate, over on the far island: the reason to bridge the gap
+          { id: 'crate2', kind: 'crate', x: 24, y: 17, open: false, item: 'electrolytes' },
           {
             id: 'mich',
             kind: 'npc',

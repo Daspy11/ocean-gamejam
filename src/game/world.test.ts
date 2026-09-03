@@ -56,7 +56,7 @@ describe('objectAt', () => {
     expect(objectAt(w, 15, 14)?.id).toBe('tree1')
     expect(objectAt(w, 13, 15)?.id).toBe('mich')
     expect(objectAt(w, 13, 17)?.id).toBe('crate1')
-    expect(objectAt(w, 19, 14)?.id).toBe('crate2')
+    expect(objectAt(w, 24, 17)?.id).toBe('crate2') // the far island, past the sign
     expect(objectAt(w, 25, 16)?.id).toBe('sign1') // on the second island's grass
     expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
     expect(objectAt(w, 19, 17)).toBeUndefined() // just past the hut
@@ -85,11 +85,11 @@ describe('the intro landing', () => {
     expect(crate?.kind === 'crate' && crate.open).toBe(false)
     expect([crate?.x, crate?.y]).toEqual([13, 17])
     expect(crate?.kind === 'crate' && crate.item).toBe('orb')
-    // and the second one, shut too, up on the north-east sand
+    // and the second one, shut too, over on the far island
     const other = w.objects.find((o) => o.id === 'crate2')
     expect(other?.kind === 'crate' && [other.x, other.y, other.open, other.item]).toEqual([
-      19,
-      14,
+      24,
+      17,
       false,
       'electrolytes',
     ])

@@ -18,50 +18,75 @@ const texts = (page: Page, scene: string) =>
     scene,
   )
 
-// what the box is on right now: an act node has no text, so it needs ticks rather than a keypress
+// what the box is on right now: an act node has no text, so it needs ticks rather than a keypress.
+// `id` is key and node together, because the got box and the crate line both start on a node '1'
 const at = (page: Page) =>
   page.evaluate(() => {
     const w = window.island.world()
     if (!w.dialogue) return null
     const node = window.island.content().dialogues[w.dialogue.key]?.nodes[w.dialogue.node]
-    return { key: w.dialogue.key, node: w.dialogue.node, text: node?.text ?? null }
+    return {
+      key: w.dialogue.key,
+      node: w.dialogue.node,
+      id: `${w.dialogue.key}/${w.dialogue.node}`,
+      text: node?.text ?? null,
+    }
   })
 
-test('talking to Mich with the electrolytes plays the flower scene and brings Walter in', async ({
-  page,
-}) => {
-  test.setTimeout(60000)
+// the far island's sand at 23,17, facing crate2: opening the crate is what starts the whole scene
+const openCrate2 = async (page: Page) => {
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   await page.evaluate(() => {
-    const w = window.island.world() // north of mich at 13,15, with the crate already looted
-    w.player = { ...w.player, x: 13, y: 14, facing: 'down' }
-    window.island.load({ ...w, flags: { 'had:electrolytes': true } })
+    const w = window.island.world()
+    window.island.load({ ...w, player: { ...w.player, x: 23, y: 17, facing: 'right' } })
     window.island.dispatch({ type: 'interact' })
   })
   await page.locator('#game canvas').click()
-  expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('flower')
+}
 
-  let picked = false
+// hold 'e' until the box has moved off `id` (or closed); an act node has no text and takes ticks
+const nextNode = (page: Page, id: string) =>
+  press(
+    page,
+    'e',
+    (was) => {
+      const d = window.island.world().dialogue
+      return !d || `${d.key}/${d.node}` !== was
+    },
+    id,
+  )
+
+test('opening the second crate plays the flower scene and brings Walter in', async ({ page }) => {
+  test.setTimeout(60000)
+  await openCrate2(page)
+  // the got box first, then Mich's crate line, and the flower scene behind them both
+  expect(await page.evaluate(() => window.island.world().queue.map((q) => q.key))).toEqual([
+    'crate',
+    'flower',
+  ])
+
+  const picked = new Set<string>()
   let crabLine = ''
-  for (let n = 0; n < 200; n++) {
+  for (let n = 0; n < 300; n++) {
     const on = await at(page)
     if (!on) break
-    if (on.node === '18' && !crabLine) {
+    if (on.id === 'flower/18' && !crabLine) {
       await expect.poll(() => texts(page, 'ui')).toContain('at least 10 beauty')
       crabLine = await texts(page, 'ui')
       await page.locator('#game canvas').screenshot({ path: 'test-results/walter.png' })
     }
-    // the second choice is the one that runs the "real crab" branch
-    if (on.node === '29' && !picked) {
+    // the long way round: no, no, no, and then the crab question rather than walking off
+    const choose = ['a1', 'a2', 'a4', '29'].includes(on.node)
+    if (on.key === 'flower' && choose && !picked.has(on.node)) {
       await press(page, 'ArrowDown', () => window.island.world().dialogue?.choice === 1)
-      picked = true
+      picked.add(on.node)
     }
-    if (on.text !== null)
-      await press(page, 'e', (was) => window.island.world().dialogue?.node !== was, on.node)
+    if (on.text !== null) await nextNode(page, on.id)
     else await page.evaluate(() => window.island.dispatch({ type: 'tick', dt: 250 }))
   }
 
+  expect([...picked]).toEqual(['a1', 'a2', 'a4', '29'])
   expect(crabLine).toContain('at least 10 beauty') // {score} filled in from the flower that bloomed
   const after = await page.evaluate(() => {
     const w = window.island.world()
@@ -69,14 +94,37 @@ test('talking to Mich with the electrolytes plays the flower scene and brings Wa
     return { world: w, mich: obj('mich'), flower: obj('flower1'), walter: obj('walter') }
   })
   expect(after.world.dialogue).toBe(null)
-  expect(after.mich).toMatchObject({ x: 16, y: 13, facing: 'right' })
-  expect(after.flower).toMatchObject({ x: 17, y: 13, white: true })
-  expect(after.walter).toMatchObject({ x: 14, y: 14, facing: 'down' })
+  expect(after.mich).toMatchObject({ x: 24, y: 15, facing: 'right' })
+  expect(after.flower).toMatchObject({ x: 25, y: 15, white: true })
+  expect(after.walter).toMatchObject({ x: 14, y: 14 })
   expect(after.world.score).toBe(10)
+  expect(after.world.inventory.electrolytes).toBe(1) // she never got to eat them on this route
   expect(after.world.flags['score:on']).toBe(true)
   expect(after.world.flags['fired:flower']).toBe(true)
+  expect(after.world.flags['ate:electrolytes']).toBeUndefined()
 
   await expect.poll(() => texts(page, 'ui')).toContain('beauty: 10') // the hud counts beauty now
+})
+
+test('saying yes to Mich feeds her the electrolytes out of the inventory', async ({ page }) => {
+  test.setTimeout(30000)
+  await openCrate2(page)
+
+  // every choice defaults to its first option, which is yes, so the box walks itself to the eat node
+  for (let n = 0; n < 100; n++) {
+    const on = await at(page)
+    if (!on || on.id === 'flower/1') break
+    if (on.text !== null) await nextNode(page, on.id)
+    else await page.evaluate(() => window.island.dispatch({ type: 'tick', dt: 250 }))
+  }
+
+  const fed = await page.evaluate(() => {
+    const w = window.island.world()
+    return { left: w.inventory.electrolytes, ate: w.flags['ate:electrolytes'], node: w.dialogue }
+  })
+  expect(fed.left).toBeUndefined() // the last of them went, so the slot went with it
+  expect(fed.ate).toBe(true)
+  expect(fed.node).toMatchObject({ key: 'flower', node: '1' })
 })
 
 test('paving the sea over costs a beauty and Mich says so', async ({ page }) => {

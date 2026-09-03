@@ -1,8 +1,45 @@
 {
   "name": "Mich",
-  "trigger": { "event": "talk:mich", "when": "had:electrolytes" },
-  "start": [{ "node": "1" }],
+  "trigger": { "event": "crate:open", "when": "had:electrolytes" },
+  "start": [{ "node": "run" }],
   "nodes": {
+    "run": {
+      "walk": {
+        "id": "mich",
+        "path": ["right", "right", "right", "right", "right", "right", "right", "down", "right", "right", "right"],
+        "run": true
+      },
+      "next": "a1"
+    },
+    "a1": {
+      "text": "are those horse electrolytes",
+      "choices": [
+        { "text": "yes", "next": "a2" },
+        { "text": "no", "next": "a2" }
+      ]
+    },
+    "a2": {
+      "text": "can i eat them",
+      "choices": [
+        { "text": "yes", "next": "eat" },
+        { "text": "no", "next": "a3" }
+      ]
+    },
+    "eat": {
+      "text": "delicious thanks",
+      "take": "electrolytes",
+      "set": { "ate:electrolytes": true },
+      "next": "1"
+    },
+    "a3": { "text": "neigh", "next": "a4" },
+    "a4": {
+      "text": "what about now",
+      "choices": [
+        { "text": "yes", "next": "eat" },
+        { "text": "no", "next": "a5" }
+      ]
+    },
+    "a5": { "text": "fine", "next": "1" },
     "1": { "text": "i am so hungry did you find anything to eat yet", "next": "2" },
     "2": { "who": "", "text": "that flower in your hair looks delicious", "next": "3" },
     "3": {
@@ -11,8 +48,8 @@
     },
     "4": { "text": "...", "next": "5" },
     "5": { "text": "i have an idea", "next": "6" },
-    "6": { "walk": { "id": "mich", "path": ["up", "right", "up", "right", "right"] }, "next": "7" },
-    "7": { "spawn": { "id": "flower1", "kind": "flower", "x": 17, "y": 13 }, "next": "8" },
+    "6": { "walk": { "id": "mich", "path": ["up", "right"] }, "next": "7" },
+    "7": { "spawn": { "id": "flower1", "kind": "flower", "x": 25, "y": 15 }, "next": "8" },
     "8": { "text": "now when it grows later i can eat 2 flowers instead.", "next": "9" },
     "9": { "wait": 1000, "next": "10" },
     "10": { "bloom": "flower1", "next": "11" },
@@ -28,12 +65,15 @@
         "sprite": "walter",
         "facing": "down",
         "dialogue": "walter",
-        "x": 16,
-        "y": 8
+        "x": 24,
+        "y": 9
       },
       "next": "17"
     },
-    "17": { "walk": { "id": "walter", "path": ["down", "down", "down", "down"], "run": true }, "next": "18" },
+    "17": {
+      "walk": { "id": "walter", "path": ["down", "down", "down", "down", "down"], "run": true },
+      "next": "18"
+    },
     "18": {
       "who": "Walter",
       "text": "wow i always wanted to live on an island with at least {score} beauty",
@@ -73,6 +113,12 @@
       "set": { "score:on": true },
       "next": "walk"
     },
-    "walk": { "walk": { "id": "walter", "path": ["left", "down", "left", "down"] }, "next": null }
+    "walk": {
+      "walk": {
+        "id": "walter",
+        "path": ["left", "left", "left", "left", "left", "left", "left", "left", "left", "left"]
+      },
+      "next": null
+    }
   }
 }

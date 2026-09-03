@@ -209,6 +209,38 @@ describe('bloom act', () => {
   })
 })
 
+// the flower scene's `eat` node: one line, and it costs the player the electrolytes it names
+const eatContent: Content = {
+  dialogues: {
+    eat: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER eat 1]', take: 'electrolytes', next: null } },
+    },
+  },
+  items: {},
+}
+
+describe('a node that takes an item', () => {
+  it('spends one as the node opens, and the slot goes with the last of them', () => {
+    const w = createWorld()
+    w.inventory.electrolytes = 1
+    const rev = w.rev
+    apply(w, { type: 'talk', key: 'eat' }, eatContent)
+    expect(w.inventory).toEqual({}) // the key itself is gone, so the inventory screen has no slot
+    expect(w.rev).toBeGreaterThan(rev)
+  })
+
+  it('never takes the count below none', () => {
+    const w = createWorld()
+    apply(w, { type: 'talk', key: 'eat' }, eatContent)
+    expect(w.inventory.electrolytes).toBeUndefined()
+    apply(w, { type: 'interact' }, eatContent) // close it, then play it again on an empty bag
+    apply(w, { type: 'talk', key: 'eat' }, eatContent)
+    expect(w.inventory).toEqual({})
+  })
+})
+
 // a scene that waits on an npc: talking to mich fires talk:mich before her own lines get a look in
 const talkContent: Content = {
   dialogues: {

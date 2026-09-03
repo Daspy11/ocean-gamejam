@@ -75,12 +75,12 @@ const content: Content = {
         },
       },
     },
-    // the shape of assets/dialogue/horse.json: only crate2's contents make its `when` flag true
-    horse: {
+    // the shape of assets/dialogue/flower.json: only crate2's contents make its `when` flag true
+    flower: {
       name: '[PLACEHOLDER NPC NAME]',
       trigger: { event: 'crate:open', when: 'had:electrolytes' },
       start: [{ node: '1' }],
-      nodes: { '1': { text: '[PLACEHOLDER horse 1]', next: null } },
+      nodes: { '1': { text: '[PLACEHOLDER flower 1]', next: null } },
     },
   },
   items: {
@@ -224,30 +224,30 @@ function tutorial(w: World) {
   }
 }
 
-// crate2 sits on the north-east sand at 19,14; 19,15 is the grass just south of it
+// crate2 sits on the far island's grass at 24,17; 23,17 is the sand just west of it
 function atCrate2(): World {
   const w = createWorld()
-  w.player.x = 19
-  w.player.y = 15
-  w.player.facing = 'up'
+  w.player.x = 23
+  w.player.y = 17
+  w.player.facing = 'right'
   return w
 }
 
 describe('the second crate', () => {
-  it('hands over the electrolytes once, with the horse line queued behind the got box', () => {
+  it('hands over the electrolytes once, with the flower scene queued behind the got box', () => {
     const w = atCrate2()
     apply(w, { type: 'interact' }, content)
     expect(w.inventory).toEqual({ electrolytes: 1 })
     expect(w.dialogue).toEqual({ key: 'got', node: '1', choice: 0, item: 'electrolytes' })
-    expect(w.queue).toEqual([{ key: 'crate' }, { key: 'horse' }])
-    expect(w.flags['fired:horse']).toBe(true)
+    expect(w.queue).toEqual([{ key: 'crate' }, { key: 'flower' }])
+    expect(w.flags['fired:flower']).toBe(true)
 
     const crate = w.objects.find((o) => o.id === 'crate2')
     expect(crate?.kind === 'crate' && crate.open).toBe(true)
     apply(w, { type: 'interact' }, content) // the got box goes, the queue takes over
     apply(w, { type: 'interact' }, content)
     apply(w, { type: 'interact' }, content)
-    expect(w.dialogue?.key).toBe('horse')
+    expect(w.dialogue?.key).toBe('flower')
 
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue).toBe(null)
@@ -256,13 +256,13 @@ describe('the second crate', () => {
     expect(w.dialogue).toBe(null)
   })
 
-  it('leaves the horse line alone when the crate by the wreck is the one opened', () => {
+  it('leaves the flower scene alone when the crate by the wreck is the one opened', () => {
     const w = atCrate()
     apply(w, { type: 'interact' }, content)
     expect(w.inventory).toEqual({ orb: 1 })
     expect(w.dialogue?.item).toBe('orb')
-    expect(w.queue).toEqual([{ key: 'crate' }]) // had:electrolytes is unset, so horse is not due
-    expect(w.flags['fired:horse']).toBeUndefined()
+    expect(w.queue).toEqual([{ key: 'crate' }]) // had:electrolytes is unset, so flower is not due
+    expect(w.flags['fired:flower']).toBeUndefined()
   })
 })
 

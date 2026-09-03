@@ -254,7 +254,7 @@ const sheets = [
     file: 'sprites/items.png',
     w: 16,
     h: 16,
-    cols: 3,
+    cols: 4,
     frames: [
       [
         [3, 9, 10, 4, '#c4ccd6'],
@@ -268,6 +268,10 @@ const sheets = [
         [6, 3, 4, 3, '#8a7050'],
         [4, 6, 8, 8, '#c8b088'],
       ], // 2 electrolytes, a bag with a tied neck
+      [
+        [3, 10, 10, 2, '#7a5a3a'],
+        [9, 6, 2, 5, '#7a5a3a'],
+      ], // 3 twig, a stick with one shoot
     ],
   },
 ]

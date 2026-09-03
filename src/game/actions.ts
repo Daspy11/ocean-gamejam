@@ -51,6 +51,7 @@ export function apply(w: World, a: Action, c: Content): void {
     const to = at === undefined ? undefined : dlg?.nodes[at]
     if (at === undefined || !to) return false
     Object.assign(w.flags, to.set)
+    if (to.take) take(to.take)
     w.dialogue = { key, node: at, choice: 0, item }
     w.rev++
     const walk = to.walk
@@ -99,6 +100,13 @@ export function apply(w: World, a: Action, c: Content): void {
       w.flags[`fired:${key}`] = true
       play(key)
     }
+  }
+  // a node's `take` spends one: the key goes when the last is gone, so the inventory drops the slot
+  const take = (item: Item) => {
+    const left = (w.inventory[item] ?? 0) - 1
+    if (left > 0) w.inventory[item] = left
+    else delete w.inventory[item]
+    w.rev++
   }
   const gain = (item: Item) => {
     w.inventory[item] = (w.inventory[item] ?? 0) + 1

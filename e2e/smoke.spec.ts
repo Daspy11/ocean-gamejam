@@ -219,23 +219,24 @@ test('the crate beside the wreck gives up the orb exactly once', async ({ page }
   expect(result).toEqual({ once: 1, twice: 1, open: true })
 })
 
-test('the second crate up the beach holds the horse electrolytes', async ({ page }) => {
+test('the second crate on the far island holds the horse electrolytes', async ({ page }) => {
   await openIsland(page)
   await page.evaluate(() => {
-    const w = window.island.world() // crate2 sits at 19,14; stand on the grass just south of it
-    w.player = { ...w.player, x: 19, y: 15, facing: 'up' }
-    // Mich's crate line is the tutorial test's job, so only the horse line is left to queue
+    const w = window.island.world() // crate2 sits at 24,17; stand on the sand just west of it
+    w.player = { ...w.player, x: 23, y: 17, facing: 'right' }
+    // Mich's crate line is the tutorial test's job, so only the flower scene is left to queue
     window.island.load({ ...w, flags: { 'fired:crate': true } })
   })
   await page.locator('#game canvas').click()
 
   await press(page, 'e', () => window.island.world().dialogue?.key === 'got')
-  const got = await page.evaluate(() => window.island.world())
-  expect([got.inventory.electrolytes, got.dialogue?.item]).toEqual([1, 'electrolytes'])
-  await expect.poll(() => texts(page, 'ui')).toContain('horse electrolytes')
+  expect(await page.evaluate(() => window.island.world().inventory)).toEqual({ electrolytes: 1 })
+  await expect.poll(() => texts(page, 'ui')).toContain('horse electrolytes') // {item} in the box
 
-  await press(page, 'e', () => window.island.world().dialogue?.key === 'horse')
-  await expect.poll(() => texts(page, 'ui')).toContain('if you had a horse')
+  // the got box gone, the flower scene takes over on its walk act: Mich is running over already
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'flower')
+  const mich = await page.evaluate(() => window.island.world().objects.find((o) => o.id === 'mich'))
+  expect(mich?.kind === 'npc' && !!(mich.step || mich.path?.length)).toBe(true)
 })
 
 test('the inventory screen opens with the held items and closes again', async ({ page }) => {

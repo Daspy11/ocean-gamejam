@@ -1,5 +1,6 @@
 {
   "salt": { "name": "salt" },
   "orb": { "name": "Lord Tarqualius' Orb Of Endless Burning" },
-  "electrolytes": { "name": "horse electrolytes" }
+  "electrolytes": { "name": "horse electrolytes" },
+  "twig": { "name": "twig" }
 }

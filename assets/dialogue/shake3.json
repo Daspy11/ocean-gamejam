@@ -1,0 +1,8 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "tree:shake:3" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "seriously is this the best you can do?", "next": null }
+  }
+}

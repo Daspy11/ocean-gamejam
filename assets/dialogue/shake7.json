@@ -1,0 +1,8 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "tree:shake:7" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "how many twigs is enough", "next": null }
+  }
+}

@@ -37,7 +37,6 @@ export const JSONS = [
   'dialogue/firstsalt',
   'dialogue/flower',
   'dialogue/got',
-  'dialogue/horse',
   'dialogue/insalting',
   'dialogue/inventory1',
   'dialogue/inventory2',

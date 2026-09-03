@@ -1,8 +1,0 @@
-{
-  "name": "Mich",
-  "trigger": { "event": "crate:open", "when": "had:electrolytes" },
-  "start": [{ "node": "1" }],
-  "nodes": {
-    "1": { "text": "these would be amazing if you had a horse", "next": null }
-  }
-}

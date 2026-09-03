@@ -1,0 +1,13 @@
+{
+  "name": "tree",
+  "trigger": { "event": "tree:near", "when": "tree:promised" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "hi again", "next": "2" },
+    "2": { "spawn": { "id": "tree2", "kind": "tree", "x": 15, "y": 19 }, "next": "3" },
+    "3": { "land": "tree2", "next": "4" },
+    "4": { "who": "tree 2", "text": "hi tree", "next": "5" },
+    "5": { "text": "hi tree 2", "next": "6" },
+    "6": { "text": "thanks for not shaking me again, i invited a friend", "next": null }
+  }
+}
