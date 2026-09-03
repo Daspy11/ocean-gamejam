@@ -44,6 +44,8 @@ export interface World {
     parity: boolean // flips every step so the walk cycle alternates feet
   }
   inventory: Partial<Record<Item, number>>
+  score: number // beauty; hidden until flags['score:on']
+  pops: { x: number; y: number; text: string; at: number }[] // floating score text over tile x,y, gone 1500 ms after `at`
   objects: Obj[]
   // story state. Strings let dialogue rename things: flags['name:orb'] overrides the item's display name
   flags: Record<string, boolean | number | string>
@@ -155,6 +157,8 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     tiles,
     player: { ...spawn, step: null, held: null, run: false, turnedAt: 0, parity: false },
     inventory: {},
+    score: 0,
+    pops: [],
     objects,
     flags: {},
     dialogue: null,

@@ -247,6 +247,25 @@ describe('menu', () => {
   })
 })
 
+describe('score pops', () => {
+  it('floats for 1500 ms and then disappears with a rev bump', () => {
+    const w = createWorld()
+    w.pops.push({ x: 16, y: 16, text: '+10', at: 0 })
+
+    const idle = w.rev
+    apply(w, { type: 'tick', dt: 1499 }, content)
+    expect(w.pops.length).toBe(1)
+    expect(w.rev).toBe(idle)
+
+    apply(w, { type: 'tick', dt: 1 }, content)
+    expect(w.pops).toEqual([])
+    expect(w.rev).toBe(idle + 1)
+
+    apply(w, { type: 'tick', dt: 1500 }, content) // nothing left to drop
+    expect(w.rev).toBe(idle + 1)
+  })
+})
+
 describe('rev', () => {
   it('moves only on a visible change', () => {
     const w = createWorld()

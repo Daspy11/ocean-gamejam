@@ -238,13 +238,14 @@ test('the inventory screen opens with the held items and closes again', async ({
   await page.evaluate(() => {
     const w = window.island.world()
     w.inventory = { salt: 2, orb: 1 }
-    window.island.load(w)
+    window.island.load({ ...w, score: 7, flags: { 'score:on': true } }) // beauty needs the flag
   })
   await page.locator('#game canvas').click()
 
   await press(page, 'i', () => window.island.world().menu !== null)
-  await expect.poll(() => texts(page, 'ui')).toContain('salt: 2') // the hud counts salt now
-  await expect.poll(() => texts(page, 'ui')).not.toContain('Orb Of') // the cursor is on the salt
+  await expect.poll(() => texts(page, 'ui')).toContain('beauty: 7') // the hud counts beauty now
+  // no salt counter any more, and the cursor is on the salt, so the orb's name is not up yet
+  await expect.poll(() => texts(page, 'ui')).not.toMatch(/salt:|Orb Of/)
   await page.locator('#game canvas').screenshot({ path: 'test-results/inventory.png' })
 
   await press(page, 'ArrowRight', () => window.island.world().menu?.cursor === 1)

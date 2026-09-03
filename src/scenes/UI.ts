@@ -45,7 +45,7 @@ export default class UI extends Phaser.Scene {
   }
 
   private sync() {
-    this.hud.setText(`salt: ${world.inventory.salt ?? 0}`)
+    this.hud.setText(world.flags['score:on'] ? `beauty: ${world.score}` : '')
     // dialogue may have renamed an item, so the flag wins over the content file
     const name = (id: Item) => `${world.flags[`name:${id}`] ?? content.items[id]?.name ?? id}`
 

@@ -13,6 +13,8 @@ export default class Island extends Phaser.Scene {
   private objects: Phaser.GameObjects.Sprite[] = []
   // one per orb still boiling its tile, with the bottom of that tile to rise from
   private smoke: { sprite: Phaser.GameObjects.Sprite; bottom: number }[] = []
+  // one per world.pops entry, with the sim time it started and the y it floats up from
+  private pops: { text: Phaser.GameObjects.Text; at: number; baseY: number }[] = []
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
   private sent: { dir: Dir | null; run: boolean } = { dir: null, run: false }
 
@@ -94,6 +96,12 @@ export default class Island extends Phaser.Scene {
         .setFrame(Math.floor(world.time / 200) % 3)
         .setY(bottom - 8 - rise * 10)
         .setAlpha(1 - rise)
+
+    // a pop drifts 12 px up over its 1500 ms life, fading out; sim time drives it, so no tweens
+    for (const { text, at, baseY } of this.pops) {
+      const age = world.time - at
+      text.setY(baseY - (age / 1500) * 12).setAlpha(1 - age / 1500)
+    }
   }
 
   // position and frame are pure functions of the world, so there are no tweens and no animations
@@ -125,6 +133,20 @@ export default class Island extends Phaser.Scene {
 
     for (const sprite of this.objects) sprite.destroy()
     for (const { sprite } of this.smoke) sprite.destroy()
+    for (const { text } of this.pops) text.destroy()
+    this.pops = world.pops.map((p) => {
+      const baseY = p.y * 16
+      const text = this.add
+        .text(p.x * 16 + 8, baseY, p.text, {
+          fontFamily: 'monospace',
+          fontSize: 8,
+          resolution: 1,
+          color: '#ffffff',
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(10000) // score pops always read over everything
+      return { text, at: p.at, baseY }
+    })
     this.smoke = world.objects
       .filter((o) => o.kind === 'orb' && tileAt(world, o.x, o.y) === 'water') // still boiling
       .map((o) => {

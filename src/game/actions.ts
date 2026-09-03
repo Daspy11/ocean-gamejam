@@ -67,6 +67,11 @@ export function apply(w: World, a: Action, c: Content): void {
         w.rev++
         fire('salt:spawn')
       }
+    const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
+    if (live.length !== w.pops.length) {
+      w.pops = live
+      w.rev++
+    }
     const ms = p.run ? 125 : 250 // ms per tile: 250 walking, 125 running
     // 100 ms turn delay: a tapped direction only turns, a held one walks
     if (!p.step && !busy && p.facing === p.held && w.time - p.turnedAt >= 100) startStep(0)
