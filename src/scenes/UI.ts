@@ -52,15 +52,17 @@ export default class UI extends Phaser.Scene {
     const open = world.dialogue
     const dialogue = open ? content.dialogues[open.key] : undefined
     const node = open && dialogue ? dialogue.nodes[open.node] : undefined
-    for (const part of [this.box, this.who, this.body]) part.setVisible(!!node)
-    if (open && dialogue && node) {
+    const text = node?.text // a node with no text is an act: no box, the sim runs it and moves on
+    for (const part of [this.box, this.who, this.body]) part.setVisible(text !== undefined)
+    if (open && dialogue && node && text !== undefined) {
       const who = node.who ?? dialogue.name
       this.who.setText(who).setVisible(!!who) // '' is the unnamed lead: no name line, body stays put
       const lines = node.choices
         ? node.choices.map((c, i) => `${i === open.choice ? '> ' : '  '}${c.text}`)
         : ['[E] continue']
-      const text = open.item ? node.text.replaceAll('{item}', name(open.item)) : node.text
-      this.body.setText([text, '', ...lines].join('\n'))
+      this.body.setText(
+        [open.item ? text.replaceAll('{item}', name(open.item)) : text, '', ...lines].join('\n'),
+      )
     }
 
     const menu = world.menu

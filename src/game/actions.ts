@@ -1,7 +1,19 @@
 import { DIRS, KINDS, objectAt, tileAt, type Action, type Content, type World } from './world'
-import type { Item } from './world'
+import type { DialogueNode, Item, Obj } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
+type Npc = Extract<Obj, { kind: 'npc' }>
+
+// is the open node's act over? Its dialogue then moves on by itself, with no interact
+function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode): boolean {
+  const walk = node.walk
+  if (walk) {
+    const npc = w.objects.find((o) => o.id === walk.id)
+    return !npc || npc.kind !== 'npc' || (!npc.step && !npc.path?.length)
+  }
+  if (node.wait !== undefined) return w.time >= (d.until ?? 0)
+  return true // a spawn lands the moment the node opens, and a node with no act at all is over too
+}
 
 export function apply(w: World, a: Action, c: Content): void {
   const p = w.player
@@ -19,6 +31,14 @@ export function apply(w: World, a: Action, c: Content): void {
     p.step = { x, y, t }
     w.rev++
   }
+  // takes the next tile off a scripted npc's path. A cutscene walk passes through everything,
+  // player and solid objects alike: a blocked npc would stall the story.
+  const stepNpc = (o: Npc, t: number) => {
+    const dir = o.path?.shift()
+    if (!dir) return
+    o.facing = dir
+    o.step = { x: o.x + DIRS[dir][0], y: o.y + DIRS[dir][1], t }
+  }
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item) => {
     const dlg = c.dialogues[key]
@@ -28,7 +48,32 @@ export function apply(w: World, a: Action, c: Content): void {
     Object.assign(w.flags, to.set)
     w.dialogue = { key, node: at, choice: 0, item }
     w.rev++
+    const walk = to.walk
+    if (walk) {
+      const npc = w.objects.find((o) => o.id === walk.id) // a missing npc just ends the act at once
+      if (npc?.kind === 'npc') {
+        npc.path = [...walk.path]
+        npc.run = walk.run
+        stepNpc(npc, 0)
+      }
+    }
+    if (to.wait !== undefined) w.dialogue.until = w.time + to.wait
+    const spawn = to.spawn
+    if (spawn && !w.objects.some((o) => o.id === spawn.id)) w.objects.push(structuredClone(spawn))
     return true
+  }
+  // leaving the open node: follow `next`, or close and let the queue in. Shared by an interact on
+  // a text node and by an act finishing on its own.
+  const advance = (d: NonNullable<World['dialogue']>, node: DialogueNode | undefined) => {
+    const chosen = node?.choices?.[d.choice]
+    if (chosen) Object.assign(w.flags, chosen.set)
+    // a missing node is broken content: close rather than throw, a human fixes the json
+    const next = (node ? (chosen ? chosen.next : node.next) : null) ?? null
+    if (next !== null && open(d.key, next, d.item)) return
+    w.dialogue = null
+    w.rev++
+    const queued = w.queue.shift()
+    if (queued) open(queued.key, undefined, queued.item)
   }
   // a line the sim starts waits its turn rather than cutting off the box already on screen
   const play = (key: string, item?: Item) =>
@@ -93,6 +138,22 @@ export function apply(w: World, a: Action, c: Content): void {
         }
       }
     }
+    for (const o of w.objects) {
+      if (o.kind !== 'npc' || !o.step) continue
+      const npcMs = o.run ? 125 : 250
+      o.step.t += a.dt / npcMs // progress alone is not a visible change, so no rev
+      if (o.step.t < 1) continue
+      const leftover = (o.step.t - 1) * npcMs
+      o.x = o.step.x
+      o.y = o.step.y
+      o.step = null
+      o.parity = !o.parity
+      w.rev++
+      stepNpc(o, leftover / npcMs) // keeps the speed constant across the boundary
+    }
+    const act = w.dialogue
+    const on = act ? c.dialogues[act.key]?.nodes[act.node] : undefined
+    if (act && on && on.text === undefined && actDone(w, act, on)) advance(act, on)
     return
   }
 
@@ -112,6 +173,7 @@ export function apply(w: World, a: Action, c: Content): void {
   const d = w.dialogue
   if (d) {
     const node = c.dialogues[d.key]?.nodes[d.node]
+    if (node && node.text === undefined) return // an act runs to its end; input cannot skip it
     if (node && a.type === 'move') {
       const count = node.choices?.length ?? 0
       const by = a.dir === 'up' ? -1 : a.dir === 'down' ? 1 : 0
@@ -122,15 +184,7 @@ export function apply(w: World, a: Action, c: Content): void {
       }
       return
     }
-    const chosen = node?.choices?.[d.choice]
-    if (chosen) Object.assign(w.flags, chosen.set)
-    // a missing node is broken content: close rather than throw, a human fixes the json
-    const next = (node ? (chosen ? chosen.next : node.next) : null) ?? null
-    if (next !== null && open(d.key, next, d.item)) return
-    w.dialogue = null
-    w.rev++
-    const queued = w.queue.shift()
-    if (queued) open(queued.key, undefined, queued.item)
+    advance(d, node)
     return
   }
 

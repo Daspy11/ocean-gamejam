@@ -5,6 +5,14 @@ import { dispatch, world } from '../store'
 
 const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass'] // priority, lowest first; later fills draw over earlier ones
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
+// anything drawn walking on the grid: the player, and npcs a cutscene is walking
+type Actor = {
+  x: number
+  y: number
+  facing: Dir
+  step?: null | { x: number; y: number; t: number }
+  parity?: boolean
+}
 
 export default class Island extends Phaser.Scene {
   private rev = -1
@@ -50,7 +58,7 @@ export default class Island extends Phaser.Scene {
     ) as Record<string, Phaser.Input.Keyboard.Key>
 
     this.sync()
-    this.drawPlayer()
+    this.drawActors()
     this.rev = world.rev
   }
 
@@ -82,12 +90,12 @@ export default class Island extends Phaser.Scene {
     if (down([this.keys.I, this.keys.TAB, this.keys.ESC])) dispatch({ type: 'menu' })
 
     dispatch({ type: 'tick', dt: delta })
-    this.drawPlayer()
 
     if (world.rev !== this.rev) {
       this.rev = world.rev
       this.sync()
     }
+    this.drawActors()
 
     // clouds off the boiling sea: a 900 ms rise, driven from sim time so there is nothing to tween
     const rise = (world.time % 900) / 900
@@ -104,16 +112,23 @@ export default class Island extends Phaser.Scene {
     }
   }
 
+  // the player and every npc; this.objects[i] lines up with world.objects[i], sync maps them in order
+  private drawActors() {
+    this.draw(this.player, world.player)
+    world.objects.forEach((o, i) => {
+      if (o.kind === 'npc' && this.objects[i]) this.draw(this.objects[i], o)
+    })
+  }
+
   // position and frame are pure functions of the world, so there are no tweens and no animations
-  private drawPlayer() {
-    const p = world.player
-    const x = (p.step ? p.x + (p.step.x - p.x) * p.step.t : p.x) * 16
-    const y = (p.step ? p.y + (p.step.y - p.y) * p.step.t : p.y) * 16
-    const col = p.step ? (p.step.t < 0.5 ? (p.parity ? 0 : 2) : 1) : 1 // 1 is standing
-    this.player
+  private draw(sprite: Phaser.GameObjects.Sprite, a: Actor) {
+    const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
+    const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
+    const col = a.step ? (a.step.t < 0.5 ? (a.parity ? 0 : 2) : 1) : 1 // 1 is standing
+    sprite
       .setPosition(x, y + 16)
       .setDepth(y + 16)
-      .setFrame(ROW[p.facing] * 3 + col)
+      .setFrame(ROW[a.facing] * 3 + col)
   }
 
   private sync() {
@@ -161,7 +176,7 @@ export default class Island extends Phaser.Scene {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
       let frame = 0 // frame 0 unless the kind has some state to show
       if (o.kind === 'crate') frame = o.open ? 1 : 0
-      if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // npcs always stand
+      if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
       return this.add
         .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
         .setOrigin(0, 1)

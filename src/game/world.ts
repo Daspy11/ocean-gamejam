@@ -9,14 +9,25 @@ export const ITEMS: Item[] = ['salt', 'orb'] // icon frame order in sprites/item
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
 // objects overlap the tiles behind.
-export type Obj = { id: string; x: number; y: number } & (
-  | { kind: 'npc'; sprite: string; facing: Dir; dialogue: string }
-  | { kind: 'orb'; doneAt: number } // thrown into the sea it boils its tile into salt once w.time reaches doneAt
-  | { kind: 'tree' }
-  | { kind: 'hut' }
-  | { kind: 'boat' }
-  | { kind: 'crate'; open: boolean }
-)
+export type Obj = { id: string; x: number; y: number } &
+  // a cutscene walks an npc along `path`, one tile per step exactly like the player
+  (
+    | {
+        kind: 'npc'
+        sprite: string
+        facing: Dir
+        dialogue: string
+        step?: null | { x: number; y: number; t: number }
+        path?: Dir[]
+        run?: boolean
+        parity?: boolean
+      }
+    | { kind: 'orb'; doneAt: number } // thrown into the sea it boils its tile into salt once w.time reaches doneAt
+    | { kind: 'tree' }
+    | { kind: 'hut' }
+    | { kind: 'boat' }
+    | { kind: 'crate'; open: boolean }
+  )
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
   npc: { w: 1, h: 1, solid: true },
@@ -49,7 +60,8 @@ export interface World {
   objects: Obj[]
   // story state. Strings let dialogue rename things: flags['name:orb'] overrides the item's display name
   flags: Record<string, boolean | number | string>
-  dialogue: null | { key: string; node: string; choice: number; item?: Item } // item fills {item} in text
+  // item fills {item} in text; until is the sim time a `wait` act on the open node ends
+  dialogue: null | { key: string; node: string; choice: number; item?: Item; until?: number }
   queue: { key: string; item?: Item }[] // dialogues waiting for the open one to close, in order
   menu: null | { screen: 'inventory'; cursor: number }
 }
@@ -70,8 +82,14 @@ export interface Dialogue {
   nodes: Record<string, DialogueNode>
 }
 export interface DialogueNode {
-  text: string // may contain {item}, replaced with the display name of dialogue.item
+  text?: string // may contain {item}, replaced with the display name of dialogue.item
   who?: string // speaker name for this node; absent = the dialogue's name, '' = no name line
+  // A node without text is an act: the box hides, the act runs, and the node advances to `next` by
+  // itself once it is done (walk: the npc has arrived; wait: the time has passed; spawn: at once).
+  // Interact and move are ignored while an act runs.
+  walk?: { id: string; path: Dir[]; run?: boolean }
+  wait?: number // ms
+  spawn?: Obj
   set?: Record<string, boolean | number | string>
   next?: string | null // used when there are no choices; null or missing closes the dialogue
   choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
