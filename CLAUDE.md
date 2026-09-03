@@ -45,8 +45,10 @@ e2e/           Playwright specs.
   union member, one `KINDS` row, one manifest entry, one placeholder entry.
 - Ground is drawn with layered dual-grid autotiling: `tiles/water` is the base, and each higher terrain
   has one 5x3 sheet (a 3x3 island, a 2x2 hole, two diagonals; frame for a corner mask via `DUAL_FRAME`
-  in `src/assets.ts`) drawn over whatever is below. One sheet per terrain covers every transition. Adding a terrain: add it to `Tile`,
-  the draw order in `Island.ts`, the manifest, the placeholder script, and `assets/README.md`.
+  in `src/assets.ts`) drawn over whatever is below. A layer's mask counts any terrain above it as itself,
+  so a rounded corner reveals the terrain below and never water. One sheet per terrain covers every
+  transition. Adding a terrain: add it to `Tile`, the draw order in `Island.ts`, the manifest, the
+  placeholder script, and `assets/README.md`.
 - `assets/README.md` is the artist's spec. Keep it true when a sheet layout changes. `?map=gallery`
   renders every tile, transition, object, and character with the real game code.
 - Dialogue is data (`Dialogue` json, see `src/game/world.ts`). Current node and choice cursor live in

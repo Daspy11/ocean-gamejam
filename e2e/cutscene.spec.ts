@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { DUAL_FRAME } from '../src/assets'
 
 // Phaser reads the keyboard on its own frame loop, so hold each key until the world reacts.
 async function press(page: Page, key: string, until: (arg: string) => boolean, arg = '') {
@@ -112,4 +113,29 @@ test('reading the sign on the second island', async ({ page }) => {
   })
   expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('sign')
   await expect.poll(() => texts(page, 'ui')).toContain('NO pirates')
+})
+
+test('terrains meeting on a diagonal leave no water notch between them', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  await page.evaluate(() => {
+    const w = window.island.world() // salt at 14,20 corners the grass at 15,19, sand on the other two
+    w.tiles[20 * w.width + 14] = 'salt'
+    window.island.load(w)
+  })
+
+  const frames = await page.evaluate(async () => {
+    const scene = window.island.game.scene.getScene('island')
+    const cam = scene.cameras.main
+    cam.stopFollow()
+    cam.setZoom(6).centerOn(15 * 16, 20 * 16)
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    const layers = scene.children.list as Phaser.Tilemaps.TilemapLayer[]
+    const cell = (name: string) =>
+      layers.find((o) => o.layer?.name === name)!.getTileAt(15, 20, true).index
+    return [cell('salt'), cell('sand'), cell('grass')]
+  })
+  // salt fills the cell, sand rounds one corner off it, and grass keeps only its top-right tile
+  expect(frames).toEqual([DUAL_FRAME[15], DUAL_FRAME[11], DUAL_FRAME[2]])
+  await page.locator('#game canvas').screenshot({ path: 'test-results/layering.png' })
 })

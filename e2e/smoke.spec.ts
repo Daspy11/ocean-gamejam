@@ -270,7 +270,7 @@ test('the dual-grid ground layers autotile the island edges', async ({ page }) =
     const grass = list.find((o) => o.layer?.name === 'grass')!
     return {
       sandCorner: sand.getTileAt(15, 12).index, // only the bottom-right logical tile is sand
-      sandEdge: sand.getTileAt(15, 13).index, // sand top-right and bottom-left, grass bottom-right
+      sandEdge: sand.getTileAt(15, 13).index, // sand top-right and bottom-left, grass (so: sand) bottom-right
       grassCorner: grass.getTileAt(15, 13).index,
       open: sand.getTileAt(0, 0, true).index, // open sea: no sand at any corner, so no frame
       offsets: [salt.x, salt.y, sand.x, sand.y, grass.x, grass.y],
@@ -279,7 +279,7 @@ test('the dual-grid ground layers autotile the island edges', async ({ page }) =
   // the frame is not the mask itself: the 5x3 sheet layout puts each combination somewhere else
   expect(grid).toEqual({
     sandCorner: DUAL_FRAME[8],
-    sandEdge: DUAL_FRAME[6],
+    sandEdge: DUAL_FRAME[14],
     grassCorner: DUAL_FRAME[8],
     open: -1,
     offsets: Array(6).fill(-8),

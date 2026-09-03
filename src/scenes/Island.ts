@@ -3,7 +3,9 @@ import { DUAL_FRAME } from '../assets'
 import { KINDS, tileAt, type Dir, type Tile } from '../game/world'
 import { dispatch, world } from '../store'
 
-const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass'] // priority, lowest first; later fills draw over earlier ones
+// priority, lowest first; later fills draw over earlier ones, so each layer's mask counts every
+// terrain above it as itself
+const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass']
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
 // anything drawn walking on the grid: the player, and npcs a cutscene is walking
 type Actor = {
@@ -149,12 +151,15 @@ export default class Island extends Phaser.Scene {
 
   private sync() {
     for (let n = 1; n < GROUND.length; n++) {
-      const terrain = GROUND[n]
-      const is = (x: number, y: number, bit: number) => (tileAt(world, x, y) === terrain ? bit : 0)
+      // a higher terrain counts as every terrain below it, so a rounded corner never opens onto water
+      const is = (x: number, y: number, bit: number) => {
+        const tile = tileAt(world, x, y) // undefined off the map: nothing there
+        return tile && GROUND.indexOf(tile) >= n ? bit : 0
+      }
       for (let j = 0; j <= world.height; j++)
         for (let i = 0; i <= world.width; i++)
-          // the dual cell's centre sits on the corner shared by these four logical tiles; -1 (none
-          // of them is this terrain) clears the cell
+          // the dual cell's centre sits on the corner shared by these four logical tiles; -1 (no
+          // corner is this terrain or higher) clears the cell
           this.layers[n].putTileAt(
             DUAL_FRAME[is(i - 1, j - 1, 1) + is(i, j - 1, 2) + is(i - 1, j, 4) + is(i, j, 8)],
             i,
