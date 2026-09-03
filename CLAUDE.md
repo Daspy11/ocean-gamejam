@@ -62,7 +62,8 @@ e2e/           Playwright specs.
   3 s (`orb` object); salt placed on water becomes a `salt` tile. That is the Skyblock cobblestone
   generator, thematically. The map is ASCII in `src/game/map.ts`; edit it by hand.
 - Scene flow: Boot → Menu → Intro (the rowboat cutscene, data in `assets/text/intro.json`) → Island,
-  which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it.
+  which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
+  Z three times quickly flips between the game and `?map=gallery` (`src/main.ts`).
 - Cast so far: the main character (he/him, unnamed, says almost nothing) and his friend Mich (she/her,
   red hair). Do not invent further characters, names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.

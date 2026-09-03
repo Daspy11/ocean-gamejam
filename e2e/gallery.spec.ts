@@ -106,3 +106,25 @@ test('?map=gallery draws every terrain template and every object with the game c
 
   expect(errors).toEqual([])
 })
+
+test('Z three times flips to the gallery map and back', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  for (let i = 0; i < 3; i++) await page.keyboard.press('z')
+  await page.waitForURL(/map=gallery/)
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  expect(await page.evaluate(() => window.island.world().player)).toMatchObject({ x: 8, y: 20 })
+
+  // two presses, a pause, then one more: never three within a second, so nothing happens
+  await page.keyboard.press('z')
+  await page.keyboard.press('z')
+  await page.waitForTimeout(1100)
+  await page.keyboard.press('z')
+  await page.waitForTimeout(200)
+  expect(page.url()).toContain('map=gallery')
+
+  for (let i = 0; i < 3; i++) await page.keyboard.press('z')
+  await page.waitForURL(/scene=island/)
+  await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
+  expect(await page.evaluate(() => window.island.world().player)).toMatchObject({ x: 14, y: 16 })
+})

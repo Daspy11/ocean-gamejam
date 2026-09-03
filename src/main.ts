@@ -25,3 +25,15 @@ window.island = {
   content: () => content,
   game,
 }
+
+// Dev shortcut: Z three times within a second flips between the game and the ?map=gallery proof sheet.
+// A page reload keeps it to one line per direction; left out of the itch.io build.
+let zs: number[] = []
+if (import.meta.env.DEV)
+  addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyZ' || e.repeat) return
+    zs = [...zs.filter((t) => e.timeStamp - t < 1000), e.timeStamp]
+    if (zs.length < 3) return
+    const gallery = new URLSearchParams(location.search).get('map') === 'gallery'
+    location.search = gallery ? '?scene=island' : '?map=gallery'
+  })
