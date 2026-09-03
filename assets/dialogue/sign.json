@@ -1,0 +1,7 @@
+{
+  "name": "",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "yarr, travel north for a very nice and peaceful island with NO pirates on", "next": null }
+  }
+}

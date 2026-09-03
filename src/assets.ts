@@ -32,6 +32,7 @@ export const JSONS = [
   'dialogue/crate',
   'dialogue/firstsalt',
   'dialogue/got',
+  'dialogue/horse',
   'dialogue/inventory1',
   'dialogue/inventory2',
   'dialogue/landing',

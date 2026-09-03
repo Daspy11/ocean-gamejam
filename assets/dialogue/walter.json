@@ -1,0 +1,10 @@
+{
+  "name": "Walter",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "text": "im gonna go chill under this tree. if you make the island more beautiful then you might attract someone who can help you fix your boat",
+      "next": null
+    }
+  }
+}

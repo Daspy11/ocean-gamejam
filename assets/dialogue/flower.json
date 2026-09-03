@@ -1,0 +1,78 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "talk:mich", "when": "had:electrolytes" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "i am so hungry did you find anything to eat yet", "next": "2" },
+    "2": { "who": "", "text": "that flower in your hair looks delicious", "next": "3" },
+    "3": {
+      "text": "true but then i would have eaten it and i have a feeling we're going to be here a long time",
+      "next": "4"
+    },
+    "4": { "text": "...", "next": "5" },
+    "5": { "text": "i have an idea", "next": "6" },
+    "6": { "walk": { "id": "mich", "path": ["up", "right", "up", "right", "right"] }, "next": "7" },
+    "7": { "spawn": { "id": "flower1", "kind": "flower", "x": 17, "y": 13 }, "next": "8" },
+    "8": { "text": "now when it grows later i can eat 2 flowers instead.", "next": "9" },
+    "9": { "wait": 1000, "next": "10" },
+    "10": { "bloom": "flower1", "next": "11" },
+    "11": { "wait": 1500, "next": "12" },
+    "12": { "text": "+10 whats", "next": "13" },
+    "13": { "text": "...", "next": "14" },
+    "14": { "text": "i can't eat math this is worthless get this out of my face", "next": "15" },
+    "15": { "who": "", "text": "wow i always wanted to have 10 ??????s", "next": "16" },
+    "16": {
+      "spawn": {
+        "id": "walter",
+        "kind": "npc",
+        "sprite": "walter",
+        "facing": "down",
+        "dialogue": "walter",
+        "x": 16,
+        "y": 8
+      },
+      "next": "17"
+    },
+    "17": { "walk": { "id": "walter", "path": ["down", "down", "down", "down"], "run": true }, "next": "18" },
+    "18": {
+      "who": "Walter",
+      "text": "wow i always wanted to live on an island with at least {score} beauty",
+      "next": "19"
+    },
+    "19": { "text": "can crabs wear hats?", "next": "20" },
+    "20": { "who": "Walter", "text": "what a stupid question", "next": "21" },
+    "21": { "who": "Walter", "text": "ANYWAY", "next": "22" },
+    "22": {
+      "text": "you can't quantify beauty, it's purposiveness without purpose apprehended in disinterested subjective universality",
+      "next": "23"
+    },
+    "23": {
+      "who": "Walter",
+      "text": "you LITERALLY just saw beauty points poof into existence in front of your very eyes",
+      "next": "24"
+    },
+    "24": { "text": "i thought that was pollen", "next": "25" },
+    "25": { "who": "Walter", "text": "pollen deez nuts", "next": "26" },
+    "26": { "text": "...", "next": "27" },
+    "27": { "text": "ok yes very funny but i cant fix our boat with beauty points", "next": "28" },
+    "28": { "who": "Walter", "text": "yeah but you can make your shipwreck look nicer", "next": "29" },
+    "29": {
+      "text": "ok useless",
+      "choices": [
+        { "text": "leave", "next": "chill" },
+        { "text": "are you real crab or imitation crab?", "next": "30" }
+      ]
+    },
+    "30": { "who": "Walter", "text": "\"are you real crab or imitation crab\"", "next": "31" },
+    "31": { "who": "", "text": "what", "next": "32" },
+    "32": { "who": "Walter", "text": "what", "next": "33" },
+    "33": { "who": "Walter", "text": "...", "next": "chill" },
+    "chill": {
+      "who": "Walter",
+      "text": "im gonna go chill under this tree. if you make the island more beautiful then you might attract someone who can help you fix your boat",
+      "set": { "score:on": true },
+      "next": "walk"
+    },
+    "walk": { "walk": { "id": "walter", "path": ["left", "down", "left", "down"] }, "next": null }
+  }
+}

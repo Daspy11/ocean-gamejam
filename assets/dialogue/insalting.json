@@ -1,0 +1,9 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "salt:place", "when": "score:on" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "idiot you're making the island ugly", "next": "2" },
+    "2": { "who": "", "text": "how insalting", "next": null }
+  }
+}

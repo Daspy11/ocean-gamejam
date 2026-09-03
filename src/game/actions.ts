@@ -242,9 +242,9 @@ export function apply(w: World, a: Action, c: Content): void {
     return
   }
   if (obj?.kind === 'crate') {
-    if (obj.open) return // it only ever held the one orb
+    if (obj.open) return // a crate hands over what it holds exactly once
     obj.open = true
-    gain('orb')
+    gain(obj.item)
     fire('crate:open') // fired after the got box, so Mich's line queues up behind it
     return
   }

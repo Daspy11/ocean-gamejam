@@ -32,18 +32,22 @@ const texts = (page: Page, scene: string) =>
     scene,
   )
 
-test('boots into the menu and Enter starts the intro', async ({ page }) => {
+test('boots into the menu, Enter starts the intro and Escape skips it', async ({ page }) => {
   await page.goto('/')
   await page.waitForFunction(() => window.island?.game.scene.isActive('menu'))
   expect(await texts(page, 'menu')).toContain('start')
   await page.locator('#game canvas').screenshot({ path: 'test-results/menu.png' })
 
+  const on = (key: string) => page.evaluate((k) => window.island.game.scene.isActive(k), key)
   await tap(page, 'Enter')
-  await expect
-    .poll(() => page.evaluate(() => window.island.game.scene.isActive('intro')))
-    .toBe(true)
+  await expect.poll(() => on('intro')).toBe(true)
   await expect.poll(() => texts(page, 'intro')).toContain("i knew we shouldn't")
   await page.locator('#game canvas').screenshot({ path: 'test-results/intro.png' })
+
+  await tap(page, 'Escape')
+  await expect.poll(() => on('island')).toBe(true)
+  // skipping the cutscene still drops you into the landing conversation
+  expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('landing')
 })
 
 test('playing the intro through lands on the island and opens the landing talk', async ({
@@ -76,20 +80,6 @@ test('playing the intro through lands on the island and opens the landing talk',
   await expect.poll(talking).toBe(false)
 })
 
-test('Escape skips the intro straight to the island', async ({ page }) => {
-  await page.goto('/')
-  await page.waitForFunction(() => window.island?.game.scene.isActive('menu'))
-  await tap(page, 'Enter')
-  await page.waitForFunction(() => window.island.game.scene.isActive('intro'))
-
-  await tap(page, 'Escape')
-  await expect
-    .poll(() => page.evaluate(() => window.island.game.scene.isActive('island')))
-    .toBe(true)
-  // skipping the cutscene still drops you into the landing conversation
-  expect(await page.evaluate(() => window.island.world().dialogue?.key)).toBe('landing')
-})
-
 test('boots the island scene with no console errors', async ({ page }) => {
   const errors: string[] = []
   page.on('console', (msg) => {
@@ -108,9 +98,9 @@ test('tick advances sim time', async ({ page }) => {
 
   // read both sides in one evaluate so the scene's own per-frame tick can't land between them
   const advanced = await page.evaluate(() => {
-    const before = window.island.world().time
+    const at = window.island.world().time
     window.island.dispatch({ type: 'tick', dt: 3000 })
-    return window.island.world().time - before
+    return window.island.world().time - at
   })
   expect(advanced).toBe(3000)
 })
@@ -129,9 +119,8 @@ test('holding an arrow key walks the player and releasing stops it', async ({ pa
   })
 
   const player = await page.evaluate(() => window.island.world().player)
-  expect(player.x).toBeGreaterThanOrEqual(start + 1) // one or two tiles, depending on release timing
-  expect(player.facing).toBe('right')
-  expect(player.held).toBeNull()
+  // one or two tiles walked, depending on release timing
+  expect([player.x >= start + 1, player.facing, player.held]).toEqual([true, 'right', null])
 })
 
 test('tapping a direction turns the player without walking', async ({ page }) => {
@@ -144,8 +133,7 @@ test('tapping a direction turns the player without walking', async ({ page }) =>
   await page.waitForTimeout(200) // longer than the 100ms turn delay: a released key must not walk
 
   const player = await page.evaluate(() => window.island.world().player)
-  expect(player.facing).toBe('up')
-  expect([player.x, player.y, player.step]).toEqual([start.x, start.y, null])
+  expect([player.facing, player.x, player.y, player.step]).toEqual(['up', start.x, start.y, null])
 })
 
 test('an orb thrown in the sea boils its tile into salt', async ({ page }) => {
@@ -153,10 +141,10 @@ test('an orb thrown in the sea boils its tile into salt', async ({ page }) => {
 
   const result = await page.evaluate(() => {
     const w = window.island.world()
-    w.player = { ...w.player, x: 20, y: 16, facing: 'right' } // the east beach, facing the gap
     w.objects.push({ id: 'orb1', kind: 'orb', x: 21, y: 16, doneAt: w.time + 2000 })
-    w.flags = { 'fired:firstsalt': true, 'had:orb': true } // both boxes are the tutorial test's job
-    window.island.load(w)
+    w.player = { ...w.player, x: 20, y: 16, facing: 'right' } // the east beach, facing the gap
+    // both boxes are the tutorial test's job
+    window.island.load({ ...w, flags: { 'fired:firstsalt': true, 'had:orb': true } })
     window.island.dispatch({ type: 'tick', dt: 2000 })
     const orbs = () => window.island.world().objects.filter((o) => o.kind === 'orb').length
     const boiled = window.island.world()
@@ -197,9 +185,8 @@ test('two salt bridge the gap to the second island', async ({ page }) => {
 test('talking to the npc runs a dialogue and sets a flag', async ({ page }) => {
   await openIsland(page)
   await page.evaluate(() => {
-    const w = window.island.world()
-    w.player = { ...w.player, x: 13, y: 14, facing: 'down' } // north of mich at 13,15
-    window.island.load(w)
+    const w = window.island.world() // north of mich at 13,15
+    window.island.load({ ...w, player: { ...w.player, x: 13, y: 14, facing: 'down' } })
   })
   await page.locator('#game canvas').click()
 
@@ -220,9 +207,8 @@ test('the crate beside the wreck gives up the orb exactly once', async ({ page }
   await openIsland(page)
 
   const result = await page.evaluate(() => {
-    const w = window.island.world()
-    w.player = { ...w.player, x: 14, y: 17, facing: 'left' } // crate1 sits at 13,17
-    window.island.load(w)
+    const w = window.island.world() // crate1 sits at 13,17
+    window.island.load({ ...w, player: { ...w.player, x: 14, y: 17, facing: 'left' } })
     window.island.dispatch({ type: 'interact' })
     const once = window.island.world().inventory.orb
     window.island.dispatch({ type: 'interact' })
@@ -233,12 +219,31 @@ test('the crate beside the wreck gives up the orb exactly once', async ({ page }
   expect(result).toEqual({ once: 1, twice: 1, open: true })
 })
 
+test('the second crate up the beach holds the horse electrolytes', async ({ page }) => {
+  await openIsland(page)
+  await page.evaluate(() => {
+    const w = window.island.world() // crate2 sits at 19,14; stand on the grass just south of it
+    w.player = { ...w.player, x: 19, y: 15, facing: 'up' }
+    // Mich's crate line is the tutorial test's job, so only the horse line is left to queue
+    window.island.load({ ...w, flags: { 'fired:crate': true } })
+  })
+  await page.locator('#game canvas').click()
+
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'got')
+  const got = await page.evaluate(() => window.island.world())
+  expect([got.inventory.electrolytes, got.dialogue?.item]).toEqual([1, 'electrolytes'])
+  await expect.poll(() => texts(page, 'ui')).toContain('horse electrolytes')
+
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'horse')
+  await expect.poll(() => texts(page, 'ui')).toContain('if you had a horse')
+})
+
 test('the inventory screen opens with the held items and closes again', async ({ page }) => {
   await openIsland(page)
   await page.evaluate(() => {
-    const w = window.island.world()
-    w.inventory = { salt: 2, orb: 1 }
-    window.island.load({ ...w, score: 7, flags: { 'score:on': true } }) // beauty needs the flag
+    const w = window.island.world() // beauty needs the flag
+    const inventory = { salt: 2, orb: 1 }
+    window.island.load({ ...w, inventory, score: 7, flags: { 'score:on': true } })
   })
   await page.locator('#game canvas').click()
 

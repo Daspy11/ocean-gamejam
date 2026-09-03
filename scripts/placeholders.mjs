@@ -225,7 +225,7 @@ const sheets = [
     file: 'sprites/items.png',
     w: 16,
     h: 16,
-    cols: 2,
+    cols: 3,
     frames: [
       [
         [3, 9, 10, 4, '#c4ccd6'],
@@ -235,6 +235,10 @@ const sheets = [
         [5, 3, 6, 10, '#e07020'],
         [3, 5, 10, 6, '#e07020'],
       ], // 1 orb, as frame 0 of orb.png
+      [
+        [6, 3, 4, 3, '#8a7050'],
+        [4, 6, 8, 8, '#c8b088'],
+      ], // 2 electrolytes, a bag with a tied neck
     ],
   },
 ]

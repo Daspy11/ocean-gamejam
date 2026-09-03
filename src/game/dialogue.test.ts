@@ -73,8 +73,19 @@ const content: Content = {
         },
       },
     },
+    // the shape of assets/dialogue/horse.json: only crate2's contents make its `when` flag true
+    horse: {
+      name: '[PLACEHOLDER NPC NAME]',
+      trigger: { event: 'crate:open', when: 'had:electrolytes' },
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER horse 1]', next: null } },
+    },
   },
-  items: { salt: { name: '[PLACEHOLDER salt]' }, orb: { name: '[PLACEHOLDER orb]' } },
+  items: {
+    salt: { name: '[PLACEHOLDER salt]' },
+    orb: { name: '[PLACEHOLDER orb]' },
+    electrolytes: { name: '[PLACEHOLDER electrolytes]' },
+  },
 }
 
 // north of mich (13,15), facing her
@@ -210,6 +221,48 @@ function tutorial(w: World) {
     for (let i = 0; i < beats; i++) apply(w, { type: 'interact' }, content)
   }
 }
+
+// crate2 sits on the north-east sand at 19,14; 19,15 is the grass just south of it
+function atCrate2(): World {
+  const w = createWorld()
+  w.player.x = 19
+  w.player.y = 15
+  w.player.facing = 'up'
+  return w
+}
+
+describe('the second crate', () => {
+  it('hands over the electrolytes once, with the horse line queued behind the got box', () => {
+    const w = atCrate2()
+    apply(w, { type: 'interact' }, content)
+    expect(w.inventory).toEqual({ electrolytes: 1 })
+    expect(w.dialogue).toEqual({ key: 'got', node: '1', choice: 0, item: 'electrolytes' })
+    expect(w.queue).toEqual([{ key: 'crate' }, { key: 'horse' }])
+    expect(w.flags['fired:horse']).toBe(true)
+
+    const crate = w.objects.find((o) => o.id === 'crate2')
+    expect(crate?.kind === 'crate' && crate.open).toBe(true)
+    apply(w, { type: 'interact' }, content) // the got box goes, the queue takes over
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.key).toBe('horse')
+
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBe(null)
+    apply(w, { type: 'interact' }, content) // an open crate is empty
+    expect(w.inventory).toEqual({ electrolytes: 1 })
+    expect(w.dialogue).toBe(null)
+  })
+
+  it('leaves the horse line alone when the crate by the wreck is the one opened', () => {
+    const w = atCrate()
+    apply(w, { type: 'interact' }, content)
+    expect(w.inventory).toEqual({ orb: 1 })
+    expect(w.dialogue?.item).toBe('orb')
+    expect(w.queue).toEqual([{ key: 'crate' }]) // had:electrolytes is unset, so horse is not due
+    expect(w.flags['fired:horse']).toBeUndefined()
+  })
+})
 
 describe('the scripted tutorial', () => {
   it('shows the got box first and queues the triggered line behind it', () => {

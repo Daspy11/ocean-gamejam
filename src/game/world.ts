@@ -3,8 +3,8 @@ import { MAPS } from './map'
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
 export type Tile = 'water' | 'salt' | 'sand' | 'grass'
 export type Dir = 'up' | 'down' | 'left' | 'right'
-export type Item = 'salt' | 'orb'
-export const ITEMS: Item[] = ['salt', 'orb'] // icon frame order in sprites/items
+export type Item = 'salt' | 'orb' | 'electrolytes'
+export const ITEMS: Item[] = ['salt', 'orb', 'electrolytes'] // icon frame order in sprites/items
 
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
@@ -26,7 +26,7 @@ export type Obj = { id: string; x: number; y: number } &
     | { kind: 'tree' }
     | { kind: 'hut' }
     | { kind: 'boat' }
-    | { kind: 'crate'; open: boolean }
+    | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
     // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
     | { kind: 'flower'; bloomAt?: number; white?: boolean }
   )
@@ -141,8 +141,8 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           { id: 'g-tree', kind: 'tree', x: 2, y: 18 },
           { id: 'g-hut', kind: 'hut', x: 4, y: 17 },
           { id: 'g-boat', kind: 'boat', x: 7, y: 18 },
-          { id: 'g-crate', kind: 'crate', x: 2, y: 20, open: false },
-          { id: 'g-crate-open', kind: 'crate', x: 4, y: 20, open: true },
+          { id: 'g-crate', kind: 'crate', x: 2, y: 20, open: false, item: 'orb' },
+          { id: 'g-crate-open', kind: 'crate', x: 4, y: 20, open: true, item: 'orb' },
           {
             id: 'g-mich',
             kind: 'npc',
@@ -160,7 +160,9 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
         ]
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
-          { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false },
+          { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false, item: 'orb' },
+          // the second crate, up on the north-east sand
+          { id: 'crate2', kind: 'crate', x: 19, y: 14, open: false, item: 'electrolytes' },
           {
             id: 'mich',
             kind: 'npc',
