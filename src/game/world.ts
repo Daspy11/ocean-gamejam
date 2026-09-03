@@ -9,38 +9,43 @@ export const ITEMS: Item[] = ['salt', 'orb', 'electrolytes', 'twig'] // icon fra
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
 // objects overlap the tiles behind.
-export type Obj = { id: string; x: number; y: number } &
-  // a cutscene walks an npc along `path`, one tile per step exactly like the player
-  (
-    | {
-        kind: 'npc'
-        sprite: string
-        facing: Dir
-        dialogue: string
-        step?: null | { x: number; y: number; t: number }
-        path?: Dir[]
-        run?: boolean
-        parity?: boolean
-      }
-    // thrown into the sea it boils its tile into salt once w.time reaches doneAt; `thrown` is the
-    // tile it left the hand on and when, so the scene can arc it over for the first 300 ms
-    | { kind: 'orb'; doneAt: number; thrown?: { x: number; y: number; at: number } }
-    // shaken for twigs; flyAt/landAt are when it started leaving / arriving, 1500 ms each
-    // a tree with its own dialogue is talked to, not shaken
-    | {
-        kind: 'tree'
-        dialogue?: string
-        shakes?: number
-        shookAt?: number
-        flyAt?: number
-        landAt?: number
-      }
-    | { kind: 'boat' }
-    | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
-    | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
-    // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
-    | { kind: 'flower'; bloomAt?: number; white?: boolean }
-  )
+export type Obj = {
+  id: string
+  x: number
+  y: number
+  // a cutscene walks any object along `path`, one tile per step exactly like the player: an npc on
+  // foot, a boat under sail
+  step?: null | { x: number; y: number; t: number }
+  path?: Dir[]
+  run?: boolean
+  parity?: boolean
+} & (
+  | {
+      kind: 'npc'
+      sprite: string
+      facing: Dir
+      dialogue: string
+      ride?: string // id of the object he stands on: he takes its tile and its step
+    }
+  // thrown into the sea it boils its tile into salt once w.time reaches doneAt; `thrown` is the
+  // tile it left the hand on and when, so the scene can arc it over for the first 300 ms
+  | { kind: 'orb'; doneAt: number; thrown?: { x: number; y: number; at: number } }
+  // shaken for twigs; flyAt/landAt are when it started leaving / arriving, 1500 ms each
+  // a tree with its own dialogue is talked to, not shaken
+  | {
+      kind: 'tree'
+      dialogue?: string
+      shakes?: number
+      shookAt?: number
+      flyAt?: number
+      landAt?: number
+    }
+  | { kind: 'boat'; wrecked?: boolean } // wrecked: it sailed into something, so the bow is stove in
+  | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
+  | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
+  // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
+  | { kind: 'flower'; bloomAt?: number; white?: boolean }
+)
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
   npc: { w: 1, h: 1, solid: true },
@@ -55,6 +60,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
 export interface World {
   rev: number // bumped by apply() on every visible change; scenes resync when it moves
   time: number // sim milliseconds
+  rumble: number // the sim time the screen shake ends; the scene jitters the camera until then
   width: number
   height: number
   tiles: Tile[] // row-major, index = y * width + x
@@ -91,7 +97,7 @@ export interface Dialogue {
   name: string
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
   // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id> · tree:shake:<n> ·
-  // tree:near · score:negative (beauty has gone below zero)
+  // tree:near · score:negative (beauty has gone below zero) · arrive:north (stepped ashore up north)
   trigger?: { event: string; when?: string }
   start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
   nodes: Record<string, DialogueNode>
@@ -101,10 +107,11 @@ export interface DialogueNode {
   who?: string // speaker name for this node; absent = the dialogue's name, '' = no name line
   // A node without text is an act: the box hides, the act runs, and the node advances to `next` by
   // itself once it is done (walk: the npc has arrived; wait: the time has passed; spawn and shake:
-  // at once; fly: the tree has gone; land: it has come down). Interact and move are ignored while
-  // an act runs.
+  // at once; fly: the tree has gone; land: it has come down; rumble: the shake is over). Interact
+  // and move are ignored while an act runs.
   walk?: { id: string; path: Dir[]; run?: boolean }
   wait?: number // ms
+  rumble?: number // ms of screen shake, from now
   spawn?: Obj
   bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
   shake?: string // id of a tree: one more shake, and the twig it drops
@@ -192,6 +199,17 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           { id: 'g-flower', kind: 'flower', x: 9, y: 20, white: false },
           { id: 'g-flower-white', kind: 'flower', x: 10, y: 20, white: true },
           { id: 'g-sign', kind: 'sign', x: 3, y: 20, dialogue: 'sign' },
+          { id: 'g-wreck', kind: 'boat', x: 5, y: 17, wrecked: true }, // the smashed hull frame
+          // the pirate faces the way he is not looking, so this row draws his back
+          {
+            id: 'g-etarp',
+            kind: 'npc',
+            sprite: 'etarp',
+            x: 4,
+            y: 18,
+            facing: 'down',
+            dialogue: 'etarp',
+          },
         ]
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
@@ -213,6 +231,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
   return {
     rev: 0,
     time: 0,
+    rumble: 0,
     width,
     height,
     tiles,

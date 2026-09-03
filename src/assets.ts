@@ -12,10 +12,13 @@ export const SHEETS = {
   // character sheet layout; the crab only ever walks sideways, so the left/right rows are the walk
   // and the down row is how he stands
   'sprites/walter': { frameWidth: 16, frameHeight: 24 },
+  // character sheet; the blind pirate is drawn on the row opposite the way he is facing
+  'sprites/etarp': { frameWidth: 16, frameHeight: 24 },
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
-  'sprites/boat': { frameWidth: 32, frameHeight: 16 }, // 2x1 footprint, also the rowboat in the intro
+  // 2x1 footprint, also the rowboat in the intro: 0 whole · 1 smashed in at the bow (its left end)
+  'sprites/boat': { frameWidth: 32, frameHeight: 16 },
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
@@ -34,6 +37,7 @@ export const DUAL_FRAME = [-1, 12, 10, 11, 2, 7, 13, 3, 0, 14, 5, 4, 1, 8, 9, 6]
 export const JSONS = [
   'dialogue/boat',
   'dialogue/crate',
+  'dialogue/etarp',
   'dialogue/firstsalt',
   'dialogue/flower',
   'dialogue/got',
@@ -43,6 +47,7 @@ export const JSONS = [
   'dialogue/landing',
   'dialogue/mich',
   'dialogue/negative',
+  'dialogue/pirate',
   'dialogue/shake3',
   'dialogue/shake7',
   'dialogue/sign',

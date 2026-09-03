@@ -56,15 +56,17 @@ e2e/           Playwright specs.
   dialogue path and menu state is testable without Phaser.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open`, `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
-  `tree:shake:<n>`, `tree:near`, add more in `apply`) and the `when` flag is truthy; it sets
+  `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, add more in `apply`) and the `when` flag is truthy; it sets
   `flags['fired:<key>']`. Dialogues that fire while a box is open wait in `world.queue`. Node `set` may
   write strings; `flags['name:<item>']` renames an item; node `take` spends an item. `{item}` in text
   becomes the name of `dialogue.item`; `{score}` the beauty score. The first pickup of each item plays
   `got.json`. To add a tutorial beat: write a dialogue file with a trigger, and if it needs a new
   event, emit it from `apply`. No trigger system.
 - Cutscenes are dialogue nodes without `text` (acts): `walk` an npc along a path, `wait` ms, `spawn` an
-  object, `bloom` a flower, `shake` / `fly` / `land` a tree (`src/game/tree.ts`). The box hides, the act
-  runs, and the node advances itself. Npcs walk through everything. See `assets/dialogue/flower.json`.
+  object, `bloom` a flower, `shake` / `fly` / `land` a tree (`src/game/tree.ts`), `rumble` the screen. The
+  box hides, the act runs, and the node advances itself. Any object can be walked; npcs walk through
+  everything, a boat stops and is `wrecked` when its next tile is not water (`src/game/boat.ts`), and an
+  npc with `ride` sits on the object it names. See `assets/dialogue/flower.json` and `pirate.json`.
 - The infinite-resource loop: the orb thrown on a water tile boils it (smoke) and after 2 s that tile is
   `salt`; the orb is picked back up. Interact on a bare salt tile digs it up as a salt item; salt placed
   on water becomes a `salt` tile. That is the Skyblock cobblestone generator, thematically. The map is
@@ -75,8 +77,9 @@ e2e/           Playwright specs.
   which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
   Z three times quickly flips between the game and `?map=gallery` (`src/main.ts`).
 - Cast so far: the main character (he/him, unnamed, says almost nothing), his friend Mich (she/her,
-  red hair), Walter (he/him, a crab in a cowboy hat, walks sideways), and the tree, which talks once
-  woken (`assets/dialogue/tree*.json`). Do not invent further characters, names, or backstory.
+  red hair), Walter (he/him, a crab in a cowboy hat, walks sideways), the tree, which talks once
+  woken (`assets/dialogue/tree*.json`), and Etarp (he/him, a blind pirate, drawn facing the wrong
+  way). Do not invent further characters, names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.
 - Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24
   in the RPG Maker layout: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up).

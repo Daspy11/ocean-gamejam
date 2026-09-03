@@ -60,6 +60,7 @@ test('?map=gallery draws every terrain template and every object with the game c
   expect(drawn.sprites).toEqual([
     'sprites/boat',
     'sprites/crate',
+    'sprites/etarp',
     'sprites/flower',
     'sprites/mich',
     'sprites/orb',

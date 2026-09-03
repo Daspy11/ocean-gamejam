@@ -1,16 +1,16 @@
+import { stepObj, tickWalks } from './boat'
 import { shakeTree, startTree, tickTrees, treeDone } from './tree'
 import { DIRS, KINDS, beauty, objectAt, tileAt } from './world'
-import type { Action, Content, DialogueNode, Item, Obj, World } from './world'
+import type { Action, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
-type Npc = Extract<Obj, { kind: 'npc' }>
 
 // is the open node's act over? Its dialogue then moves on by itself, with no interact
 function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode): boolean {
   const walk = node.walk
   if (walk) {
-    const npc = w.objects.find((o) => o.id === walk.id)
-    return !npc || npc.kind !== 'npc' || (!npc.step && !npc.path?.length)
+    const o = w.objects.find((x) => x.id === walk.id)
+    return !o || (!o.step && !o.path?.length)
   }
   const bloom = node.bloom
   if (bloom) {
@@ -19,6 +19,7 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
   }
   if (node.fly !== undefined || node.land !== undefined) return treeDone(w, node)
   if (node.wait !== undefined) return w.time >= (d.until ?? 0)
+  if (node.rumble !== undefined) return w.time >= w.rumble
   return true // a spawn lands the moment the node opens, and a node with no act at all is over too
 }
 
@@ -38,14 +39,6 @@ export function apply(w: World, a: Action, c: Content): void {
     p.step = { x, y, t }
     w.rev++
   }
-  // takes the next tile off a scripted npc's path. A cutscene walk passes through everything,
-  // player and solid objects alike: a blocked npc would stall the story.
-  const stepNpc = (o: Npc, t: number) => {
-    const dir = o.path?.shift()
-    if (!dir) return
-    o.facing = dir
-    o.step = { x: o.x + DIRS[dir][0], y: o.y + DIRS[dir][1], t }
-  }
   // both `start` and a branching `next` are read this way: first entry with no `when`, or whose
   // flag is truthy. Nothing matching means there is nowhere to go.
   const pick = (list: { when?: string; node: string }[] | undefined) =>
@@ -62,14 +55,16 @@ export function apply(w: World, a: Action, c: Content): void {
     w.rev++
     const walk = to.walk
     if (walk) {
-      const npc = w.objects.find((o) => o.id === walk.id) // a missing npc just ends the act at once
-      if (npc?.kind === 'npc') {
-        npc.path = [...walk.path]
-        npc.run = walk.run
-        stepNpc(npc, 0)
+      const o = w.objects.find((x) => x.id === walk.id) // a missing one just ends the act at once
+      if (o) {
+        if (o.kind === 'npc') delete o.ride // a walk of his own gets him off whatever he was riding
+        o.path = [...walk.path]
+        o.run = walk.run
+        stepObj(w, o, 0)
       }
     }
     if (to.wait !== undefined) w.dialogue.until = w.time + to.wait
+    if (to.rumble !== undefined) w.rumble = w.time + to.rumble
     const spawn = to.spawn
     if (spawn && !w.objects.some((o) => o.id === spawn.id)) w.objects.push(structuredClone(spawn))
     const bloom = to.bloom
@@ -179,6 +174,8 @@ export function apply(w: World, a: Action, c: Content): void {
         p.step = null
         p.parity = !p.parity
         w.rev++
+        const on = tileAt(w, p.x, p.y) // the north island is the only land this far up the map
+        if (p.y <= 5 && (on === 'sand' || on === 'grass')) fire('arrive:north')
         if (p.held && !busy) {
           if (p.facing !== p.held) {
             p.facing = p.held // already walking, so no turn delay
@@ -188,19 +185,7 @@ export function apply(w: World, a: Action, c: Content): void {
         }
       }
     }
-    for (const o of w.objects) {
-      if (o.kind !== 'npc' || !o.step) continue
-      const npcMs = o.run ? 125 : 250
-      o.step.t += a.dt / npcMs // progress alone is not a visible change, so no rev
-      if (o.step.t < 1) continue
-      const leftover = (o.step.t - 1) * npcMs
-      o.x = o.step.x
-      o.y = o.step.y
-      o.step = null
-      o.parity = !o.parity
-      w.rev++
-      stepNpc(o, leftover / npcMs) // keeps the speed constant across the boundary
-    }
+    tickWalks(w, a.dt)
     const act = w.dialogue
     const on = act ? c.dialogues[act.key]?.nodes[act.node] : undefined
     if (act && on && on.text === undefined && actDone(w, act, on)) advance(act, on)

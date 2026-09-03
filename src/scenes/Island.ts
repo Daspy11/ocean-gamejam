@@ -7,6 +7,7 @@ import { dispatch, world } from '../store'
 // terrain above it as itself
 const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass']
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
+const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 // anything drawn walking on the grid: the player, and npcs a cutscene is walking
 type Actor = {
   x: number
@@ -122,6 +123,12 @@ export default class Island extends Phaser.Scene {
     }
     this.drawActors()
 
+    // the screen shake: a jitter off sim time, so it is the same every run and needs no tween
+    const rumbling = world.time < world.rumble
+    const jitter = (every: number) =>
+      rumbling ? ((Math.floor(world.time / every) % 3) - 1) * 2 : 0
+    this.cameras.main.followOffset.set(-8 + jitter(30), 8 + jitter(50))
+
     // clouds off the boiling sea: a 900 ms rise, driven from sim time so there is nothing to tween
     const rise = (world.time % 900) / 900
     for (const { sprite, bottom, thrownAt } of this.smoke)
@@ -170,24 +177,43 @@ export default class Island extends Phaser.Scene {
     }
   }
 
-  // the player and every npc; this.objects[i] lines up with world.objects[i], sync maps them in order
+  // everything moving on the grid: the player, npcs, and a boat under sail. this.objects[i] lines
+  // up with world.objects[i], sync maps them in order
   private drawActors() {
     this.draw(this.player, world.player)
     world.objects.forEach((o, i) => {
-      if (o.kind === 'npc' && this.objects[i]) this.draw(this.objects[i], o, o.sprite === 'walter')
+      const sprite = this.objects[i]
+      if (!sprite) return
+      // a rider shares the boat's tile, so lift him one depth over the deck he is standing on
+      if (o.kind === 'npc') this.draw(sprite, o, o.sprite, o.ride ? 1 : 0)
+      // a boat under sail moves like an actor, but its frame is the hull's state, set by sync()
+      else if (o.kind === 'boat' && o.step) {
+        const y = (o.y + (o.step.y - o.y) * o.step.t) * 16 + 16
+        sprite.setPosition((o.x + (o.step.x - o.x) * o.step.t) * 16, y).setDepth(y)
+      }
     })
   }
 
   // position and frame are pure functions of the world, so there are no tweens and no animations
-  private draw(sprite: Phaser.GameObjects.Sprite, a: Actor, crab = false) {
+  private draw(sprite: Phaser.GameObjects.Sprite, a: Actor, who = '', lift = 0) {
     const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
     const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
     const col = a.step ? (a.step.t < 0.5 ? (a.parity ? 0 : 2) : 1) : 1 // 1 is standing
-    // a crab scuttles sideways whichever way he is going, and turns to face you when he stops
-    const facing = crab ? (!a.step ? 'down' : a.facing === 'left' ? 'left' : 'right') : a.facing
+    // the crab scuttles sideways whichever way he is going and turns to face you when he stops;
+    // the pirate is blind, so he is always drawn looking the opposite way to the one he faces
+    const facing =
+      who === 'walter'
+        ? !a.step
+          ? 'down'
+          : a.facing === 'left'
+            ? 'left'
+            : 'right'
+        : who === 'etarp'
+          ? OPP[a.facing]
+          : a.facing
     sprite
       .setPosition(x, y + 16)
-      .setDepth(y + 16)
+      .setDepth(y + 16 + lift)
       .setFrame(ROW[facing] * 3 + col)
   }
 
@@ -242,6 +268,7 @@ export default class Island extends Phaser.Scene {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
       let frame = 0 // frame 0 unless the kind has some state to show
       if (o.kind === 'crate') frame = o.open ? 1 : 0
+      if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
       return this.add

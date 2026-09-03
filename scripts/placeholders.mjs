@@ -140,6 +140,13 @@ const sheets = [
   },
   { file: 'sprites/walter.png', w: 16, h: 24, cols: 3, frames: crab() },
   {
+    file: 'sprites/etarp.png',
+    w: 16,
+    h: 24,
+    cols: 3,
+    frames: character({ hair: '#101010', skin: '#c8c0b8', shirt: '#b03030' }),
+  },
+  {
     file: 'sprites/orb.png',
     w: 16,
     h: 16,
@@ -190,12 +197,17 @@ const sheets = [
     file: 'sprites/boat.png',
     w: 32,
     h: 16,
-    cols: 1,
+    cols: 2,
     frames: [
       [
         [4, 4, 24, 10, '#7a5a3a'], // hull, wider at the waterline
         [1, 7, 30, 6, '#7a5a3a'],
         [6, 6, 20, 4, '#a08050'], // the inside, open to the sky
+      ], // 0 whole
+      [
+        [10, 4, 18, 10, '#7a5a3a'], // 1 the same hull with the bow, its left end, missing
+        [7, 7, 24, 6, '#7a5a3a'],
+        [12, 6, 14, 4, '#a08050'],
       ],
     ],
   },
