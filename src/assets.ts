@@ -15,6 +15,7 @@ export const SHEETS = {
   'sprites/hut': { frameWidth: 32, frameHeight: 40 }, // 2x2 footprint, bottom-anchored
   'sprites/boat': { frameWidth: 32, frameHeight: 16 }, // 2x1 footprint, also the rowboat in the intro
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
+  'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
 } as const
 

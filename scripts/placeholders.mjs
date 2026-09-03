@@ -204,6 +204,24 @@ const sheets = [
     ],
   },
   {
+    file: 'sprites/flower.png',
+    w: 16,
+    h: 16,
+    cols: 2,
+    frames: [
+      [
+        [7, 9, 2, 7, '#3f7f3f'], // stem
+        [5, 4, 6, 6, '#e06090'], // head, two overlapping rects
+        [4, 5, 8, 4, '#e06090'],
+      ], // 0 in colour
+      [
+        [7, 9, 2, 7, '#3f7f3f'],
+        [5, 4, 6, 6, '#f4f4f4'],
+        [4, 5, 8, 4, '#f4f4f4'],
+      ], // 1 gone white
+    ],
+  },
+  {
     file: 'sprites/items.png',
     w: 16,
     h: 16,

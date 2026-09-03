@@ -11,6 +11,11 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
     const npc = w.objects.find((o) => o.id === walk.id)
     return !npc || npc.kind !== 'npc' || (!npc.step && !npc.path?.length)
   }
+  const bloom = node.bloom
+  if (bloom) {
+    const f = w.objects.find((o) => o.id === bloom)
+    return !f || f.kind !== 'flower' || !!f.white
+  }
   if (node.wait !== undefined) return w.time >= (d.until ?? 0)
   return true // a spawn lands the moment the node opens, and a node with no act at all is over too
 }
@@ -60,6 +65,11 @@ export function apply(w: World, a: Action, c: Content): void {
     if (to.wait !== undefined) w.dialogue.until = w.time + to.wait
     const spawn = to.spawn
     if (spawn && !w.objects.some((o) => o.id === spawn.id)) w.objects.push(structuredClone(spawn))
+    const bloom = to.bloom
+    if (bloom) {
+      const f = w.objects.find((o) => o.id === bloom) // a missing flower just ends the act at once
+      if (f?.kind === 'flower') f.bloomAt = w.time
+    }
     return true
   }
   // leaving the open node: follow `next`, or close and let the queue in. Shared by an interact on
@@ -111,6 +121,18 @@ export function apply(w: World, a: Action, c: Content): void {
         w.tiles[o.y * w.width + o.x] = 'salt' // the orb stays put, now sitting on the crust it boiled
         w.rev++
         fire('salt:spawn')
+      }
+    for (const o of w.objects)
+      if (
+        o.kind === 'flower' &&
+        o.bloomAt !== undefined &&
+        !o.white &&
+        w.time >= o.bloomAt + 1500
+      ) {
+        o.white = true // every flower that blooms is worth the same 10 beauty
+        w.score += 10
+        w.pops.push({ x: o.x, y: o.y, text: '+10', at: w.time })
+        w.rev++
       }
     const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
     if (live.length !== w.pops.length) {

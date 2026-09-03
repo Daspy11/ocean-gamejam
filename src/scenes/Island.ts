@@ -21,6 +21,13 @@ export default class Island extends Phaser.Scene {
   private objects: Phaser.GameObjects.Sprite[] = []
   // one per orb still boiling its tile, with the bottom of that tile to rise from
   private smoke: { sprite: Phaser.GameObjects.Sprite; bottom: number }[] = []
+  // one per flower mid-bloom: a white copy fading in over the coloured sprite, both vibrating
+  private blooms: {
+    base: Phaser.GameObjects.Sprite
+    white: Phaser.GameObjects.Sprite
+    bloomAt: number
+    x: number
+  }[] = []
   // one per world.pops entry, with the sim time it started and the y it floats up from
   private pops: { text: Phaser.GameObjects.Text; at: number; baseY: number }[] = []
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
@@ -105,6 +112,13 @@ export default class Island extends Phaser.Scene {
         .setY(bottom - 8 - rise * 10)
         .setAlpha(1 - rise)
 
+    // a bloom crossfades to white over its 1500 ms and shakes a pixel each way, both off sim time
+    for (const { base, white, bloomAt, x } of this.blooms) {
+      const at = x + (Math.floor(world.time / 40) % 2 ? 1 : -1)
+      base.setX(at)
+      white.setX(at).setAlpha(Math.min(1, Math.max(0, (world.time - bloomAt) / 1500)))
+    }
+
     // a pop drifts 12 px up over its 1500 ms life, fading out; sim time drives it, so no tweens
     for (const { text, at, baseY } of this.pops) {
       const age = world.time - at
@@ -148,6 +162,7 @@ export default class Island extends Phaser.Scene {
 
     for (const sprite of this.objects) sprite.destroy()
     for (const { sprite } of this.smoke) sprite.destroy()
+    for (const { white } of this.blooms) white.destroy() // the base is in this.objects, destroyed above
     for (const { text } of this.pops) text.destroy()
     this.pops = world.pops.map((p) => {
       const baseY = p.y * 16
@@ -176,11 +191,23 @@ export default class Island extends Phaser.Scene {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
       let frame = 0 // frame 0 unless the kind has some state to show
       if (o.kind === 'crate') frame = o.open ? 1 : 0
+      if (o.kind === 'flower' && o.white) frame = 1
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
       return this.add
         .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
         .setOrigin(0, 1)
         .setDepth(feet)
+    })
+    this.blooms = []
+    world.objects.forEach((o, i) => {
+      if (o.kind !== 'flower' || o.bloomAt === undefined || o.white) return
+      const base = this.objects[i]
+      const white = this.add
+        .sprite(base.x, base.y, 'sprites/flower', 1)
+        .setOrigin(0, 1)
+        .setDepth(base.depth + 0.5) // right over the coloured flower it fades in on top of
+        .setAlpha(0)
+      this.blooms.push({ base, white, bloomAt: o.bloomAt, x: o.x * 16 })
     })
   }
 }

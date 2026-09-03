@@ -27,6 +27,8 @@ export type Obj = { id: string; x: number; y: number } &
     | { kind: 'hut' }
     | { kind: 'boat' }
     | { kind: 'crate'; open: boolean }
+    // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
+    | { kind: 'flower'; bloomAt?: number; white?: boolean }
   )
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
@@ -36,6 +38,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   hut: { w: 2, h: 2, solid: true },
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
+  flower: { w: 1, h: 1, solid: true },
 }
 
 export interface World {
@@ -90,6 +93,7 @@ export interface DialogueNode {
   walk?: { id: string; path: Dir[]; run?: boolean }
   wait?: number // ms
   spawn?: Obj
+  bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
   set?: Record<string, boolean | number | string>
   next?: string | null // used when there are no choices; null or missing closes the dialogue
   choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
@@ -151,6 +155,8 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           // a day of sim time away, so this one keeps smoking however long the gallery is left open
           { id: 'g-orb', kind: 'orb', x: 12, y: 18, doneAt: 86400000 },
           { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, doneAt: 0 }, // already sat on its finished salt
+          { id: 'g-flower', kind: 'flower', x: 9, y: 20, white: false },
+          { id: 'g-flower-white', kind: 'flower', x: 10, y: 20, white: true },
         ]
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },

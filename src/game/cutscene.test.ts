@@ -128,3 +128,83 @@ describe('act nodes', () => {
     expect(w.dialogue?.node).toBe('end')
   })
 })
+
+const bloomContent: Content = {
+  dialogues: {
+    plant: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: 'bloom' }],
+      nodes: {
+        bloom: { bloom: 'f1', next: 'end' },
+        end: { text: '[PLACEHOLDER bloom 1]', next: null },
+      },
+    },
+    ghost: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: 'bloom' }],
+      nodes: {
+        bloom: { bloom: 'nobody', next: 'end' },
+        end: { text: '[PLACEHOLDER bloom 2]', next: null },
+      },
+    },
+  },
+  items: {},
+}
+
+function flower(w: World) {
+  const o = w.objects.find((o) => o.id === 'f1')
+  if (o?.kind !== 'flower') throw new Error('f1 is not a flower')
+  return o
+}
+// the flower planted on the grass at 15,16, with the bloom act already open on it
+function planted(white = false): World {
+  const w = createWorld()
+  w.objects.push({ id: 'f1', kind: 'flower', x: 15, y: 16, white })
+  apply(w, { type: 'talk', key: 'plant' }, bloomContent)
+  return w
+}
+
+describe('bloom act', () => {
+  it('starts the bloom on the named flower and hides the box', () => {
+    const w = planted()
+    expect(w.dialogue?.node).toBe('bloom')
+    expect(bloomContent.dialogues.plant.nodes.bloom.text).toBeUndefined() // no text: no box
+    expect(flower(w).bloomAt).toBe(0)
+    expect(flower(w).white).toBe(false)
+  })
+
+  it('holds on the bloom node until 1500 ms have passed', () => {
+    const w = planted()
+    apply(w, { type: 'tick', dt: 1499 }, bloomContent)
+    expect(flower(w).white).toBe(false)
+    expect(w.score).toBe(0)
+    expect(w.pops).toEqual([])
+    expect(w.dialogue?.node).toBe('bloom')
+  })
+
+  it('turns white at 1500 ms, scores 10 with a pop, and moves the dialogue on', () => {
+    const w = planted()
+    const rev = w.rev
+    apply(w, { type: 'tick', dt: 1500 }, bloomContent)
+    expect(flower(w).white).toBe(true)
+    expect(w.score).toBe(10)
+    expect(w.pops).toEqual([{ x: 15, y: 16, text: '+10', at: 1500 }])
+    expect(w.rev).toBeGreaterThan(rev)
+    expect(w.dialogue?.node).toBe('end')
+  })
+
+  it('never scores a flower that is already white', () => {
+    const w = planted(true)
+    for (let n = 0; n < 20; n++) apply(w, { type: 'tick', dt: 200 }, bloomContent)
+    expect(w.score).toBe(0)
+    expect(w.pops).toEqual([])
+  })
+
+  it('does not hang on a bloom naming a flower that is not there', () => {
+    const w = createWorld()
+    apply(w, { type: 'talk', key: 'ghost' }, bloomContent)
+    expect(w.dialogue?.node).toBe('bloom')
+    apply(w, { type: 'tick', dt: 16 }, bloomContent)
+    expect(w.dialogue?.node).toBe('end')
+  })
+})
