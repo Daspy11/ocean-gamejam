@@ -9,12 +9,9 @@ export default class Menu extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#000000')
-    this.add
-      .text(320, 120, 'Project Island', { fontFamily: 'monospace', fontSize: 24, resolution: 1 })
-      .setOrigin(0.5)
-    this.add
-      .text(320, 200, '> start', { fontFamily: 'monospace', fontSize: 14, resolution: 1 })
-      .setOrigin(0.5)
+    // the title is the only text in the game drawn at two font pixels to the canvas pixel
+    this.add.bitmapText(320, 120, 'basis33', 'Project Island').setOrigin(0.5).setScale(2)
+    this.add.bitmapText(320, 200, 'basis33', '> start').setOrigin(0.5)
 
     this.keys = this.input.keyboard!.addKeys('E,SPACE,ENTER') as Record<
       string,

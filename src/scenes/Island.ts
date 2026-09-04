@@ -44,7 +44,7 @@ export default class Island extends Phaser.Scene {
     landAt?: number
   }[] = []
   // one per world.pops entry, with the sim time it started and the y it floats up from
-  private pops: { text: Phaser.GameObjects.Text; at: number; baseY: number }[] = []
+  private pops: { text: Phaser.GameObjects.BitmapText; at: number; baseY: number }[] = []
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
   private sent: { dir: Dir | null; run: boolean } = { dir: null, run: false }
 
@@ -243,12 +243,7 @@ export default class Island extends Phaser.Scene {
     this.pops = world.pops.map((p) => {
       const baseY = p.y * 16
       const text = this.add
-        .text(p.x * 16 + 8, baseY, p.text, {
-          fontFamily: 'monospace',
-          fontSize: 8,
-          resolution: 1,
-          color: '#ffffff',
-        })
+        .bitmapText(p.x * 16 + 8, baseY, 'basis33', p.text)
         .setOrigin(0.5, 1)
         .setDepth(10000) // score pops always read over everything
       return { text, at: p.at, baseY }

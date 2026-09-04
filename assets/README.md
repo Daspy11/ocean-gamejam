@@ -21,6 +21,17 @@ bottom-right 8); the game picks the cell by those corners and draws it over what
 so paint each cell's edge as the transition onto anything. `tiles/water` is a single 16x16 fill.
 `?map=gallery` draws every cell of every terrain in game.
 
+`ui/box.png` is one 24x24 picture, drawn in game as a nine-slice cut 8px in from each side: the four
+8x8 corners are pinned, the middle column is stretched to whatever width the box is and the middle
+row to its height. So keep that middle column flat left-to-right and that middle row flat
+top-to-bottom, or a stretched edge will smear. The dialogue box draws it at 624x112, the inventory
+panel at 184x144.
+
+`fonts/basis33.ttf` is the only font in the game. It is a pixel font on a 16px line with a 7px
+advance, and Boot bakes it into a 1-bit sprite sheet at that size once at startup, because drawing a
+ttf through the canvas smears every stem. So it is only ever drawn at its own size (the title screen
+doubles it). Replacing it means a font on the same 7x16 grid, or changing `W` and `H` in `Boot.ts`.
+
 Aseprite: File > Export Sprite Sheet, Sheet Type "By Rows" with the column count above (or "Horizontal
 Strip" for one-row sheets), untick Trim, export PNG to the path named in `src/assets.ts`. A terrain
 sheet is just its 80x48 canvas, exported as a plain PNG.

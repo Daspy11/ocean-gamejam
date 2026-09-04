@@ -119,6 +119,10 @@ const signpost = [
   [2, 2, 12, 7, '#a08050'], // board
 ]
 
+// The dialogue and inventory frame: a flat panel behind a plain edge, drawn in game as a nine-slice
+// cut at 8px, so only the corners survive intact and the middle column and row get stretched.
+const boxframe = (x, y) => (x < 2 || y < 2 || x > 21 || y > 21 ? '#e0e0e0' : '#101820')
+
 const sheets = [
   { file: 'tiles/water.png', w: 16, h: 16, cols: 1, frames: [[[0, 0, 16, 16, '#3b6fb6']]] },
   { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
@@ -270,6 +274,7 @@ const sheets = [
       ], // 3 twig, a stick with one shoot
     ],
   },
+  { file: 'ui/box.png', w: 24, h: 24, cols: 1, frames: [boxframe] },
 ]
 
 const dialogue = {

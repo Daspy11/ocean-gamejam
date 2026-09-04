@@ -6,7 +6,6 @@ import { dispatch } from '../store'
 // is the landing conversation the cutscene hands over to.
 type Script = { cast: Record<string, { name: string }>; lines: { who: string; text: string }[] }
 
-const FONT = { fontFamily: 'monospace', fontSize: 14, resolution: 1 }
 const SEAT = 204 // both characters sit 6 px above the boat's waterline at y 210
 
 export default class Intro extends Phaser.Scene {
@@ -17,9 +16,9 @@ export default class Intro extends Phaser.Scene {
   private crew!: Phaser.GameObjects.Container
   private actors!: Record<string, Phaser.GameObjects.Image>
   private bob!: Phaser.Tweens.Tween
-  private box!: Phaser.GameObjects.Graphics
-  private who!: Phaser.GameObjects.Text
-  private body!: Phaser.GameObjects.Text
+  private box!: Phaser.GameObjects.NineSlice
+  private who!: Phaser.GameObjects.BitmapText
+  private body!: Phaser.GameObjects.BitmapText
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
   private clicked = false // a click advances the line on the next update, exactly like [E]
 
@@ -61,11 +60,9 @@ export default class Intro extends Phaser.Scene {
     })
 
     // same box as UI.ts: the bottom third of the canvas
-    this.box = this.add.graphics()
-    this.box.fillStyle(0x101820).fillRect(8, 240, 624, 112)
-    this.box.lineStyle(1, 0xffffff, 1).strokeRect(8.5, 240.5, 623, 111)
-    this.who = this.add.text(18, 246, '', FONT)
-    this.body = this.add.text(18, 266, '', { ...FONT, wordWrap: { width: 604 } })
+    this.box = this.add.nineslice(8, 240, 'ui/box', 0, 624, 112, 8, 8, 8, 8).setOrigin(0)
+    this.who = this.add.bitmapText(20, 248, 'basis33', '')
+    this.body = this.add.bitmapText(20, 264, 'basis33', '').setMaxWidth(604)
 
     this.keys = this.input.keyboard!.addKeys('E,SPACE,ENTER,ESC') as Record<
       string,
