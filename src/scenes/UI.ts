@@ -6,13 +6,12 @@ const SLOT = 32 // inventory slot size; the 5x3 grid starts at 240,120 so the pa
 
 export default class UI extends Phaser.Scene {
   private rev = -1
-  private font = { fontFamily: 'monospace', fontSize: 14, resolution: 1 }
-  private hud!: Phaser.GameObjects.Text
-  private box!: Phaser.GameObjects.Graphics
-  private who!: Phaser.GameObjects.Text
-  private body!: Phaser.GameObjects.Text
-  private panel!: Phaser.GameObjects.Graphics
-  private label!: Phaser.GameObjects.Text
+  private hud!: Phaser.GameObjects.BitmapText
+  private box!: Phaser.GameObjects.NineSlice
+  private who!: Phaser.GameObjects.BitmapText
+  private body!: Phaser.GameObjects.BitmapText
+  private panel!: Phaser.GameObjects.NineSlice
+  private label!: Phaser.GameObjects.BitmapText
   private slots: Phaser.GameObjects.GameObject[] = []
 
   constructor() {
@@ -20,19 +19,16 @@ export default class UI extends Phaser.Scene {
   }
 
   create() {
-    this.hud = this.add.text(8, 6, '', this.font)
+    this.hud = this.add.bitmapText(8, 6, 'basis33', '')
 
-    // dialogue box spans the bottom third of the 640x360 canvas
-    this.box = this.add.graphics()
-    this.box.fillStyle(0x101820).fillRect(8, 240, 624, 112)
-    this.box.lineStyle(1, 0xffffff, 1).strokeRect(8.5, 240.5, 623, 111)
-    this.who = this.add.text(18, 246, '', this.font)
-    this.body = this.add.text(18, 266, '', { ...this.font, wordWrap: { width: 604 } })
+    // dialogue box spans the bottom third of the 640x360 canvas; the 8px frame leaves 248..344
+    // inside it, which is exactly the name line plus five 16px body lines
+    this.box = this.add.nineslice(8, 240, 'ui/box', 0, 624, 112, 8, 8, 8, 8).setOrigin(0)
+    this.who = this.add.bitmapText(20, 248, 'basis33', '')
+    this.body = this.add.bitmapText(20, 264, 'basis33', '').setMaxWidth(604)
 
-    this.panel = this.add.graphics()
-    this.panel.fillStyle(0x101820).fillRect(228, 108, 184, 144)
-    this.panel.lineStyle(1, 0xffffff, 1).strokeRect(228.5, 108.5, 183, 143)
-    this.label = this.add.text(240, 222, '', this.font)
+    this.panel = this.add.nineslice(228, 108, 'ui/box', 0, 184, 144, 8, 8, 8, 8).setOrigin(0)
+    this.label = this.add.bitmapText(240, 224, 'basis33', '')
 
     this.sync()
     this.rev = world.rev
@@ -83,7 +79,7 @@ export default class UI extends Phaser.Scene {
       const y = 120 + Math.floor(i / 5) * SLOT
       this.slots.push(
         this.add.image(x, y, 'sprites/items', ITEMS.indexOf(id)).setOrigin(0).setScale(2),
-        this.add.text(x + SLOT - 1, y + SLOT - 1, `${n}`, this.font).setOrigin(1),
+        this.add.bitmapText(x + SLOT - 1, y + SLOT - 1, 'basis33', `${n}`).setOrigin(1),
       )
     })
 

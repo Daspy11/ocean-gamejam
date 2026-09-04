@@ -23,6 +23,9 @@ export const SHEETS = {
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
+  // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
+  // row are stretched to whatever size the box is, so keep those flat along the way they stretch
+  'ui/box': { frameWidth: 24, frameHeight: 24 },
 } as const
 
 // A terrain sheet is 5x3 frames laid out as three pictures the artist paints whole. Each number is
@@ -63,7 +66,8 @@ export const JSONS = [
 export function resolve(file: string): { url: string; placeholder: boolean } {
   // Vite needs these two calls written out literally; it rewrites them at build time. They live in
   // here rather than at module scope so e2e tests can import DUAL_FRAME from this file under node.
-  const real = import.meta.glob<string>('/assets/**/*.{png,json}', {
+  // ttf only on this side: there is no stand-in font, assets/fonts/basis33.ttf has to be there
+  const real = import.meta.glob<string>('/assets/**/*.{png,json,ttf}', {
     eager: true,
     query: '?url',
     import: 'default',

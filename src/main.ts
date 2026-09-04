@@ -14,9 +14,18 @@ const game = new Phaser.Game({
   backgroundColor: '#000000',
   pixelArt: true,
   roundPixels: true,
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+  scale: { mode: Phaser.Scale.NONE, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [Boot, Menu, Intro, Island, UI],
 })
+
+// Pixel art only reads evenly at whole-number scales: stretched to fill a 1400px window the canvas
+// runs at 2.1875x, so the browser draws some game pixels two screen pixels wide and the next three
+// and the font goes lumpy. Take the biggest whole multiple of 640x360 that fits and letterbox the
+// rest.
+const snap = () =>
+  game.scale.setZoom(Math.max(1, Math.floor(Math.min(innerWidth / 640, innerHeight / 360))))
+game.events.once('ready', snap)
+addEventListener('resize', snap)
 
 window.island = {
   world: () => structuredClone(world),
