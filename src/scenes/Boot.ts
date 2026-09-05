@@ -4,9 +4,11 @@ import { MAPS } from '../game/map'
 import { createWorld, type Dialogue } from '../game/world'
 import { load, setContent } from '../store'
 
-// basis33's advance and line height at its native size: every glyph is 7 px wide on a 16 px line
-const W = 7
-const H = 16
+// each font at its native size: advance x line box, and how many of those rows sit above the baseline
+const FONTS = {
+  basis33: { w: 7, h: 16, base: 11 },
+  nihonium: { w: 8, h: 12, base: 10 }, // Nihonium113 Console, the name line's font
+}
 
 export default class Boot extends Phaser.Scene {
   constructor() {
@@ -18,13 +20,15 @@ export default class Boot extends Phaser.Scene {
       this.load.spritesheet(key, resolve(`${key}.png`).url, frame)
     for (const key of JSONS) this.load.json(key, resolve(`${key}.json`).url)
     this.load.font('basis33', resolve('fonts/basis33.ttf').url, 'truetype')
+    this.load.font('nihonium', resolve('fonts/Nihonium113-Console.ttf').url, 'truetype')
   }
 
-  // basis33 is a 16x16 pixel font, but Canvas2D never draws it cleanly: Windows rasterises glyphs
-  // through ClearType, so a 1px stem comes out smeared over three pixels even at the exact size on
-  // whole pixels. Bake the sheet once instead — draw every character 8x too big, keep the centre
-  // sample of each font pixel, and hand Phaser a 1-bit fixed-width bitmap font, which it blits.
-  private bakeFont() {
+  // Canvas2D never draws a pixel font cleanly: Windows rasterises glyphs through ClearType, so a
+  // 1px stem comes out smeared over three pixels even at the exact size on whole pixels. Bake the
+  // sheet once instead - draw every character 8x too big, keep the centre sample of each font pixel,
+  // and hand Phaser a 1-bit fixed-width bitmap font, which it blits.
+  private bakeFont(key: keyof typeof FONTS) {
+    const { w: W, h: H, base } = FONTS[key]
     const chars = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('') // ' '..'~'
     const S = 8 // one font pixel drawn this many device pixels wide, so a centre sample is never on an edge
     const cols = 16
@@ -33,15 +37,14 @@ export default class Boot extends Phaser.Scene {
     big.width = cols * W * S
     big.height = rows * H * S
     const ctx = big.getContext('2d')!
-    ctx.font = `${H * S}px basis33`
+    ctx.font = `${H * S}px ${key}`
     ctx.fillStyle = '#ffffff'
     chars.split('').forEach((ch, i) => {
-      // 11 of basis33's 16 pixels are above the baseline
-      ctx.fillText(ch, (i % cols) * W * S, (Math.floor(i / cols) * H + 11) * S)
+      ctx.fillText(ch, (i % cols) * W * S, (Math.floor(i / cols) * H + base) * S)
     })
 
     const from = ctx.getImageData(0, 0, big.width, big.height).data
-    const sheet = this.textures.createCanvas('ui/font', cols * W, rows * H)!
+    const sheet = this.textures.createCanvas(`ui/font/${key}`, cols * W, rows * H)!
     const to = sheet.context.createImageData(sheet.width, sheet.height)
     for (let y = 0; y < sheet.height; y++)
       for (let x = 0; x < sheet.width; x++) {
@@ -53,7 +56,7 @@ export default class Boot extends Phaser.Scene {
 
     // the cells butt up against each other, so all the spacing a glyph needs is already inside it
     const config = {
-      image: 'ui/font',
+      image: `ui/font/${key}`,
       width: W,
       height: H,
       chars,
@@ -64,11 +67,11 @@ export default class Boot extends Phaser.Scene {
       'spacing.y': 0,
       lineSpacing: 0,
     }
-    this.cache.bitmapFont.add('basis33', Phaser.GameObjects.RetroFont.Parse(this, config))
+    this.cache.bitmapFont.add(key, Phaser.GameObjects.RetroFont.Parse(this, config))
   }
 
   create() {
-    this.bakeFont()
+    for (const key of Object.keys(FONTS) as (keyof typeof FONTS)[]) this.bakeFont(key)
     const dialogues: Record<string, Dialogue> = {}
     // the dialogue id is the basename: 'dialogue/mich' loads as 'mich'
     for (const key of JSONS)

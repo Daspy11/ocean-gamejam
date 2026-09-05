@@ -12,10 +12,12 @@ test('the boxes are the ui/box nine-slice and the baked font is 1-bit', async ({
   const drawn = await page.evaluate(() => {
     const list = window.island.game.scene.getScene('ui').children.list
     // any pixel that is neither clear nor solid means the ttf got smeared into the sheet
-    const src = window.island.game.textures.get('ui/font').getSourceImage() as HTMLCanvasElement
-    const read = src.getContext('2d')!.getImageData(0, 0, src.width, src.height).data
     let blurred = 0
-    for (let i = 3; i < read.length; i += 4) if (read[i] !== 0 && read[i] !== 255) blurred++
+    for (const key of ['ui/font/basis33', 'ui/font/nihonium']) {
+      const src = window.island.game.textures.get(key).getSourceImage() as HTMLCanvasElement
+      const read = src.getContext('2d')!.getImageData(0, 0, src.width, src.height).data
+      for (let i = 3; i < read.length; i += 4) if (read[i] !== 0 && read[i] !== 255) blurred++
+    }
     return {
       boxes: list
         .filter((o) => o.type === 'NineSlice')
@@ -24,7 +26,13 @@ test('the boxes are the ui/box nine-slice and the baked font is 1-bit', async ({
           return [box.texture.key, box.width, box.height]
         }),
       // every label is a BitmapText blitted from that sheet, so nothing goes through Canvas2D text
-      labels: [...new Set(list.filter((o) => o.type === 'BitmapText').map(() => 'basis33'))],
+      labels: [
+        ...new Set(
+          list
+            .filter((o) => o.type === 'BitmapText')
+            .map((o) => (o as Phaser.GameObjects.BitmapText).font),
+        ),
+      ],
       texts: list.filter((o) => o.type === 'Text').length,
       blurred,
     }
@@ -34,7 +42,7 @@ test('the boxes are the ui/box nine-slice and the baked font is 1-bit', async ({
       ['ui/box', 624, 112], // the dialogue box
       ['ui/box', 184, 144], // the inventory panel
     ],
-    labels: ['basis33'],
+    labels: ['basis33', 'nihonium'], // the hud and body, and the speaker's name
     texts: 0,
     blurred: 0,
   })

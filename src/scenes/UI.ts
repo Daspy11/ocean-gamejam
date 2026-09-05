@@ -22,9 +22,9 @@ export default class UI extends Phaser.Scene {
     this.hud = this.add.bitmapText(8, 6, 'basis33', '')
 
     // dialogue box spans the bottom third of the 640x360 canvas; the 8px frame leaves 248..344
-    // inside it, which is exactly the name line plus five 16px body lines
+    // inside it, which is exactly the 16px name line plus five 16px body lines
     this.box = this.add.nineslice(8, 240, 'ui/box', 0, 624, 112, 8, 8, 8, 8).setOrigin(0)
-    this.who = this.add.bitmapText(20, 248, 'basis33', '')
+    this.who = this.add.bitmapText(20, 248, 'nihonium', '')
     this.body = this.add.bitmapText(20, 264, 'basis33', '').setMaxWidth(604)
 
     this.panel = this.add.nineslice(228, 108, 'ui/box', 0, 184, 144, 8, 8, 8, 8).setOrigin(0)

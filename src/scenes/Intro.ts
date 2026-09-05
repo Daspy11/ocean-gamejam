@@ -78,7 +78,7 @@ export default class Intro extends Phaser.Scene {
 
     // same box as UI.ts: the bottom third of the canvas
     this.box = this.add.nineslice(8, 240, 'ui/box', 0, 624, 112, 8, 8, 8, 8).setOrigin(0)
-    this.who = this.add.bitmapText(20, 248, 'basis33', '')
+    this.who = this.add.bitmapText(20, 248, 'nihonium', '')
     this.body = this.add.bitmapText(20, 264, 'basis33', '').setMaxWidth(604)
 
     this.keys = this.input.keyboard!.addKeys('E,SPACE,ENTER,ESC') as Record<

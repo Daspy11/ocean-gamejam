@@ -81,7 +81,7 @@ export const JSONS = [
 export function resolve(file: string): { url: string; placeholder: boolean } {
   // Vite needs these two calls written out literally; it rewrites them at build time. They live in
   // here rather than at module scope so e2e tests can import DUAL_FRAME from this file under node.
-  // ttf only on this side: there is no stand-in font, assets/fonts/basis33.ttf has to be there
+  // ttf only on this side: there is no stand-in font, assets/fonts/*.ttf have to be there
   const real = import.meta.glob<string>('/assets/**/*.{png,json,ttf}', {
     eager: true,
     query: '?url',
