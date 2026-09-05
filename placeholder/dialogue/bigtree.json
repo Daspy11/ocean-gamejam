@@ -1,0 +1,14 @@
+{
+  "name": "",
+  "start": [
+    {
+      "node": "1"
+    }
+  ],
+  "nodes": {
+    "1": {
+      "text": "[PLACEHOLDER a tree on the big island]",
+      "next": null
+    }
+  }
+}

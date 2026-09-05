@@ -72,11 +72,13 @@ test('every dialogue node fits the box', async ({ page }) => {
 })
 
 // a fractional scale makes the browser draw some game pixels wider than others, which reads as a
-// lumpy font; main.ts letterboxes instead, so these windows all land on a whole multiple of 640x360
+// lumpy font; main.ts letterboxes instead. 1280x720 is the itch frame size, and the shipped game
+// fills it exactly at 2x
 test('the canvas only ever scales by a whole number', async ({ page }) => {
   for (const [w, h, zoom] of [
+    [1280, 720, 2], // the itch frame: 2x, edge to edge, nothing left over
+    [1920, 1080, 3], // fullscreen on a 1080p monitor
     [1400, 800, 2], // 2.1875 if it stretched to fit
-    [1920, 1080, 3],
     [900, 620, 1], // 1.40: too small to double, so it stays at 1:1 rather than going uneven
   ]) {
     await page.setViewportSize({ width: w, height: h })
@@ -89,4 +91,32 @@ test('the canvas only ever scales by a whole number', async ({ page }) => {
     })
     expect(drawn).toEqual([zoom, zoom])
   }
+})
+
+// three speaker cases the box has to keep apart: an npc line, a node the lead speaks (who: ''), and
+// narration, which is a whole dialogue with no name and must stay unlabelled
+test('the lead is named You, and narration is not', async ({ page }) => {
+  await page.goto('/?scene=island')
+  await page.waitForFunction(() => window.island?.game.scene.isActive('ui'))
+
+  // open the box on that node and read the name line, which is the BitmapText UI.ts puts at 248.
+  // null means it is hidden. Re-opening on every poll is harmless: load() just bumps rev again.
+  const speaker = (key: string, node: string) =>
+    page.evaluate(
+      ([k, n]) => {
+        const w = window.island.world()
+        w.dialogue = { key: k, node: n, choice: 0 }
+        window.island.load(w)
+        const list = window.island.game.scene.getScene('ui').children.list
+        const label = list.find(
+          (o) => o.type === 'BitmapText' && (o as Phaser.GameObjects.BitmapText).y === 248,
+        ) as Phaser.GameObjects.BitmapText
+        return label.visible ? label.text : null
+      },
+      [key, node],
+    )
+
+  await expect.poll(() => speaker('crate', '1')).toBe('Mich') // the dialogue's own name
+  await expect.poll(() => speaker('crate', '2')).toBe('You') // who: '' on the node: the lead speaks
+  await expect.poll(() => speaker('boat', '1')).toBe(null) // name '': narration, no name line
 })

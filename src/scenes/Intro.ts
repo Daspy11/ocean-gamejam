@@ -1,12 +1,12 @@
 import Phaser from 'phaser'
-import { DUAL_FRAME } from '../assets'
 import { dispatch } from '../store'
 
 // assets/text/intro.json: human-written, read verbatim. The only thing here that touches `world`
 // is the landing conversation the cutscene hands over to.
 type Script = { cast: Record<string, { name: string }>; lines: { who: string; text: string }[] }
 
-const SEAT = 204 // both characters sit 6 px above the boat's waterline at y 210
+const ZOOM = 3 // the cutscene sits a step closer than gameplay: art at 3x, the dialogue box at 1x
+const SEAT = 3 // both characters sit this many art pixels above the boat's waterline
 
 export default class Intro extends Phaser.Scene {
   private script!: Script
@@ -16,10 +16,12 @@ export default class Intro extends Phaser.Scene {
   private crew!: Phaser.GameObjects.Container
   private actors!: Record<string, Phaser.GameObjects.Image>
   private bob!: Phaser.Tweens.Tween
+  private surge!: Phaser.Tweens.Tween
   private box!: Phaser.GameObjects.NineSlice
   private who!: Phaser.GameObjects.BitmapText
   private body!: Phaser.GameObjects.BitmapText
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
+  private seat = 0 // the y the crew rest at, so a hop always returns to it
   private clicked = false // a click advances the line on the next update, exactly like [E]
 
   constructor() {
@@ -31,30 +33,45 @@ export default class Intro extends Phaser.Scene {
     this.ending = false
     this.script = this.cache.json.get('text/intro')
 
-    // no camera zoom here, so everything is drawn at 640x360 and the sprites carry the 2x scale
-    this.water = this.add.tileSprite(0, 0, 640, 360, 'tiles/water').setOrigin(0).setTileScale(2)
-    this.add
-      .tileSprite(540, 60, 200, 240, 'tiles/sand', DUAL_FRAME[15])
-      .setOrigin(0)
-      .setTileScale(2)
+    // no camera zoom here: the art carries ZOOM and the box is drawn at 1x on top of it
+    this.water = this.add.tileSprite(0, 0, 640, 360, 'tiles/water').setOrigin(0).setTileScale(ZOOM)
 
-    const boat = this.add.image(200, 210, 'sprites/boat').setOrigin(0, 1).setScale(2)
+    // the boat is 32 art px wide, so this sits it in the middle of the 640 canvas
+    const boat = this.add
+      .image((640 - 32 * ZOOM) / 2, 208, 'sprites/boat')
+      .setOrigin(0, 1)
+      .setScale(ZOOM)
+    this.seat = boat.y - SEAT * ZOOM
     this.actors = {
-      mich: this.add
-        .image(boat.x + 8, SEAT, 'sprites/mich', 7)
-        .setOrigin(0, 1)
-        .setScale(2),
+      mich: this.add.image(boat.x, this.seat, 'sprites/mich', 7).setOrigin(0, 1).setScale(ZOOM),
       player: this.add
-        .image(boat.x + 40, SEAT, 'sprites/player', 7)
+        .image(boat.x + 15 * ZOOM, this.seat, 'sprites/player', 7)
         .setOrigin(0, 1)
-        .setScale(2),
+        .setScale(ZOOM),
     }
-    this.crew = this.add.container(0, -3, [boat, this.actors.mich, this.actors.player])
+    // the bob and the surge are in screen pixels, so they scale with the art. The boat is added last
+    // so it draws on top: its near gunwale cuts across their legs and they read as sat down in it.
+    this.crew = this.add.container(-5 * ZOOM, -3 * ZOOM, [
+      this.actors.mich,
+      this.actors.player,
+      boat,
+    ])
     this.bob = this.tweens.add({
       targets: this.crew,
-      y: 3,
+      y: 3 * ZOOM,
       duration: 900,
       ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    })
+    // rowing is not a steady pace: a quick pull forward, a glide, then a slower drift back. The beat
+    // is 1650 ms against the bob's 1800, so the two never settle into one circle.
+    this.surge = this.tweens.add({
+      targets: this.crew,
+      x: 5 * ZOOM,
+      duration: 700,
+      ease: 'Quad.easeOut',
+      hold: 250, // the glide at the end of the stroke
       yoyo: true,
       repeat: -1,
     })
@@ -74,7 +91,7 @@ export default class Intro extends Phaser.Scene {
   }
 
   update() {
-    this.water.tilePositionX += 0.3 // the sea slides past the boat
+    this.water.tilePositionX += 0.7 // the sea rushes past: they are rowing hard
     if (this.ending) return
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) {
       this.land()
@@ -94,13 +111,13 @@ export default class Intro extends Phaser.Scene {
 
   private show() {
     const line = this.script.lines[this.line]
-    this.who.setText(this.script.cast[line.who]?.name ?? '') // the player has no name, so no name line
+    this.who.setText(this.script.cast[line.who]?.name ?? '') // cast names, so the lead reads 'You'
     this.body.setText([line.text, '', '[E] continue'].join('\n'))
     const actor = this.actors[line.who]
     if (actor)
       this.tweens.add({
         targets: actor,
-        y: { from: SEAT, to: SEAT - 6 },
+        y: { from: this.seat, to: this.seat - 2 * ZOOM }, // a 2px bounce on the line they speak
         duration: 150,
         yoyo: true,
       })
@@ -110,7 +127,7 @@ export default class Intro extends Phaser.Scene {
   private crash() {
     this.ending = true
     for (const part of [this.box, this.who, this.body]) part.setVisible(false)
-    this.bob.stop()
+    for (const tween of [this.bob, this.surge]) tween.stop()
     this.tweens.add({
       targets: this.crew,
       x: 720,

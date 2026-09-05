@@ -40,14 +40,19 @@ e2e/           Playwright specs.
   player every frame from that (no tweens, no Phaser animations). World coordinates are tiles; scenes
   multiply by 16.
 - Everything standing on the ground is an `Obj` in `world.objects` with a `kind`. `KINDS` gives the tile
-  footprint and solidity. Sprites come from `sprites/<kind>`, are bottom-anchored, and are depth-sorted by
-  their feet Y, so tall things overlap what's behind them (top-down oblique). To add an object kind: one
+  footprint and solidity. `cave` and `floor` are the non-solid kinds, walked over rather than into;
+  stepping onto a `cave` puts the player at its `to` (the big island's cave mouth leads to a rock-walled
+  room in the map's bottom-left corner, and back; the mouth is sealed inside the forest for now, on
+  purpose). A `rack` is picked up whole, like the
+  orb. Sprites come from `sprites/<kind>`, are bottom-anchored, and are depth-sorted by their feet Y,
+  so tall things overlap what's behind them (top-down oblique). To add an object kind: one
   union member, one `KINDS` row, one manifest entry, one placeholder entry.
 - Ground is drawn with layered dual-grid autotiling: `tiles/water` is the base, and each higher terrain
   has one 5x3 sheet (a 3x3 island, a 2x2 hole, two diagonals; frame for a corner mask via `DUAL_FRAME`
   in `src/assets.ts`) drawn over whatever is below. A layer's mask counts any terrain above it as itself,
   so a rounded corner reveals the terrain below and never water. One sheet per terrain covers every
-  transition. Adding a terrain: add it to `Tile`, the draw order in `Island.ts`, the manifest, the
+  transition. `rock` is the top layer and the only solid one: walking allows salt, sand and grass.
+  Adding a terrain: add it to `Tile`, the draw order in `Island.ts`, the manifest, the
   placeholder script, and `assets/README.md`.
 - `assets/README.md` is the artist's spec. Keep it true when a sheet layout changes. `?map=gallery`
   renders every tile, transition, object, and character with the real game code.
@@ -56,30 +61,49 @@ e2e/           Playwright specs.
   dialogue path and menu state is testable without Phaser.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open`, `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
-  `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, add more in `apply`) and the `when` flag is truthy; it sets
-  `flags['fired:<key>']`. Dialogues that fire while a box is open wait in `world.queue`. Node `set` may
-  write strings; `flags['name:<item>']` renames an item; node `take` spends an item. `{item}` in text
-  becomes the name of `dialogue.item`; `{score}` the beauty score. The first pickup of each item plays
-  `got.json`. To add a tutorial beat: write a dialogue file with a trigger, and if it needs a new
-  event, emit it from `apply`. No trigger system.
+  `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `salt:away` (any item put down off
+  the main island), `carrots:done`, add more in `apply`) and the `when` flag is truthy; it sets
+  `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`.
+  Dialogues that fire while a box is open wait in
+  `world.queue`. Node `set` may write strings; `flags['name:<item>']` renames an item; node `take`
+  spends an item (or the counts in a record: `{ twig: 10 }`); node `give` hands one over, got box and
+  all. `{item}` in text becomes the name of `dialogue.item`; `{score}` the beauty score. The first
+  pickup of each item plays `got.json`. To add a tutorial beat: write a dialogue file with a trigger,
+  and if it needs a new event, emit it from `apply`. No trigger system.
 - Cutscenes are dialogue nodes without `text` (acts): `walk` an npc along a path, `wait` ms, `spawn` an
   object, `bloom` a flower, `shake` / `fly` / `land` a tree (`src/game/tree.ts`), `rumble` the screen. The
   box hides, the act runs, and the node advances itself. Any object can be walked; npcs walk through
   everything, a boat stops and is `wrecked` when its next tile is not water (`src/game/boat.ts`), and an
   npc with `ride` sits on the object it names. See `assets/dialogue/flower.json` and `pirate.json`.
-- The infinite-resource loop: the orb thrown on a water tile boils it (smoke) and after 2 s that tile is
-  `salt`; the orb is picked back up. Interact on a bare salt tile digs it up as a salt item; salt placed
-  on water becomes a `salt` tile. That is the Skyblock cobblestone generator, thematically. The map is
-  ASCII in `src/game/map.ts`; edit it by hand.
+- The island grows by the orb: thrown on a water tile it boils it (smoke) and after 2 s that tile is
+  `salt`, and the orb is picked back up. A crust once laid stays laid — there is no digging it back up,
+  so every block costs its beauty for good. A `salt` item in hand still fills a water tile in the same
+  way, but nothing hands one out any more, so `salt:place` (`insalting.json`) is unreachable for now.
+  Interact in the inventory (E / Enter) uses the slot the cursor is on against the tile in front of him:
+  `useItem` in `src/game/salt.ts` throws the orb, lays a block of salt, or puts a `floor` down on bare
+  ground, and the bag shuts so he can see it land. Nothing else in the bag goes anywhere. The map is
+  ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
+  farmland with a carrot on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets
-  it). A bloomed flower is +10, placing salt is -1 after that. `world.pops` are the floating +N/-N.
-- Scene flow: Boot → Menu → Intro (the rowboat cutscene, data in `assets/text/intro.json`) → Island,
+  it). A bloomed flower is +10, a `floor` +5, placing salt is -1, but only on the main island:
+  `world.main` is flood-filled from the spawn when the world is made and grows through salt laid next
+  to it. Anything put down anywhere else counts for nothing and fires `salt:away` (Walter's reminder in
+  `assets/dialogue/away.json`) instead of `salt:place`. `world.pops` are the floating +N/-N.
+- Scene flow: Boot → Intro (the rowboat cutscene, data in `assets/text/intro.json`; it opens on the
+  sea and waits for a press before the first line) → Island,
   which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
-  Z three times quickly flips between the game and `?map=gallery` (`src/main.ts`).
+  Z three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, warps into the cave
+  and to the other islands, free twigs). A warp cancels whatever cutscene was playing
+  (`cancelScene` in `src/game/cutscene.ts`).
 - Cast so far: the main character (he/him, unnamed, says almost nothing), his friend Mich (she/her,
   red hair), Walter (he/him, a crab in a cowboy hat, walks sideways), the tree, which talks once
-  woken (`assets/dialogue/tree*.json`), and Etarp (he/him, a blind pirate, drawn facing the wrong
-  way). Do not invent further characters, names, or backstory.
+  woken (`assets/dialogue/tree*.json`; Walter hands over the fashionable carpet before he settles under
+  it, in `flower.json`), Etarp (he/him, a blind pirate, drawn facing the wrong
+  way), and golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
+  pays with a golden egg, `assets/dialogue/albatross.json`), and the shrimp (he/him, French, unnamed so
+  far, farms carrots on the big island's east side from a stool; picking all twelve earns the
+  certificate, `assets/dialogue/shrimp.json` and `carrots.json`). Do not invent further characters,
+  names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.
 - Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24
   in the RPG Maker layout: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up).

@@ -1,0 +1,11 @@
+{
+  "name": "Walter",
+  "trigger": { "event": "salt:away", "when": "score:on" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "text": "hello yes i would like to remind you that only your main island counts towards beauty score",
+      "next": null
+    }
+  }
+}

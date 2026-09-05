@@ -1,0 +1,32 @@
+{
+  "name": "golfer's delight",
+  "start": [{ "when": "albatross:egg", "node": "after" }, { "node": "1" }],
+  "nodes": {
+    "1": { "text": "oh man oh geez oh BOY i am NEVER gonna finish this nest", "next": "2" },
+    "2": {
+      "who": "",
+      "text": "what's up",
+      "next": [{ "has": { "twig": 10 }, "node": "3twigs" }, { "node": "3" }]
+    },
+    "3": {
+      "text": "i am trying to finish my nest but all the twigs on this island are TERRIBLE",
+      "next": null
+    },
+    "3twigs": {
+      "text": "i am trying to finish my nest but all the twigs on this island are TERRIBLE",
+      "choices": [
+        { "text": "sucks to be you i guess", "next": null },
+        { "text": "what about these twigs", "next": "4" }
+      ]
+    },
+    "4": { "text": "holy hell these twigs are amazing where did you get them", "next": "5" },
+    "5": {
+      "text": "great ok thanks take this",
+      "take": { "twig": 10 },
+      "give": "egg",
+      "set": { "albatross:egg": true },
+      "next": null
+    },
+    "after": { "text": "[PLACEHOLDER golfer's delight, after the egg]", "next": null }
+  }
+}

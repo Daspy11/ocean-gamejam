@@ -22,6 +22,12 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: { '1': { text: '[PLACEHOLDER insalting]', next: null } },
     },
+    away: {
+      name: '[PLACEHOLDER NPC NAME]',
+      trigger: { event: 'salt:away', when: 'score:on' },
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER salt laid out at sea]', next: null } },
+    },
     negative: {
       name: '[PLACEHOLDER NPC NAME]',
       trigger: { event: 'score:negative', when: 'score:on' },
@@ -40,6 +46,24 @@ function shore(): World {
   w.player.facing = 'right'
   w.inventory.orb = 1
   w.flags['had:orb'] = true
+  return w
+}
+
+// the big island's west beach at 32,16, facing the open sea at 31,16 with a salt in hand and
+// beauty already showing: nothing laid out here is anywhere near the island the player lives on
+function away(): World {
+  const w = createWorld()
+  w.player = { ...w.player, x: 32, y: 16, facing: 'left' }
+  w.inventory.salt = 1
+  w.score = 10
+  w.flags['score:on'] = true
+  return w
+}
+
+// the same, from the small east island's north shore at 25,14, facing the water at 25,13
+function eastIsland(): World {
+  const w = away()
+  w.player = { ...w.player, x: 25, y: 14, facing: 'up' }
   return w
 }
 
@@ -122,8 +146,8 @@ describe('the salt generator', () => {
   })
 })
 
-describe('digging up the boiled salt', () => {
-  it('turns the crust back into water and hands over one salt, with the got box once', () => {
+describe('the crust the orb leaves', () => {
+  it('stays where it was laid: a bare salt tile cannot be picked back up', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)
     apply(w, { type: 'tick', dt: 2000 }, content)
@@ -131,22 +155,8 @@ describe('digging up the boiled salt', () => {
     apply(w, { type: 'interact' }, content) // take the orb off the salt
 
     apply(w, { type: 'interact' }, content)
-    expect(w.inventory.salt).toBe(1)
-    expect(tileAt(w, 21, 16)).toBe('water')
-    expect(w.dialogue).toEqual({ key: 'got', node: '1', choice: 0, item: 'salt' })
-    expect(w.flags['had:salt']).toBe(true)
-
-    apply(w, { type: 'interact' }, content) // dismiss the got box
-    apply(w, { type: 'interact' }, content) // spend that salt on the tile the orb had boiled
-    expect([tileAt(w, 21, 16), w.inventory.salt]).toEqual(['salt', 0])
-
-    w.player.y = 15 // an untouched patch of sea, to run the whole loop a second time
-    apply(w, { type: 'interact' }, content)
-    apply(w, { type: 'tick', dt: 2000 }, content)
-    apply(w, { type: 'interact' }, content) // take the orb
-    apply(w, { type: 'interact' }, content) // and dig the second salt
-    expect(w.inventory.salt).toBe(1)
-    expect(w.dialogue).toBe(null) // no second got box
+    expect([tileAt(w, 21, 16), w.inventory.salt]).toEqual(['salt', undefined])
+    expect([w.dialogue, w.flags['had:salt']]).toEqual([null, undefined])
   })
 
   it('feeds the salt straight back into growing the island', () => {
@@ -186,7 +196,7 @@ describe('paving the sea over once beauty is on', () => {
   })
 })
 
-describe('beauty counts every salt block on the map', () => {
+describe('beauty counts salt on the main island', () => {
   it('costs one to boil a tile, with no pop until beauty is on', () => {
     const w = shore()
     apply(w, { type: 'interact' }, content)
@@ -204,7 +214,7 @@ describe('beauty counts every salt block on the map', () => {
     expect(w.pops).toEqual([{ x: 21, y: 16, text: '-1', at: 2000 }])
   })
 
-  it('refunds the beauty when the crust is dug back up', () => {
+  it('never gives it back, since the crust cannot be dug up again', () => {
     const w = shore()
     w.score = 10
     w.flags['score:on'] = true
@@ -214,8 +224,79 @@ describe('beauty counts every salt block on the map', () => {
     apply(w, { type: 'interact' }, content) // take the orb off the salt
 
     apply(w, { type: 'interact' }, content)
+    expect([w.score, w.pops.length]).toEqual([9, 1]) // still just the -1 for boiling it
+    expect(w.main[16 * w.width + 21]).toBe(true) // and the island keeps the tile
+  })
+
+  it('charges nothing for a tile boiled out of reach of the island', () => {
+    const w = away() // 32,16 on the big island's beach, facing the sea at 31,16
+    w.inventory.orb = 1
+    w.flags['had:orb'] = true
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    expect(tileAt(w, 31, 16)).toBe('salt')
+    expect([w.score, w.pops.length]).toEqual([10, 0])
+  })
+
+  it('leaves a crust out at sea alone too, salt in hand and all', () => {
+    const w = away()
+    w.tiles[16 * w.width + 31] = 'salt'
+    apply(w, { type: 'interact' }, content)
+    expect([w.score, w.pops.length]).toEqual([10, 0])
+    expect(w.inventory.salt).toBe(1) // the one carried out here, and nowhere to put it
+  })
+})
+
+describe('the main island', () => {
+  const main = (w: World, x: number, y: number) => w.main[y * w.width + x]
+
+  it('is the island the player washed up on, and no other', () => {
+    const w = createWorld()
+    expect([main(w, 14, 16), main(w, 16, 16)]).toEqual([true, true])
+    expect(main(w, 24, 16)).toBe(false) // the small east island
+    expect(main(w, 22, 3)).toBe(false) // the empty one up north
+    expect(main(w, 45, 20)).toBe(false) // the big one out east
+    expect(main(w, 21, 16)).toBe(false) // open water
+  })
+
+  it('grows through every block the player lays, at a beauty each', () => {
+    const w = shore()
+    w.inventory.salt = 2
+    w.score = 10
+    w.flags['score:on'] = true
+
+    apply(w, { type: 'interact' }, content)
+    expect([main(w, 21, 16), w.score]).toEqual([true, 9])
+    expect(w.dialogue?.key).toBe('insalting')
+    apply(w, { type: 'interact' }, content) // dismiss the complaint
+
+    w.player.x = 21 // out onto the block just laid, and lay the next one from there
+    apply(w, { type: 'interact' }, content)
+    expect([main(w, 22, 16), w.score]).toEqual([true, 8])
+  })
+
+  it('never reaches a block laid out at sea, which is free and silent', () => {
+    for (const w of [away(), eastIsland()]) {
+      const [x, y] = w.player.facing === 'left' ? [31, 16] : [25, 13]
+      apply(w, { type: 'interact' }, content)
+      expect([tileAt(w, x, y), main(w, x, y)]).toEqual(['salt', false])
+      expect([w.score, w.pops.length]).toEqual([10, 0])
+      expect(w.dialogue?.key).toBe('away') // Walter's line, not Mich's
+      expect(w.flags['fired:insalting']).toBeUndefined()
+    }
+  })
+
+  it('is where a flower has to bloom to be worth its 10', () => {
+    const w = createWorld()
+    w.flags['score:on'] = true
+    w.objects.push({ id: 'far', kind: 'flower', x: 45, y: 20, bloomAt: 0 })
+    apply(w, { type: 'tick', dt: 1500 }, content)
+    expect([w.score, w.pops.length]).toEqual([0, 0])
+
+    w.objects.push({ id: 'home', kind: 'flower', x: 16, y: 15, bloomAt: w.time })
+    apply(w, { type: 'tick', dt: 1500 }, content)
     expect(w.score).toBe(10)
-    expect(w.pops.at(-1)).toEqual({ x: 21, y: 16, text: '+1', at: 2000 })
+    expect(w.pops.at(-1)).toEqual({ x: 16, y: 15, text: '+10', at: 3000 })
   })
 })
 

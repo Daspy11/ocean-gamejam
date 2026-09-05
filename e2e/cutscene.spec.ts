@@ -94,11 +94,12 @@ test('opening the second crate plays the flower scene and brings Walter in', asy
     return { world: w, mich: obj('mich'), flower: obj('flower1'), walter: obj('walter') }
   })
   expect(after.world.dialogue).toBe(null)
-  expect(after.mich).toMatchObject({ x: 24, y: 15, facing: 'right' })
-  expect(after.flower).toMatchObject({ x: 25, y: 15, white: true })
+  expect(after.mich).toMatchObject({ x: 19, y: 15, facing: 'up' })
+  expect(after.flower).toMatchObject({ x: 19, y: 14, white: true })
   expect(after.walter).toMatchObject({ x: 17, y: 16 }) // settled in beside tree1 at 16,16
   expect(after.world.score).toBe(10)
   expect(after.world.inventory.electrolytes).toBe(1) // she never got to eat them on this route
+  expect(after.world.inventory.carpet).toBe(1) // handed over before he went to sit under the tree
   expect(after.world.flags['score:on']).toBe(true)
   expect(after.world.flags['fired:flower']).toBe(true)
   expect(after.world.flags['ate:electrolytes']).toBeUndefined()

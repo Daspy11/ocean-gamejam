@@ -91,7 +91,7 @@ export default class Boot extends Phaser.Scene {
       this.scene.start('island')
       return
     }
-    // ?scene=island skips the menu and the cutscene; tests and dev use it
-    this.scene.start(params.get('scene') ?? 'menu')
+    // ?scene=island skips the cutscene; tests and dev use it
+    this.scene.start(params.get('scene') ?? 'intro')
   }
 }

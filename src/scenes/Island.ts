@@ -5,7 +5,7 @@ import { dispatch, world } from '../store'
 
 // priority, lowest first; later fills draw over earlier ones, so each layer's mask counts every
 // terrain above it as itself
-const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass']
+const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass', 'farm', 'rock']
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 // anything drawn walking on the grid: the player, and npcs a cutscene is walking
@@ -266,10 +266,13 @@ export default class Island extends Phaser.Scene {
       if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
-      return this.add
-        .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
-        .setOrigin(0, 1)
-        .setDepth(feet)
+      return (
+        this.add
+          .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
+          .setOrigin(0, 1)
+          // a floor lies flat on the ground, so he walks over it rather than behind it
+          .setDepth(o.kind === 'floor' ? feet - 1 : feet)
+      )
     })
     this.trees = []
     world.objects.forEach((o, i) => {

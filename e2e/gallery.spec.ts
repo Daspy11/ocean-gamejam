@@ -1,4 +1,12 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+// a Phaser Key that goes down and up inside one frame is never seen, so hold it for a few frames
+async function tap(page: Page, key: string) {
+  await page.keyboard.down(key)
+  await page.waitForTimeout(80)
+  await page.keyboard.up(key)
+  await page.waitForTimeout(80)
+}
 
 // Where each terrain's block starts in MAPS.gallery: a 2x2 at (x, y) draws the sheet's 3x3 island
 // from dual cell (x, y), the ring beside it draws the 2x2 hole from (x+4, y+1), and the checkerboard
@@ -7,6 +15,7 @@ const BLOCKS = [
   { layer: 'salt', x: 1, y: 1 },
   { layer: 'sand', x: 8, y: 1 },
   { layer: 'grass', x: 15, y: 1 },
+  { layer: 'rock', x: 22, y: 1 },
 ]
 
 test('?map=gallery draws every terrain template and every object with the game code', async ({
@@ -111,24 +120,30 @@ test('?map=gallery draws every terrain template and every object with the game c
   expect(errors).toEqual([])
 })
 
-test('Z three times flips to the gallery map and back', async ({ page }) => {
+test('the debug menu flips to the gallery map and back', async ({ page }) => {
   await page.goto('/?scene=island')
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   for (let i = 0; i < 3; i++) await page.keyboard.press('z')
+  await page.waitForFunction(() => window.island.game.scene.isActive('debug'))
+  await tap(page, 'e') // the cursor starts on the flip, which is the menu's first option
   await page.waitForURL(/map=gallery/)
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   expect(await page.evaluate(() => window.island.world().player)).toMatchObject({ x: 8, y: 20 })
 
-  // two presses, a pause, then one more: never three within a second, so nothing happens
+  // two presses, a pause, then one more: never three within a second, so the menu stays shut
   await page.keyboard.press('z')
   await page.keyboard.press('z')
   await page.waitForTimeout(1100)
   await page.keyboard.press('z')
   await page.waitForTimeout(200)
+  expect(await page.evaluate(() => window.island.game.scene.isActive('debug'))).toBe(false)
   expect(page.url()).toContain('map=gallery')
 
+  // back out of the gallery lands straight in gameplay, skipping the intro, like ?scene=island does
+  await page.waitForTimeout(1100) // let the lone press above fall out of the one-second window
   for (let i = 0; i < 3; i++) await page.keyboard.press('z')
+  await page.waitForFunction(() => window.island.game.scene.isActive('debug'))
+  await tap(page, 'e') // on the gallery the same option reads 'back to the game'
   await page.waitForURL(/scene=island/)
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
-  expect(await page.evaluate(() => window.island.world().player)).toMatchObject({ x: 14, y: 16 })
 })

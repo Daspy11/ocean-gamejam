@@ -1,11 +1,36 @@
 import { describe, expect, it } from 'vitest'
+import { MAPS } from './map'
 import { KINDS, createWorld, objectAt, tileAt } from './world'
 
 describe('createWorld', () => {
-  it('parses map.ts into a 32x32 grid', () => {
+  it('takes the grid size from the rows of the map it is given', () => {
     const w = createWorld()
-    expect([w.width, w.height, w.tiles.length]).toEqual([32, 32, 32 * 32])
+    expect([w.width, w.height, w.tiles.length]).toEqual([64, 44, 64 * 44])
     expect(tileAt(w, 16, 16)).toBe('grass') // the middle of the main island
+    expect(tileAt(w, 7, 38)).toBe('rock') // the wall of the room the cave leads to
+    expect(tileAt(w, 42, 17)).toBe('grass') // the tile the cave mouth stands on
+    const g = createWorld('gallery')
+    expect([g.width, g.height, g.tiles.length]).toEqual([32, 32, 32 * 32])
+  })
+
+  it('plants a tree of its own on every T, and leaves the tile under it grass', () => {
+    const w = createWorld()
+    expect(tileAt(w, 41, 17)).toBe('grass') // a forest tile is ordinary grass...
+    const tree = objectAt(w, 41, 17)
+    expect(tree?.id).toBe('tree41-17') // ...with a tree standing on it, talked to like tree2
+    expect(tree?.kind === 'tree' && tree.dialogue).toBe('bigtree')
+    const planted = MAPS.island.reduce((n, row) => n + [...row].filter((c) => c === 'T').length, 0)
+    expect(w.objects.filter((o) => o.id.startsWith('tree') && o.id !== 'tree1').length).toBe(
+      planted,
+    )
+    // the forest walls the mouth in: every tile around it is a tree, until something clears them
+    for (const [x, y] of [
+      [41, 17],
+      [43, 17],
+      [42, 16],
+      [42, 18],
+    ])
+      expect(objectAt(w, x, y)?.kind).toBe('tree')
   })
 
   it('lays out the wreck shore, the southern spit, and the gap to the second island', () => {
@@ -52,6 +77,10 @@ describe('objectAt', () => {
     expect(objectAt(w, 25, 16)?.id).toBe('sign1') // on the second island's grass
     expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
     expect(objectAt(w, 16, 15)).toBeUndefined() // the tile the tree's canopy hangs over
+    expect(objectAt(w, 36, 20)?.id).toBe('albatross') // out on the big island
+    expect(objectAt(w, 48, 21)?.id).toBe('crate3') // and the crate on the grass east of the forest
+    expect(objectAt(w, 42, 17)?.id).toBe('cave1') // the mouth, walled in by the forest
+    expect(objectAt(w, 10, 37)?.id).toBe('rack1') // and the rack in the room it leads to
   })
 
   it('finds the wrecked boat on both of its tiles', () => {
@@ -102,7 +131,7 @@ describe('tileAt', () => {
 })
 
 describe('the gallery map', () => {
-  it('lays an island, a ring and a checkerboard out in salt, sand and grass, a water column apart', () => {
+  it('lays an island, a ring and a checkerboard out in every terrain, a water column apart', () => {
     const w = createWorld('gallery')
     // a 2x2 block, a 3x3 ring with a hole and a checkerboard: together they draw every frame of the
     // 5x3 terrain sheet (see DUAL_FRAME in src/assets) exactly once
@@ -111,6 +140,7 @@ describe('the gallery map', () => {
       [1, 'salt'],
       [8, 'sand'],
       [15, 'grass'],
+      [22, 'rock'],
     ] as const)
       for (let r = 0; r < 6; r++)
         for (let c = 0; c < 6; c++)

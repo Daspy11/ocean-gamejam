@@ -32,15 +32,10 @@ const texts = (page: Page, scene: string) =>
     scene,
   )
 
-test('boots into the menu, Enter starts the intro and Escape skips it', async ({ page }) => {
+test('boots straight into the intro on its first line and Escape skips it', async ({ page }) => {
   await page.goto('/')
-  await page.waitForFunction(() => window.island?.game.scene.isActive('menu'))
-  expect(await texts(page, 'menu')).toContain('start')
-  await page.locator('#game canvas').screenshot({ path: 'test-results/menu.png' })
-
+  await page.waitForFunction(() => window.island?.game.scene.isActive('intro'))
   const on = (key: string) => page.evaluate((k) => window.island.game.scene.isActive(k), key)
-  await tap(page, 'Enter')
-  await expect.poll(() => on('intro')).toBe(true)
   await expect.poll(() => texts(page, 'intro')).toContain("i knew we shouldn't")
   await page.locator('#game canvas').screenshot({ path: 'test-results/intro.png' })
 
@@ -55,9 +50,7 @@ test('playing the intro through lands on the island and opens the landing talk',
 }) => {
   test.setTimeout(25000)
   await page.goto('/')
-  await page.waitForFunction(() => window.island?.game.scene.isActive('menu'))
-  await tap(page, 'Enter')
-  await page.waitForFunction(() => window.island.game.scene.isActive('intro'))
+  await page.waitForFunction(() => window.island?.game.scene.isActive('intro'))
 
   const onIsland = () => page.evaluate(() => window.island.game.scene.isActive('island'))
   for (let i = 0; i < 20 && !(await onIsland()); i++) await tap(page, 'e')
@@ -293,8 +286,10 @@ test('objects sort by the bottom of their footprint', async ({ page }) => {
   const depths = await page.evaluate(() => {
     const list = window.island.game.scene.getScene('island').children
       .list as Phaser.GameObjects.Sprite[]
-    const feet = (k: string) => list.find((o) => o.texture?.key === `sprites/${k}`)?.depth
-    return { tree: feet('tree'), crate: feet('crate'), mich: feet('mich') }
+    // by tile, since Phaser keeps children.list in depth order and the big island has its own
+    const feet = (k: string, x: number) =>
+      list.find((o) => o.texture?.key === `sprites/${k}` && o.x === x * 16)?.depth
+    return { tree: feet('tree', 16), crate: feet('crate', 13), mich: feet('mich', 13) }
   })
   // tree1 at 16,16, crate1 at 13,17, mich at 13,15: each sorted by the tile its feet are on
   expect(depths).toEqual({ tree: (16 + 1) * 16, crate: (17 + 1) * 16, mich: (15 + 1) * 16 })
@@ -349,20 +344,19 @@ test('the tutorial runs from the crate to the first salt out of the sea', async 
   expect(sea).toEqual({ thrown: [13, 18], orb: 0, tile: 'salt', box: 'firstsalt' })
   await press(page, 'e', () => window.island.world().dialogue === null)
 
-  // 5. take the orb back off its crust, then dig the bare salt tile up
+  // 5. take the orb back off its crust; the crust itself is land now, and stays
   const dug = await page.evaluate(() => {
     window.island.dispatch({ type: 'interact' }) // the orb
     const left = window.island.world().objects.filter((o) => o.kind === 'orb').length
-    window.island.dispatch({ type: 'interact' }) // and the crust it left behind
+    window.island.dispatch({ type: 'interact' }) // and again, on the bare salt it was sat on
     const w = window.island.world()
     return {
       left,
       orb: w.inventory.orb,
-      salt: w.inventory.salt,
+      salt: w.inventory.salt ?? 0,
       tile: w.tiles[18 * w.width + 13],
-      got: w.dialogue?.item,
+      box: w.dialogue,
     }
   })
-  expect(dug).toEqual({ left: 0, orb: 1, salt: 1, tile: 'water', got: 'salt' })
-  await press(page, 'e', () => window.island.world().dialogue === null)
+  expect(dug).toEqual({ left: 0, orb: 1, salt: 0, tile: 'salt', box: null })
 })

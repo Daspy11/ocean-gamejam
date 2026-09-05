@@ -106,8 +106,11 @@
       "walk": {
         "id": "mich",
         "path": [
-          "up",
-          "right"
+          "left",
+          "left",
+          "left",
+          "left",
+          "up"
         ]
       },
       "next": "7"
@@ -116,8 +119,8 @@
       "spawn": {
         "id": "flower1",
         "kind": "flower",
-        "x": 25,
-        "y": 15
+        "x": 19,
+        "y": 14
       },
       "next": "8"
     },
@@ -235,7 +238,7 @@
       "choices": [
         {
           "text": "leave",
-          "next": "chill"
+          "next": "carpet"
         },
         {
           "text": "are you real crab or imitation crab?",
@@ -261,7 +264,7 @@
     "33": {
       "who": "Walter",
       "text": "...",
-      "next": "chill"
+      "next": "carpet"
     },
     "chill": {
       "who": "Walter",
@@ -333,6 +336,26 @@
       "who": "Walter",
       "text": "oh yeah",
       "next": null
+    },
+    "carpet": {
+      "who": "Walter",
+      "text": "i would hate to be a moocher so take this fashionable carpet",
+      "give": "carpet",
+      "next": "carpet2"
+    },
+    "carpet2": {
+      "who": "Walter",
+      "text": "just remember only things on your main island count towards your beauty score",
+      "next": "carpet3"
+    },
+    "carpet3": {
+      "text": "this is NOT our main island we don't have one we are gonna leave this stupid island soon",
+      "next": "carpet4"
+    },
+    "carpet4": {
+      "who": "Walter",
+      "text": "ok nerd",
+      "next": "chill"
     }
   }
 }

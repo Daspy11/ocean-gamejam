@@ -43,7 +43,8 @@ export default class UI extends Phaser.Scene {
   private sync() {
     this.hud.setText(world.flags['score:on'] ? `beauty: ${world.score}` : '')
     // dialogue may have renamed an item, so the flag wins over the content file
-    const name = (id: Item) => `${world.flags[`name:${id}`] ?? content.items[id]?.name ?? id}`
+    const name = (id: Item) =>
+      `${world.flags[`name:${id}`] ?? content.items[id]?.name ?? `[PLACEHOLDER ${id}]`}`
 
     const open = world.dialogue
     const dialogue = open ? content.dialogues[open.key] : undefined
@@ -51,8 +52,10 @@ export default class UI extends Phaser.Scene {
     const text = node?.text // a node with no text is an act: no box, the sim runs it and moves on
     for (const part of [this.box, this.who, this.body]) part.setVisible(text !== undefined)
     if (open && dialogue && node && text !== undefined) {
-      const who = node.who ?? dialogue.name
-      this.who.setText(who).setVisible(!!who) // '' is the unnamed lead: no name line, body stays put
+      // a node's own who of '' is the lead speaking, and he goes by 'You'; a dialogue with no name
+      // at all is narration ('you got {item}'), which gets no name line and the body stays put
+      const who = node.who === '' ? 'You' : (node.who ?? dialogue.name)
+      this.who.setText(who).setVisible(!!who)
       const lines = node.choices
         ? node.choices.map((c, i) => `${i === open.choice ? '> ' : '  '}${c.text}`)
         : ['[E] continue']

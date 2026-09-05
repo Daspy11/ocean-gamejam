@@ -1,10 +1,32 @@
 import { MAPS } from './map'
 
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
-export type Tile = 'water' | 'salt' | 'sand' | 'grass'
+export type Tile = 'water' | 'salt' | 'sand' | 'grass' | 'farm' | 'rock'
 export type Dir = 'up' | 'down' | 'left' | 'right'
-export type Item = 'salt' | 'orb' | 'electrolytes' | 'twig'
-export const ITEMS: Item[] = ['salt', 'orb', 'electrolytes', 'twig'] // icon frame order in sprites/items
+export type Item =
+  | 'salt'
+  | 'orb'
+  | 'electrolytes'
+  | 'twig'
+  | 'seal'
+  | 'egg'
+  | 'hatrack'
+  | 'carrot'
+  | 'certificate'
+  | 'carpet'
+// icon frame order in sprites/items
+export const ITEMS: Item[] = [
+  'salt',
+  'orb',
+  'electrolytes',
+  'twig',
+  'seal',
+  'egg',
+  'hatrack',
+  'carrot',
+  'certificate',
+  'carpet',
+]
 
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
@@ -45,6 +67,11 @@ export type Obj = {
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
+  // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`
+  | { kind: 'cave'; to: { x: number; y: number } }
+  | { kind: 'rack' } // interact carries the whole thing off, hats and all
+  | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
+  | { kind: 'floor' } // laid on the ground out of the bag: he walks over it, and it is worth 5 beauty
 )
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
@@ -55,6 +82,10 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   crate: { w: 1, h: 1, solid: true },
   sign: { w: 1, h: 1, solid: true },
   flower: { w: 1, h: 1, solid: true },
+  cave: { w: 1, h: 1, solid: false },
+  rack: { w: 1, h: 1, solid: true },
+  carrot: { w: 1, h: 1, solid: true },
+  floor: { w: 1, h: 1, solid: false },
 }
 
 export interface World {
@@ -64,6 +95,7 @@ export interface World {
   width: number
   height: number
   tiles: Tile[] // row-major, index = y * width + x
+  main: boolean[] // same indexing: the island the player washed up on, the only one beauty counts on
   player: {
     x: number
     y: number
@@ -93,13 +125,17 @@ export type Action =
   | { type: 'talk'; key: string } // open a dialogue by key (scripted scenes; npcs go through interact)
   | { type: 'menu' } // toggle the inventory screen
 
+// one entry of a `start` or a branching `next`: it wins if its flag is set and the bag holds `has`
+export type Branch = { when?: string; has?: Partial<Record<Item, number>>; node: string }
+
 export interface Dialogue {
   name: string
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
-  // events: crate:open · menu:close · salt:spawn · salt:place · talk:<npc id> · tree:shake:<n> ·
-  // tree:near · score:negative (beauty has gone below zero) · arrive:north (stepped ashore up north)
+  // events: crate:open · menu:close · salt:spawn · salt:place · salt:away (a block laid off the main
+  // island) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
+  // zero) · arrive:north (stepped ashore up north) · carrots:done (the last carrot pulled up)
   trigger?: { event: string; when?: string }
-  start: { when?: string; node: string }[] // first entry whose flag is truthy (or that has no `when`) wins
+  start: Branch[] // first entry that matches wins
   nodes: Record<string, DialogueNode>
 }
 export interface DialogueNode {
@@ -117,11 +153,13 @@ export interface DialogueNode {
   shake?: string // id of a tree: one more shake, and the twig it drops
   fly?: string // id of a tree: it lifts off and is gone 1500 ms later
   land?: string // id of a tree: it comes down out of the sky over 1500 ms
-  take?: Item // spends one of the item as the node opens; the mirror of a crate's gain, with no got box
+  // spends items as the node opens, one of an Item or the counts in a record; no got box
+  take?: Item | Partial<Record<Item, number>>
+  give?: Item // hands over one as the node opens: a crate's gain, got box and all, from a line
   set?: Record<string, boolean | number | string>
   // used when there are no choices; null or missing closes the dialogue. A list is read like `start`:
-  // the first entry with no `when` or whose flag is truthy wins, and none matching closes it.
-  next?: string | null | { when?: string; node: string }[]
+  // the first matching entry wins, and none matching closes it.
+  next?: string | null | Branch[]
   choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
 }
 
@@ -142,8 +180,9 @@ export function tileAt(w: World, x: number, y: number): Tile | undefined {
   return w.tiles[y * w.width + x]
 }
 
-// beauty counts every salt block on the map, from the start; the floating pop waits for score:on
+// beauty only counts on the main island, from the start; the floating pop waits for score:on
 export function beauty(w: World, n: number, x: number, y: number): void {
+  if (!w.main[y * w.width + x]) return
   w.score += n
   if (w.flags['score:on']) w.pops.push({ x, y, text: n > 0 ? `+${n}` : `${n}`, at: w.time })
 }
@@ -156,17 +195,38 @@ export function objectAt(w: World, x: number, y: number): Obj | undefined {
 }
 
 export function createWorld(map: keyof typeof MAPS = 'island'): World {
-  const width = 32
-  const height = 32
   const rows = MAPS[map]
-  if (rows.length !== height || rows.some((row) => row.length !== width))
-    throw new Error(`map.ts ${map} must be 32 rows of 32 characters`)
-  const glyph: Record<string, Tile> = { '~': 'water', s: 'salt', '.': 'sand', '#': 'grass' }
+  const width = rows[0].length
+  const height = rows.length
+  if (rows.some((row) => row.length !== width))
+    throw new Error(`map.ts ${map} must be rows of ${width} characters`)
+  const glyph: Record<string, Tile> = {
+    '~': 'water',
+    s: 'salt',
+    '.': 'sand',
+    '#': 'grass',
+    '^': 'rock',
+    T: 'grass', // a tree stands on it: the tile itself is ordinary grass
+    F: 'farm', // tilled soil with a carrot growing on it
+  }
   const tiles = rows.flatMap((row) => [...row].map((ch) => glyph[ch]))
   // island: the intro ends with the boat crashing into the west shore, so that is where everyone
   // starts. gallery: the middle of the object pad, facing the camera.
   const spawn: { x: number; y: number; facing: Dir } =
     map === 'gallery' ? { x: 8, y: 20, facing: 'down' } : { x: 14, y: 16, facing: 'right' }
+  // the main island is whatever land you can walk to from the spawn: every other island is out at
+  // sea as far as beauty is concerned
+  const main = tiles.map(() => false)
+  const edge = [spawn.y * width + spawn.x]
+  while (edge.length) {
+    const at = edge.pop()!
+    if (main[at] || tiles[at] === 'water') continue
+    main[at] = true
+    if (at % width > 0) edge.push(at - 1)
+    if (at % width < width - 1) edge.push(at + 1)
+    if (at >= width) edge.push(at - width)
+    if (at + width < tiles.length) edge.push(at + width)
+  }
   const objects: Obj[] =
     map === 'gallery'
       ? [
@@ -227,7 +287,39 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           },
           { id: 'tree1', kind: 'tree', x: 16, y: 16 },
           { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
+          // out on the big island, on the grass the forest leaves clear
+          { id: 'crate3', kind: 'crate', x: 48, y: 21, open: false, item: 'seal' },
+          {
+            id: 'albatross',
+            kind: 'npc',
+            sprite: 'albatross',
+            x: 36,
+            y: 20,
+            facing: 'down',
+            dialogue: 'albatross',
+          },
+          // the mouth walled in by the forest, and the sand tile at the far end of the room
+          { id: 'cave1', kind: 'cave', x: 42, y: 17, to: { x: 10, y: 40 } },
+          { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 } },
+          { id: 'rack1', kind: 'rack', x: 10, y: 37 },
+          // the farmer, sat on his stool at the top of his field
+          {
+            id: 'shrimp',
+            kind: 'npc',
+            sprite: 'shrimp',
+            x: 49,
+            y: 14,
+            facing: 'down',
+            dialogue: 'shrimp',
+          },
         ]
+  // the forest and the carrot field are drawn in the map rather than listed: one object per glyph
+  rows.forEach((row, y) =>
+    [...row].forEach((ch, x) => {
+      if (ch === 'T') objects.push({ id: `tree${x}-${y}`, kind: 'tree', x, y, dialogue: 'bigtree' })
+      if (ch === 'F') objects.push({ id: `carrot${x}-${y}`, kind: 'carrot', x, y })
+    }),
+  )
   return {
     rev: 0,
     time: 0,
@@ -235,6 +327,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     width,
     height,
     tiles,
+    main,
     player: { ...spawn, step: null, held: null, run: false, turnedAt: 0, parity: false },
     inventory: {},
     score: 0,

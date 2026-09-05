@@ -1,0 +1,19 @@
+{
+  "name": "[PLACEHOLDER shrimp farmer name]",
+  "start": [
+    { "when": "shrimp:thanked", "node": "after" },
+    { "when": "shrimp:asked", "node": "4" },
+    { "node": "1" }
+  ],
+  "nodes": {
+    "1": { "text": "euch, excuse em wah mozzure, ey cannot euh, farm eneuf carrots", "next": "2" },
+    "2": { "text": "because of my CHREEPLING bach pen", "next": "3" },
+    "3": { "who": "", "text": "wow that sucks", "next": "4" },
+    "4": {
+      "text": "could you euh, elp me peek thes, euh, carrotsch?",
+      "set": { "shrimp:asked": true },
+      "next": null
+    },
+    "after": { "text": "ah, thees is ah, very guod, sank you mozzure", "next": null }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "cast": {
     "mich": { "name": "Mich" },
-    "player": { "name": "" }
+    "player": { "name": "You" }
   },
   "lines": [
     { "who": "mich", "text": "i knew we shouldn't have agreed to smuggle Lord Tarqualius' Orb Of Endless Burning." },

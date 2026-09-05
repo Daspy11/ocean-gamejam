@@ -1,0 +1,13 @@
+{
+  "name": "[PLACEHOLDER shrimp farmer name]",
+  "trigger": { "event": "carrots:done" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "text": "ah, thees is ah, very guod, sank you mozzure",
+      "give": "certificate",
+      "set": { "shrimp:thanked": true },
+      "next": null
+    }
+  }
+}

@@ -2,116 +2,21 @@
 // order, or a (x, y) => colour | null pixel test, transparent where nothing is drawn. A sprite is a
 // silhouette of two or three flat colours that reads as the thing; tiles are single flat fills.
 // No outlines, shading, faces or decoration.
+// One entry per sheet below; the terrain and character shapes they draw live in shapes.mjs.
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
+import { bird, character, crab, dual, shrimp } from './shapes.mjs'
 
-// The 5x3 terrain sheet: each entry is the corner mask its frame draws (TL 1, TR 2, BL 4, BR 8).
-// Left, a 3x3 island; right, a 2x2 block with a hole and, under it, the two diagonals. Must match
-// DUAL_FRAME in src/assets.ts.
-const LAYOUT = [
-  [8, 12, 4, 7, 11],
-  [10, 15, 5, 13, 14],
-  [2, 3, 1, 6, 9],
+// the coat rack: a post with a crossbar, hung with three hats; it is carried off whole, so one frame
+const rack = [
+  [7, 8, 2, 24, '#7a5a3a'], // post, crossbar down to the floor
+  [2, 8, 12, 2, '#7a5a3a'], // crossbar
+  [1, 5, 4, 3, '#c8b088'], // the three hats hung on it
+  [6, 5, 4, 3, '#c8b088'],
+  [11, 5, 4, 3, '#c8b088'],
 ]
-
-// So an 80x48 terrain sheet fills the quadrants whose corner is on, and the placeholder file *is*
-// the picture the artist paints over: an island, a hole, two diagonals, every corner case once. The
-// quadrant corners at the cell centre are rounded so the autotiling actually reads in game.
-const dual = (colour) =>
-  LAYOUT.flat().map((mask) => {
-    // quadrant order is top-left, top-right, bottom-left, bottom-right
-    const on = [1, 2, 4, 8].map((bit) => (mask & bit) !== 0)
-    const corners = on.filter(Boolean).length
-    return (x, y) => {
-      if (corners === 4) return colour
-      const q = (y < 8 ? 0 : 2) + (x < 8 ? 0 : 1)
-      // two adjacent corners is a straight edge: keep it flat so it continues across cells
-      if (corners === 2 && on[0] !== on[3]) return on[q] ? colour : null
-      // the 4x4 square this quadrant touches the cell centre with, and that square's outer corner
-      const sx = x < 8 ? 4 : 8
-      const sy = y < 8 ? 4 : 8
-      const round =
-        x >= sx &&
-        x < sx + 4 &&
-        y >= sy &&
-        y < sy + 4 &&
-        Math.hypot(x + 0.5 - (x < 8 ? 4 : 12), y + 0.5 - (y < 8 ? 4 : 12)) > 4
-      // a lone quadrant loses that arc (a rounded tip); a lone gap gains it (an inner fillet)
-      return (corners === 3 ? on[q] || round : on[q] && !round) ? colour : null
-    }
-  })
-
-// Character sheet: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up). Facing
-// reads from where the hair sits; the two walk columns only shorten one leg by a pixel.
-const character = ({ hair, skin, shirt }) =>
-  [
-    {
-      // down: hair cap, face, body
-      body: [
-        [4, 1, 8, 3, hair],
-        [4, 4, 8, 5, skin],
-        [3, 9, 10, 9, shirt],
-      ],
-      legs: [4, 9],
-    },
-    {
-      // left: back of the head on the right, face on the left
-      body: [
-        [5, 1, 7, 3, hair],
-        [9, 4, 3, 5, hair],
-        [5, 4, 4, 5, skin],
-        [4, 9, 8, 9, shirt],
-      ],
-      legs: [5, 8],
-    },
-    {
-      // right: the mirror of left
-      body: [
-        [4, 1, 7, 3, hair],
-        [4, 4, 3, 5, hair],
-        [7, 4, 4, 5, skin],
-        [4, 9, 8, 9, shirt],
-      ],
-      legs: [5, 8],
-    },
-    {
-      // up: the hair covers the whole head
-      body: [
-        [4, 1, 8, 8, hair],
-        [3, 9, 10, 9, shirt],
-      ],
-      legs: [4, 9],
-    },
-  ].flatMap(({ body, legs }) =>
-    [
-      [5, 6], // left foot forward
-      [6, 6], // stand
-      [6, 5], // right foot forward
-    ].map(([a, b]) => [...body, [legs[0], 18, 3, a, skin], [legs[1], 18, 3, b, skin]]),
-  )
-
-// Walter's sheet, in the same 3x4 character layout. A crab looks much the same from every side, so
-// all four rows share one picture; the walk columns lift alternate legs a pixel so the walk reads.
-const crab = () => {
-  const red = '#c8402a'
-  const brown = '#7a5a3a'
-  const body = [
-    [1, 8, 14, 2, brown], // hat brim
-    [5, 4, 6, 4, brown], // crown
-    [4, 10, 2, 2, red], // eye stalks
-    [10, 10, 2, 2, red],
-    [2, 12, 12, 6, red], // body
-  ]
-  const legs = [2, 5, 9, 12]
-  return [0, 1, 2, 3].flatMap(() =>
-    [0, 1, 2].map((col) => [
-      ...body,
-      ...legs.map((x, i) => [x, col !== 1 && i % 2 === (col ? 1 : 0) ? 17 : 18, 2, 3, red]),
-    ]),
-  )
-}
 
 // the sign's one frame, out here so the sheets list below stays inside the file's line budget
 const signpost = [
@@ -128,6 +33,8 @@ const sheets = [
   { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
   { file: 'tiles/sand.png', w: 16, h: 16, cols: 5, frames: dual('#d8c58e') },
   { file: 'tiles/grass.png', w: 16, h: 16, cols: 5, frames: dual('#6da85a') },
+  { file: 'tiles/farm.png', w: 16, h: 16, cols: 5, frames: dual('#6b4a2a') },
+  { file: 'tiles/rock.png', w: 16, h: 16, cols: 5, frames: dual('#3a3a44') },
   {
     file: 'sprites/player.png',
     w: 16,
@@ -150,6 +57,8 @@ const sheets = [
     cols: 3,
     frames: character({ hair: '#101010', skin: '#c8c0b8', shirt: '#b03030' }),
   },
+  { file: 'sprites/albatross.png', w: 16, h: 24, cols: 3, frames: bird() },
+  { file: 'sprites/shrimp.png', w: 16, h: 24, cols: 3, frames: shrimp() },
   {
     file: 'sprites/orb.png',
     w: 16,
@@ -251,6 +160,40 @@ const sheets = [
   },
   { file: 'sprites/sign.png', w: 16, h: 16, cols: 1, frames: [signpost] },
   {
+    file: 'sprites/cave.png',
+    w: 16,
+    h: 32,
+    cols: 1,
+    frames: [
+      [
+        [3, 8, 10, 24, '#3a3a44'], // the hump, standing a tile higher than the ground
+        [1, 14, 14, 18, '#3a3a44'],
+        [5, 20, 6, 12, '#101014'], // the way in, at its foot
+        [4, 24, 8, 8, '#101014'],
+      ],
+    ],
+  },
+  {
+    file: 'sprites/carrot.png',
+    w: 16,
+    h: 16,
+    cols: 1,
+    frames: [
+      [
+        [6, 8, 4, 7, '#e08030'], // the root, tapering into the soil
+        [7, 13, 2, 3, '#e08030'],
+        [5, 3, 6, 5, '#3f7f3f'], // the leafy top
+      ],
+    ],
+  },
+  {
+    file: 'sprites/rack.png',
+    w: 16,
+    h: 32,
+    cols: 1,
+    frames: [rack],
+  },
+  {
     file: 'sprites/items.png',
     w: 16,
     h: 16,
@@ -272,12 +215,37 @@ const sheets = [
         [3, 10, 10, 2, '#7a5a3a'],
         [9, 6, 2, 5, '#7a5a3a'],
       ], // 3 twig, a stick with one shoot
+      [
+        [4, 6, 8, 7, '#9aa0a8'],
+        [5, 4, 6, 4, '#9aa0a8'],
+      ], // 4 seal, a blob with a head
+      [
+        [5, 4, 6, 9, '#e0c040'],
+        [4, 6, 8, 5, '#e0c040'],
+      ], // 5 egg
+      [
+        [7, 6, 2, 8, '#7a5a3a'],
+        [3, 6, 10, 2, '#7a5a3a'],
+        [2, 3, 4, 3, '#c8b088'],
+        [10, 3, 4, 3, '#c8b088'],
+      ], // 6 hatrack, a post and crossbar with two hats on it
+      [
+        [6, 7, 4, 7, '#e08030'],
+        [7, 12, 2, 3, '#e08030'],
+        [5, 3, 6, 4, '#3f7f3f'],
+      ], // 7 carrot, as the sprite
+      [
+        [2, 3, 12, 10, '#e8e4d8'],
+        [9, 9, 4, 4, '#c04040'],
+      ], // 8 certificate, a pale sheet with a seal on it
+      [[3, 4, 10, 8, '#8a4a5a']], // 9 carpet, a square of rug
     ],
   },
+  { file: 'sprites/floor.png', w: 16, h: 16, cols: 1, frames: [[[1, 5, 14, 10, '#8a4a5a']]] },
   { file: 'ui/box.png', w: 24, h: 24, cols: 1, frames: [boxframe] },
 ]
 
-const dialogue = {
+const mich = {
   name: 'Mich',
   start: [{ when: 'mich_met', node: 'again' }, { node: 'greet' }],
   nodes: {
@@ -331,4 +299,21 @@ for (const sheet of sheets) {
   write(sheet.file, PNG.sync.write(png))
 }
 
-write('dialogue/mich.json', `${JSON.stringify(dialogue, null, 2)}\n`)
+// Walter's line when a block goes down out of reach of the island, and whatever the trees on the
+// big island say when they are talked to
+const away = {
+  name: 'Walter',
+  trigger: { event: 'salt:away', when: 'score:on' },
+  start: [{ node: '1' }],
+  nodes: {
+    1: { text: '[PLACEHOLDER Walter: beauty only counts on the main island]', next: null },
+  },
+}
+const bigtree = {
+  name: '',
+  start: [{ node: '1' }],
+  nodes: { 1: { text: '[PLACEHOLDER a tree on the big island]', next: null } },
+}
+
+for (const [key, data] of Object.entries({ mich, away, bigtree }))
+  write(`dialogue/${key}.json`, `${JSON.stringify(data, null, 2)}\n`)

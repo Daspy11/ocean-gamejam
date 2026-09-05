@@ -161,9 +161,9 @@ test('a promised tree left alone invites a friend over when you come back', asyn
       () =>
         (
           window.island.game.scene.getScene('island').children.list as Phaser.GameObjects.Sprite[]
-        ).filter((o) => o.texture?.key === 'sprites/tree').length,
+        ).filter((o) => o.texture?.key === 'sprites/tree' && o.x < 32 * 16).length,
     )
-  await expect.poll(drawn).toBe(2) // the old tree and the friend it called over
+  await expect.poll(drawn).toBe(2) // the old tree and the friend it called over, the big island aside
 })
 
 test('the friend tree is talked to, and renames itself once the tree has gone', async ({

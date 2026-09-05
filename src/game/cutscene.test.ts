@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
+import { cancelScene } from './cutscene'
 import { createWorld, type Content, type World } from './world'
 
 // mich starts at 13,15; the walk goes right over the player at 15,15 and on down onto tree1 at
@@ -297,5 +298,29 @@ describe('the talk:<npc id> event', () => {
 
     apply(w, { type: 'interact' }, talkContent)
     expect(w.dialogue?.key).toBe('mich')
+  })
+})
+
+// the debug menu warps out from under a cutscene, so the scene has to be dropped where it stands
+describe('cancelScene', () => {
+  it('closes the box, empties the queue and stops everyone mid-walk', () => {
+    const w = walking()
+    w.queue.push({ key: 'run' })
+    w.rumble = 2000
+    apply(w, { type: 'tick', dt: 100 }, content)
+    expect(mich(w).step).not.toBe(null)
+
+    const rev = w.rev
+    cancelScene(w)
+    expect(w.dialogue).toBe(null)
+    expect(w.queue).toEqual([])
+    expect(w.rumble).toBe(0)
+    expect(mich(w)).toMatchObject({ x: 13, y: 15, step: null, path: [] })
+    expect(w.rev).toBeGreaterThan(rev)
+
+    // and nothing starts up again on the next tick: the walk act is gone, not paused
+    apply(w, { type: 'tick', dt: 1000 }, content)
+    expect(w.dialogue).toBe(null)
+    expect(mich(w)).toMatchObject({ x: 13, y: 15, step: null })
   })
 })

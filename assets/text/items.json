@@ -2,5 +2,11 @@
   "salt": { "name": "salt" },
   "orb": { "name": "Lord Tarqualius' Orb Of Endless Burning" },
   "electrolytes": { "name": "horse electrolytes" },
-  "twig": { "name": "twig" }
+  "twig": { "name": "twig" },
+  "seal": { "name": "stuffed seal" },
+  "egg": { "name": "golden egg" },
+  "hatrack": { "name": "hat rack" },
+  "carrot": { "name": "carrot" },
+  "certificate": { "name": "shrimp welfare award certificate" },
+  "carpet": { "name": "fashionable carpet" }
 }

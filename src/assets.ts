@@ -6,6 +6,8 @@ export const SHEETS = {
   'tiles/salt': { frameWidth: 16, frameHeight: 16 }, // 80x48: 5x3 terrain layout, see assets/README.md
   'tiles/sand': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   'tiles/grass': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
+  'tiles/farm': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
+  'tiles/rock': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
   'sprites/player': { frameWidth: 16, frameHeight: 24 }, // rows down/left/right/up · cols left foot/stand/right foot
   'sprites/mich': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
@@ -14,6 +16,9 @@ export const SHEETS = {
   'sprites/walter': { frameWidth: 16, frameHeight: 24 },
   // character sheet; the blind pirate is drawn on the row opposite the way he is facing
   'sprites/etarp': { frameWidth: 16, frameHeight: 24 },
+  'sprites/albatross': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
+  // character sheet; he never gets off his stool, so all twelve frames are the same seated pose
+  'sprites/shrimp': { frameWidth: 16, frameHeight: 24 },
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
@@ -22,6 +27,11 @@ export const SHEETS = {
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
+  // one frame, bottom-anchored on its 1x1 tile: a rock hump standing higher than the ground
+  'sprites/cave': { frameWidth: 16, frameHeight: 32 },
+  'sprites/rack': { frameWidth: 16, frameHeight: 32 }, // one frame: a post hung with hats
+  'sprites/carrot': { frameWidth: 16, frameHeight: 16 }, // one frame: a carrot growing in the soil
+  'sprites/floor': { frameWidth: 16, frameHeight: 16 }, // one frame: the carpet, lying flat on its tile
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
   // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
   // row are stretched to whatever size the box is, so keep those flat along the way they stretch
@@ -38,7 +48,11 @@ export const SHEETS = {
 export const DUAL_FRAME = [-1, 12, 10, 11, 2, 7, 13, 3, 0, 14, 5, 4, 1, 8, 9, 6]
 
 export const JSONS = [
+  'dialogue/albatross',
+  'dialogue/away',
+  'dialogue/bigtree',
   'dialogue/boat',
+  'dialogue/carrots',
   'dialogue/crate',
   'dialogue/etarp',
   'dialogue/firstsalt',
@@ -53,6 +67,7 @@ export const JSONS = [
   'dialogue/pirate',
   'dialogue/shake3',
   'dialogue/shake7',
+  'dialogue/shrimp',
   'dialogue/sign',
   'dialogue/tree',
   'dialogue/tree2',

@@ -1,7 +1,8 @@
 import { stepObj, tickWalks } from './boat'
 import { shakeTree, startTree, tickTrees, treeDone } from './tree'
-import { DIRS, KINDS, beauty, objectAt, tileAt } from './world'
-import type { Action, Content, DialogueNode, Item, World } from './world'
+import { makeSalt, useItem } from './salt'
+import { DIRS, KINDS, objectAt, tileAt } from './world'
+import type { Action, Branch, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 
@@ -34,15 +35,19 @@ export function apply(w: World, a: Action, c: Content): void {
     const tile = tileAt(w, x, y)
     const obj = objectAt(w, x, y)
     // blocked: stand facing it, and no rev (a held key would otherwise spam it)
-    if ((tile !== 'salt' && tile !== 'sand' && tile !== 'grass') || (obj && KINDS[obj.kind].solid))
-      return
+    const ground = tile === 'salt' || tile === 'sand' || tile === 'grass' || tile === 'farm'
+    if (!ground || (obj && KINDS[obj.kind].solid)) return
     p.step = { x, y, t }
     w.rev++
   }
-  // both `start` and a branching `next` are read this way: first entry with no `when`, or whose
-  // flag is truthy. Nothing matching means there is nowhere to go.
-  const pick = (list: { when?: string; node: string }[] | undefined) =>
-    list?.find((s) => !s.when || !!w.flags[s.when])?.node
+  // both `start` and a branching `next` are read this way: first entry whose `when` flag is truthy
+  // and whose `has` items are all in the bag. Nothing matching means there is nowhere to go.
+  const pick = (list: Branch[] | undefined) =>
+    list?.find(
+      (s) =>
+        (!s.when || !!w.flags[s.when]) &&
+        Object.entries(s.has ?? {}).every(([item, n]) => (w.inventory[item as Item] ?? 0) >= n),
+    )?.node
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item) => {
     const dlg = c.dialogues[key]
@@ -50,9 +55,12 @@ export function apply(w: World, a: Action, c: Content): void {
     const to = at === undefined ? undefined : dlg?.nodes[at]
     if (at === undefined || !to) return false
     Object.assign(w.flags, to.set)
-    if (to.take) take(to.take)
     w.dialogue = { key, node: at, choice: 0, item }
     w.rev++
+    // spend and hand over as the node opens; the box is already up, so a give's got box queues
+    const spend = typeof to.take === 'string' ? { [to.take]: 1 } : (to.take ?? {})
+    for (const [item, n] of Object.entries(spend)) take(item as Item, n)
+    if (to.give) gain(to.give)
     const walk = to.walk
     if (walk) {
       const o = w.objects.find((x) => x.id === walk.id) // a missing one just ends the act at once
@@ -111,9 +119,9 @@ export function apply(w: World, a: Action, c: Content): void {
       play(key)
     }
   }
-  // a node's `take` spends one: the key goes when the last is gone, so the inventory drops the slot
-  const take = (item: Item) => {
-    const left = (w.inventory[item] ?? 0) - 1
+  // a node's `take` spends them: the key goes when the last is gone, so the inventory drops the slot
+  const take = (item: Item, n: number) => {
+    const left = (w.inventory[item] ?? 0) - n
     if (left > 0) w.inventory[item] = left
     else delete w.inventory[item]
     w.rev++
@@ -138,9 +146,7 @@ export function apply(w: World, a: Action, c: Content): void {
     w.time += a.dt
     for (const o of w.objects)
       if (o.kind === 'orb' && tileAt(w, o.x, o.y) === 'water' && w.time >= o.doneAt) {
-        w.tiles[o.y * w.width + o.x] = 'salt' // the orb stays put, now sitting on the crust it boiled
-        beauty(w, -1, o.x, o.y)
-        w.rev++
+        makeSalt(w, o.x, o.y) // the orb stays put, now sitting on the crust it boiled
         fire('salt:spawn')
       }
     for (const o of w.objects)
@@ -150,9 +156,11 @@ export function apply(w: World, a: Action, c: Content): void {
         !o.white &&
         w.time >= o.bloomAt + 1500
       ) {
-        o.white = true // every flower that blooms is worth the same 10 beauty
-        w.score += 10
-        w.pops.push({ x: o.x, y: o.y, text: '+10', at: w.time })
+        o.white = true // every flower that blooms on the main island is worth the same 10 beauty
+        if (w.main[o.y * w.width + o.x]) {
+          w.score += 10
+          w.pops.push({ x: o.x, y: o.y, text: '+10', at: w.time })
+        }
         w.rev++
       }
     if (w.score < 0) fire('score:negative') // fires once, whenever beauty first reads below zero
@@ -174,6 +182,12 @@ export function apply(w: World, a: Action, c: Content): void {
         p.step = null
         p.parity = !p.parity
         w.rev++
+        const mouth = objectAt(w, p.x, p.y) // stepping onto a cave mouth puts him down at the far end
+        if (mouth?.kind === 'cave') {
+          p.x = mouth.to.x
+          p.y = mouth.to.y
+          w.rev++
+        }
         const on = tileAt(w, p.x, p.y) // the north island is the only land this far up the map
         if (p.y <= 5 && (on === 'sand' || on === 'grass')) fire('arrive:north')
         if (p.held && !busy) {
@@ -225,16 +239,24 @@ export function apply(w: World, a: Action, c: Content): void {
 
   const m = w.menu
   if (m) {
+    const slots = Object.entries(w.inventory).filter(([, n]) => n > 0)
     if (a.type === 'move' && a.dir) {
-      const slots = Object.entries(w.inventory).filter(([, n]) => n > 0).length
       const by = a.dir === 'left' ? -1 : a.dir === 'right' ? 1 : a.dir === 'up' ? -5 : 5 // 5 per row
-      const at = Math.max(0, Math.min(slots - 1, m.cursor + by))
+      const at = Math.max(0, Math.min(slots.length - 1, m.cursor + by))
       if (at !== m.cursor) {
         m.cursor = at
         w.rev++
       }
     }
-    return // interact in the inventory does nothing yet
+    // interact uses the slot the cursor is on, on the tile in front of him
+    const slot = a.type === 'interact' && slots[m.cursor]
+    const did =
+      slot && useItem(w, slot[0] as Item, p.x + DIRS[p.facing][0], p.y + DIRS[p.facing][1])
+    if (!did) return
+    w.menu = null // out of the bag, so he can see what he just did with it
+    w.rev++
+    if (did !== 'used') fire(`salt:${did}`)
+    return
   }
 
   if (a.type === 'move') {
@@ -275,40 +297,24 @@ export function apply(w: World, a: Action, c: Content): void {
     fire('crate:open') // fired after the got box, so Mich's line queues up behind it
     return
   }
+  if (obj?.kind === 'rack') {
+    w.objects.splice(w.objects.indexOf(obj), 1) // hats and all: the whole rack goes in the bag
+    gain('hatrack')
+    return
+  }
+  if (obj?.kind === 'carrot') {
+    w.objects.splice(w.objects.indexOf(obj), 1) // pulled up, leaving the tilled soil bare
+    gain('carrot')
+    if (!w.objects.some((o) => o.kind === 'carrot')) fire('carrots:done') // the field is picked
+    return
+  }
   if (obj?.kind === 'orb') {
     w.objects.splice(w.objects.indexOf(obj), 1) // boiling or finished, it always comes back to hand
     gain('orb')
     return
   }
   if (obj) return
-  const tile = tileAt(w, x, y)
-  if (tile === 'salt') {
-    w.tiles[y * w.width + x] = 'water' // the crust the orb boiled is the salt: scoop it back up
-    beauty(w, 1, x, y)
-    gain('salt')
-    return
-  }
-  if (tile !== 'water') return
-  const salt = w.inventory.salt ?? 0
-  if (salt > 0) {
-    w.tiles[y * w.width + x] = 'salt' // salt goes first, so the orb is never thrown out by accident
-    w.inventory.salt = salt - 1
-    w.rev++
-    beauty(w, -1, x, y) // paving the sea over costs beauty, same as any other salt block
-    fire('salt:place') // Mich's line is the one gated on score:on, by its own trigger
-    return
-  }
-  if ((w.inventory.orb ?? 0) > 0) {
-    w.inventory.orb = (w.inventory.orb ?? 0) - 1
-    // 2 s to boil, and where it was thrown from so the scene can arc it over
-    w.objects.push({
-      id: `orb${x}-${y}`,
-      kind: 'orb',
-      x,
-      y,
-      doneAt: w.time + 2000,
-      thrown: { x: p.x, y: p.y, at: w.time },
-    })
-    w.rev++
-  }
+  // the sea in front of him: salt goes first, so the orb is never thrown out by accident
+  const did = useItem(w, (w.inventory.salt ?? 0) > 0 ? 'salt' : 'orb', x, y)
+  if (did && did !== 'used') fire(`salt:${did}`) // Mich's line is gated on score:on, by its own trigger
 }
