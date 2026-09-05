@@ -1,4 +1,5 @@
 import { stepObj, tickWalks } from './boat'
+import { putBy, tickMachines } from './machine'
 import { shakeTree, startTree, tickTrees, treeDone } from './tree'
 import { makeSalt, useItem } from './salt'
 import { DIRS, KINDS, objectAt, tileAt } from './world'
@@ -18,6 +19,7 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
     const f = w.objects.find((o) => o.id === bloom)
     return !f || f.kind !== 'flower' || !!f.white
   }
+  if (node.gone !== undefined) return !w.objects.some((o) => o.id === node.gone)
   if (node.fly !== undefined || node.land !== undefined) return treeDone(w, node)
   if (node.wait !== undefined) return w.time >= (d.until ?? 0)
   if (node.rumble !== undefined) return w.time >= w.rumble
@@ -75,6 +77,7 @@ export function apply(w: World, a: Action, c: Content): void {
     if (to.rumble !== undefined) w.rumble = w.time + to.rumble
     const spawn = to.spawn
     if (spawn && !w.objects.some((o) => o.id === spawn.id)) w.objects.push(structuredClone(spawn))
+    if (to.put) putBy(w, to.put)
     const bloom = to.bloom
     if (bloom) {
       const f = w.objects.find((o) => o.id === bloom) // a missing flower just ends the act at once
@@ -163,7 +166,9 @@ export function apply(w: World, a: Action, c: Content): void {
         }
         w.rev++
       }
+    tickMachines(w)
     if (w.score < 0) fire('score:negative') // fires once, whenever beauty first reads below zero
+    if (w.score >= 15) fire('score:fifteen') // and once, the first time it reads 15
     if (tickTrees(w)) fire('tree:near') // the promised tree, rested and back within three tiles
     const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
     if (live.length !== w.pops.length) {
@@ -303,6 +308,10 @@ export function apply(w: World, a: Action, c: Content): void {
     return
   }
   if (obj?.kind === 'carrot') {
+    if (!w.flags['shrimp:asked']) {
+      open('carrotfield') // they are someone else's until antoine has asked for a hand
+      return
+    }
     w.objects.splice(w.objects.indexOf(obj), 1) // pulled up, leaving the tilled soil bare
     gain('carrot')
     if (!w.objects.some((o) => o.kind === 'carrot')) fire('carrots:done') // the field is picked

@@ -71,6 +71,9 @@ export type Obj = {
   | { kind: 'cave'; to: { x: number; y: number } }
   | { kind: 'rack' } // interact carries the whole thing off, hats and all
   | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
+  | { kind: 'fence' } // a post and rail of the ring round his field: nothing to do with it, just solid
+  // the desalinator 9000, smoking away: it eats a beauty every 2 s and blows up after `left` of them
+  | { kind: 'machine'; nextAt?: number; left: number }
   | { kind: 'floor' } // laid on the ground out of the bag: he walks over it, and it is worth 5 beauty
 )
 
@@ -85,6 +88,8 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   cave: { w: 1, h: 1, solid: false },
   rack: { w: 1, h: 1, solid: true },
   carrot: { w: 1, h: 1, solid: true },
+  fence: { w: 1, h: 1, solid: true },
+  machine: { w: 1, h: 1, solid: true },
   floor: { w: 1, h: 1, solid: false },
 }
 
@@ -133,7 +138,8 @@ export interface Dialogue {
   // plays once, when the sim emits `event` and flag `when` (if given) is truthy; sets flags['fired:<key>'].
   // events: crate:open · menu:close · salt:spawn · salt:place · salt:away (a block laid off the main
   // island) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
-  // zero) · arrive:north (stepped ashore up north) · carrots:done (the last carrot pulled up)
+  // zero) · score:fifteen (beauty has first reached 15) · arrive:north (stepped ashore up north) ·
+  // carrots:done (the last carrot pulled up)
   trigger?: { event: string; when?: string }
   start: Branch[] // first entry that matches wins
   nodes: Record<string, DialogueNode>
@@ -149,6 +155,8 @@ export interface DialogueNode {
   wait?: number // ms
   rumble?: number // ms of screen shake, from now
   spawn?: Obj
+  put?: { by: string; obj: Obj } // spawn, but on the nearest free ground beside `by`, his left first
+  gone?: string // id of an object: the act runs until it is no longer in the world
   bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
   shake?: string // id of a tree: one more shake, and the twig it drops
   fly?: string // id of a tree: it lifts off and is gone 1500 ms later
@@ -194,6 +202,17 @@ export function objectAt(w: World, x: number, y: number): Obj | undefined {
   })
 }
 
+// every npc in the two lists below: who he is, the sheet he is drawn from, where he stands and
+// what he says
+const npc = (
+  id: string,
+  sprite: string,
+  x: number,
+  y: number,
+  facing: Dir,
+  dialogue: string,
+): Obj => ({ id, kind: 'npc', sprite, x, y, facing, dialogue })
+
 export function createWorld(map: keyof typeof MAPS = 'island'): World {
   const rows = MAPS[map]
   const width = rows[0].length
@@ -208,6 +227,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     '^': 'rock',
     T: 'grass', // a tree stands on it: the tile itself is ordinary grass
     F: 'farm', // tilled soil with a carrot growing on it
+    '=': 'grass', // grass with a fence post standing on it
   }
   const tiles = rows.flatMap((row) => [...row].map((ch) => glyph[ch]))
   // island: the intro ends with the boat crashing into the west shore, so that is where everyone
@@ -234,90 +254,48 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           { id: 'g-boat', kind: 'boat', x: 7, y: 18 },
           { id: 'g-crate', kind: 'crate', x: 2, y: 20, open: false, item: 'orb' },
           { id: 'g-crate-open', kind: 'crate', x: 4, y: 20, open: true, item: 'orb' },
-          {
-            id: 'g-mich',
-            kind: 'npc',
-            sprite: 'mich',
-            x: 6,
-            y: 20,
-            facing: 'down',
-            dialogue: 'mich',
-          },
+          npc('g-mich', 'mich', 6, 20, 'down', 'mich'),
           // a day of sim time away, so this one keeps smoking however long the gallery is left open
           { id: 'g-orb', kind: 'orb', x: 12, y: 18, doneAt: 86400000 },
           { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, doneAt: 0 }, // already sat on its finished salt
           // 8,18 is under g-boat's 2x1 footprint, so Walter stands in the next free slot along
-          {
-            id: 'g-walter',
-            kind: 'npc',
-            sprite: 'walter',
-            x: 9,
-            y: 18,
-            facing: 'down',
-            dialogue: 'walter',
-          },
+          npc('g-walter', 'walter', 9, 18, 'down', 'walter'),
           { id: 'g-flower', kind: 'flower', x: 9, y: 20, white: false },
           { id: 'g-flower-white', kind: 'flower', x: 10, y: 20, white: true },
           { id: 'g-sign', kind: 'sign', x: 3, y: 20, dialogue: 'sign' },
+          { id: 'g-fence', kind: 'fence', x: 2, y: 19 }, // two in a row, so the rail line reads
+          { id: 'g-fence2', kind: 'fence', x: 3, y: 19 },
+          // a day of sim time away, so the prototype keeps smoking rather than blowing up in here
+          { id: 'g-machine', kind: 'machine', x: 5, y: 19, nextAt: 86400000, left: 10 },
+          npc('g-seahorse', 'seahorse', 7, 19, 'down', 'seahorse'),
           { id: 'g-wreck', kind: 'boat', x: 5, y: 17, wrecked: true }, // the smashed hull frame
           // the pirate faces the way he is not looking, so this row draws his back
-          {
-            id: 'g-etarp',
-            kind: 'npc',
-            sprite: 'etarp',
-            x: 4,
-            y: 18,
-            facing: 'down',
-            dialogue: 'etarp',
-          },
+          npc('g-etarp', 'etarp', 4, 18, 'down', 'etarp'),
         ]
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
           { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false, item: 'orb' },
           // the second crate, over on the far island: the reason to bridge the gap
           { id: 'crate2', kind: 'crate', x: 24, y: 17, open: false, item: 'electrolytes' },
-          {
-            id: 'mich',
-            kind: 'npc',
-            sprite: 'mich',
-            x: 13,
-            y: 15,
-            facing: 'right',
-            dialogue: 'mich',
-          },
+          npc('mich', 'mich', 13, 15, 'right', 'mich'),
           { id: 'tree1', kind: 'tree', x: 16, y: 16 },
           { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
           // out on the big island, on the grass the forest leaves clear
-          { id: 'crate3', kind: 'crate', x: 48, y: 21, open: false, item: 'seal' },
-          {
-            id: 'albatross',
-            kind: 'npc',
-            sprite: 'albatross',
-            x: 36,
-            y: 20,
-            facing: 'down',
-            dialogue: 'albatross',
-          },
+          { id: 'crate3', kind: 'crate', x: 48, y: 22, open: false, item: 'seal' },
+          npc('albatross', 'albatross', 36, 20, 'down', 'albatross'),
           // the mouth walled in by the forest, and the sand tile at the far end of the room
           { id: 'cave1', kind: 'cave', x: 42, y: 17, to: { x: 10, y: 40 } },
           { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 } },
           { id: 'rack1', kind: 'rack', x: 10, y: 37 },
-          // the farmer, sat on his stool at the top of his field
-          {
-            id: 'shrimp',
-            kind: 'npc',
-            sprite: 'shrimp',
-            x: 49,
-            y: 14,
-            facing: 'down',
-            dialogue: 'shrimp',
-          },
+          // the farmer, sat on his stool right above the gate in his fence
+          npc('shrimp', 'shrimp', 49, 13, 'down', 'shrimp'),
         ]
   // the forest and the carrot field are drawn in the map rather than listed: one object per glyph
   rows.forEach((row, y) =>
     [...row].forEach((ch, x) => {
       if (ch === 'T') objects.push({ id: `tree${x}-${y}`, kind: 'tree', x, y, dialogue: 'bigtree' })
       if (ch === 'F') objects.push({ id: `carrot${x}-${y}`, kind: 'carrot', x, y })
+      if (ch === '=') objects.push({ id: `fence${x}-${y}`, kind: 'fence', x, y })
     }),
   )
   return {

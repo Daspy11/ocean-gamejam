@@ -78,7 +78,7 @@ describe('objectAt', () => {
     expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
     expect(objectAt(w, 16, 15)).toBeUndefined() // the tile the tree's canopy hangs over
     expect(objectAt(w, 36, 20)?.id).toBe('albatross') // out on the big island
-    expect(objectAt(w, 48, 21)?.id).toBe('crate3') // and the crate on the grass east of the forest
+    expect(objectAt(w, 48, 22)?.id).toBe('crate3') // and the crate on the grass east of the forest
     expect(objectAt(w, 42, 17)?.id).toBe('cave1') // the mouth, walled in by the forest
     expect(objectAt(w, 10, 37)?.id).toBe('rack1') // and the rack in the room it leads to
   })
@@ -171,6 +171,10 @@ describe('the gallery map', () => {
       'g-flower',
       'g-flower-white',
       'g-sign',
+      'g-fence',
+      'g-fence2',
+      'g-machine',
+      'g-seahorse',
       'g-wreck',
       'g-etarp',
     ])

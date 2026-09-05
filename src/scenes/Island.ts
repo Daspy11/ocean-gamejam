@@ -250,14 +250,16 @@ export default class Island extends Phaser.Scene {
     })
     this.smoke = []
     for (const o of world.objects) {
-      if (o.kind !== 'orb' || tileAt(world, o.x, o.y) !== 'water') continue // still boiling
+      // an orb still boiling its tile, and the desalinator chugging away on dry land
+      if (o.kind !== 'machine' && (o.kind !== 'orb' || tileAt(world, o.x, o.y) !== 'water'))
+        continue
       const bottom = (o.y + 1) * 16
       const sprite = this.add
         .sprite(o.x * 16, bottom, 'sprites/smoke')
         .setOrigin(0, 1)
         .setDepth(bottom + 1) // just over the orb it rises from
         .setVisible(false) // update() shows it as soon as the orb has landed
-      this.smoke.push({ sprite, bottom, thrownAt: o.thrown?.at })
+      this.smoke.push({ sprite, bottom, thrownAt: o.kind === 'orb' ? o.thrown?.at : undefined })
     }
     this.objects = world.objects.map((o) => {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps

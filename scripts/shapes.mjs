@@ -1,5 +1,5 @@
-// The shapes the sheets in placeholders.mjs are drawn from: the terrain template and the character
-// layouts. Flat solid fills only, two or three colours, no outlines or shading.
+// The shapes the sheets in placeholders.mjs are drawn from: the terrain template, the character
+// layouts, and whatever else is too long to sit in the sheets list there. Flat solid fills only, two or three colours, no outlines or shading.
 // The 5x3 terrain sheet: each entry is the corner mask its frame draws (TL 1, TR 2, BL 4, BR 8).
 // Left, a 3x3 island; right, a 2x2 block with a hole and, under it, the two diagonals. Must match
 // DUAL_FRAME in src/assets.ts.
@@ -151,3 +151,12 @@ export const bird = () => {
     ]),
   )
 }
+
+// the coat rack: a post with a crossbar, hung with three hats; it is carried off whole, so one frame
+export const rack = [
+  [7, 8, 2, 24, '#7a5a3a'], // post, crossbar down to the floor
+  [2, 8, 12, 2, '#7a5a3a'], // crossbar
+  [1, 5, 4, 3, '#c8b088'], // the three hats hung on it
+  [6, 5, 4, 3, '#c8b088'],
+  [11, 5, 4, 3, '#c8b088'],
+]

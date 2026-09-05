@@ -1,13 +1,16 @@
 // Rows of equal length; createWorld() takes the size from them. `~` water · `s` salt · `.` sand ·
 // `#` grass · `^` rock (solid) · `T` grass with a tree on it (a big-island tree, talked to rather
-// than shaken) · `F` farmland with a carrot on it. Hand-edit freely.
+// than shaken) · `F` farmland with a carrot on it · `=` grass with a fence post on it.
+// Hand-edit freely.
 // island: 64x44, the starting world. The wreck sits at 12..13,16 (half in the water). The small east
 // island is exactly two water tiles away at rows 15..17. An empty island sits far north at rows 1..5,
 // x 19..25 — above everything the camera can reach from either island, so you only find it by building.
-// The big island fills x 32..52, y 10..27, four water tiles east of the small one. A forest covers its
+// The big island fills x 32..60, y 10..27, four water tiles east of the small one. A forest covers its
 // middle, and the cave mouth at 42,17 is sealed inside it: every tile round it is a tree, until
-// something clears them. The shrimp's carrot field is the three strips of `F` on the east side, his
-// stool at 49,14. The cave itself is the sand room at 8..13,37..40 inside the rock block in
+// something clears them. The east side bulges out to make room for the shrimp's carrot field: twelve
+// carrots in four rows a tile apart, with a clear tile inside the fence ring at 45..55,15..21 all the
+// way round them; the ring's one gate is at 49,15, with his stool
+// right above it at 49,13. The cave itself is the sand room at 8..13,37..40 inside the rock block in
 // the bottom-left corner: at 2x zoom the camera sees 20x12 tiles, so from anywhere in the room the
 // rock runs off every edge of the screen and it reads as underground. 10,41 is the way out.
 // gallery: `?map=gallery`, the artist's proof sheet. Top, left to right in salt, sand, grass and
@@ -29,19 +32,19 @@ export const MAPS = {
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.....~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~..#####..~~~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~..T#####T##..~~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~.###..~~~~~~~~~~~~~~..#############..~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~.#####.~~~~..~~~~~~~.#######TTT#######.~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~.######.~~.##.~~~~~.##T###TTTTTTT######.~~~~~~~~~~~',
-    '~~~~~~~~~~~~~.######.~~.###.~~~~.######TTTTTTTTF#F#F.~~~~~~~~~~~',
-    '~~~~~~~~~~~~~.######.~~.###.~~~~.#####TTTT#TTTTF#F#F.~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~.####.~~~~...~~~~~.#####TTTTTTTTTF#F#F.~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~.###.~~~~~~~~~~~~~~.####TTTTTTTT#F#F#F.~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~.#.~~~~~~~~~~~~~~~.######TTTTTT#####.~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~.~~~~~~~~~~~~~~~~~.######TTT#######.~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.###############.~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.T##########T#.~~~~~~~~~~~~~~',
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.##########..~~~~~~~~~~~~~~~',
+    '~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~..T#####T####..~~~~~~~~~~~~~',
+    '~~~~~~~~~~~~~~.###..~~~~~~~~~~~~~~..################..~~~~~~~~~~',
+    '~~~~~~~~~~~~~.#####.~~~~..~~~~~~~.#######TTT###########.~~~~~~~~',
+    '~~~~~~~~~~~~~.######.~~.##.~~~~~.##T###TTTTTT====#======#.~~~~~~',
+    '~~~~~~~~~~~~~.######.~~.###.~~~~.######TTTTTT=#########=##.~~~~~',
+    '~~~~~~~~~~~~~.######.~~.###.~~~~.#####TTTT#TT=#F#F#F#F#=##.~~~~~',
+    '~~~~~~~~~~~~~~.####.~~~~...~~~~~.#####TTTTTTT=#F#F#F#F#=##.~~~~~',
+    '~~~~~~~~~~~~~~.###.~~~~~~~~~~~~~~.####TTTTTTT=#F#F#F#F#=##.~~~~~',
+    '~~~~~~~~~~~~~~~.#.~~~~~~~~~~~~~~~.######TTTTT=#########=#.~~~~~~',
+    '~~~~~~~~~~~~~~~~.~~~~~~~~~~~~~~~~~.######TTT#===========#.~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.###################..~~~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.T##########T###..~~~~~~~~~~~',
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.###########..~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~..######..~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~..###.~~~~~~~~~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~~~',

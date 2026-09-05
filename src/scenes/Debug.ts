@@ -7,7 +7,7 @@ import { load, world } from '../store'
 // the map without walking there. Never opened in the itch build, so the labels are plain English.
 const gallery = () => new URLSearchParams(location.search).get('map') === 'gallery'
 
-// three call sites: every warp puts him down standing still, holding nothing, and drops the
+// four call sites: every warp puts him down standing still, holding nothing, and drops the
 // cutscene that was playing rather than leaving it to run on somewhere he can no longer see
 const warp = (x: number, y: number, facing: Dir) => {
   const w = structuredClone(world)
@@ -36,6 +36,7 @@ export default class Debug extends Phaser.Scene {
         label: gallery() ? 'back to the game' : 'gallery',
         run: () => (location.search = gallery() ? '?scene=island' : '?map=gallery'),
       },
+      { label: 'to the first island', run: () => warp(14, 16, 'right') }, // where the boat wrecks
       { label: 'into the cave', run: () => warp(10, 40, 'up') },
       { label: 'to the big island', run: () => warp(33, 17, 'right') },
       { label: 'to the north island', run: () => warp(22, 3, 'down') },
