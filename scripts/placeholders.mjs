@@ -7,16 +7,14 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
-import { bird, character, crab, dual, shrimp } from './shapes.mjs'
+import { bird, character, crab, dual, rack, shrimp } from './shapes.mjs'
 
-// the coat rack: a post with a crossbar, hung with three hats; it is carried off whole, so one frame
-const rack = [
-  [7, 8, 2, 24, '#7a5a3a'], // post, crossbar down to the floor
-  [2, 8, 12, 2, '#7a5a3a'], // crossbar
-  [1, 5, 4, 3, '#c8b088'], // the three hats hung on it
-  [6, 5, 4, 3, '#c8b088'],
-  [11, 5, 4, 3, '#c8b088'],
-]
+// the sea horse, and the desalinator he is so proud of: a boiler with a chimney on top
+const seahorse = character({ hair: '#2a6f6f', skin: '#7fd0c8', shirt: '#2a6f6f' })
+const machine = (x, y) => ((y > 8 ? x > 1 && x < 14 : x > 9 && x < 12 && y > 2) ? '#5a5a66' : null)
+
+// a fence post: one rail the full width of the tile, so a run of them joins up
+const fence = (x, y) => ((y > 5 && y < 8) || (x > 5 && x < 10 && y > 3) ? '#7a5a3a' : null)
 
 // the sign's one frame, out here so the sheets list below stays inside the file's line budget
 const signpost = [
@@ -50,6 +48,7 @@ const sheets = [
     frames: character({ hair: '#c04040', skin: '#c8c0b8', shirt: '#e0e0e0' }),
   },
   { file: 'sprites/walter.png', w: 16, h: 24, cols: 3, frames: crab() },
+  { file: 'sprites/seahorse.png', w: 16, h: 24, cols: 3, frames: seahorse },
   {
     file: 'sprites/etarp.png',
     w: 16,
@@ -241,6 +240,8 @@ const sheets = [
       [[3, 4, 10, 8, '#8a4a5a']], // 9 carpet, a square of rug
     ],
   },
+  { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
+  { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },
   { file: 'sprites/floor.png', w: 16, h: 16, cols: 1, frames: [[[1, 5, 14, 10, '#8a4a5a']]] },
   { file: 'ui/box.png', w: 24, h: 24, cols: 1, frames: [boxframe] },
 ]

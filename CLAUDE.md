@@ -62,8 +62,8 @@ e2e/           Playwright specs.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open`, `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
   `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `salt:away` (any item put down off
-  the main island), `carrots:done`, add more in `apply`) and the `when` flag is truthy; it sets
-  `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`.
+  the main island), `carrots:done`, `score:fifteen`, add more in `apply`) and the `when` flag is
+  truthy; it sets `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`.
   Dialogues that fire while a box is open wait in
   `world.queue`. Node `set` may write strings; `flags['name:<item>']` renames an item; node `take`
   spends an item (or the counts in a record: `{ twig: 10 }`); node `give` hands one over, got box and
@@ -71,8 +71,10 @@ e2e/           Playwright specs.
   pickup of each item plays `got.json`. To add a tutorial beat: write a dialogue file with a trigger,
   and if it needs a new event, emit it from `apply`. No trigger system.
 - Cutscenes are dialogue nodes without `text` (acts): `walk` an npc along a path, `wait` ms, `spawn` an
-  object, `bloom` a flower, `shake` / `fly` / `land` a tree (`src/game/tree.ts`), `rumble` the screen. The
-  box hides, the act runs, and the node advances itself. Any object can be walked; npcs walk through
+  object, `put` one down on the nearest free ground beside somebody (`src/game/machine.ts`), `bloom` a
+  flower, `shake` / `fly` / `land` a tree (`src/game/tree.ts`), `rumble` the screen, and `gone`, which
+  just holds until the object it names has left the world. The box hides, the act runs, and the node
+  advances itself. Any object can be walked; npcs walk through
   everything, a boat stops and is `wrecked` when its next tile is not water (`src/game/boat.ts`), and an
   npc with `ride` sits on the object it names. See `assets/dialogue/flower.json` and `pirate.json`.
 - The island grows by the orb: thrown on a water tile it boils it (smoke) and after 2 s that tile is
@@ -83,7 +85,7 @@ e2e/           Playwright specs.
   `useItem` in `src/game/salt.ts` throws the orb, lays a block of salt, or puts a `floor` down on bare
   ground, and the bag shuts so he can see it land. Nothing else in the bag goes anywhere. The map is
   ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
-  farmland with a carrot on it); edit it by hand.
+  farmland with a carrot on it, `=` is grass with a fence post on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets
   it). A bloomed flower is +10, a `floor` +5, placing salt is -1, but only on the main island:
   `world.main` is flood-filled from the spawn when the world is made and grows through salt laid next
@@ -99,11 +101,15 @@ e2e/           Playwright specs.
   red hair), Walter (he/him, a crab in a cowboy hat, walks sideways), the tree, which talks once
   woken (`assets/dialogue/tree*.json`; Walter hands over the fashionable carpet before he settles under
   it, in `flower.json`), Etarp (he/him, a blind pirate, drawn facing the wrong
-  way), and golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
-  pays with a golden egg, `assets/dialogue/albatross.json`), and antoine le shrimp (he/him, a French
-  shrimp who farms carrots on the big island's east side from a stool; picking all twelve earns the
-  certificate, `assets/dialogue/shrimp.json` and `carrots.json`). Do not invent further characters,
-  names, or backstory.
+  way), golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
+  pays with a golden egg, `assets/dialogue/albatross.json`), antoine le shrimp (he/him, a French
+  shrimp who farms carrots on the big island's east side from a stool over the one gate in their
+  fence; until he asks for a hand the field only reads out (`carrotfield.json`), and picking all
+  twelve then earns the certificate, `assets/dialogue/shrimp.json` and `carrots.json`), and the sea
+  horse (he/him, who swims up to the spit at fifteen beauty and puts his smoking desalinator 9000
+  down beside him: it eats a beauty every 2 s and after ten of them explodes, salting the sea three
+  tiles every way, `src/game/machine.ts` and `assets/dialogue/seahorse.json`). Do not invent further
+  characters, names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.
 - Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24
   in the RPG Maker layout: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up).

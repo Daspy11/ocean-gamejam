@@ -30,7 +30,8 @@ test('the debug menu opens on Z three times and warps the player into the cave',
   // scene is not an active one: island stops stepping, so nothing walks behind the panel.
   await expect.poll(() => island(page)).toEqual({ active: false, paused: true })
 
-  // the cursor moves off 'gallery' onto 'into the cave', and E runs it
+  // the cursor moves off 'gallery', past 'to the first island' onto 'into the cave', and E runs it
+  await tap(page, 'ArrowDown')
   await tap(page, 'ArrowDown')
   const menu = await page.evaluate(() =>
     window.island.game.scene
@@ -84,6 +85,7 @@ test('warping cancels the cutscene that was playing', async ({ page }) => {
 
   for (let i = 0; i < 3; i++) await page.keyboard.press('z')
   await page.waitForFunction(() => window.island.game.scene.isActive('debug'))
+  await tap(page, 'ArrowDown')
   await tap(page, 'ArrowDown') // onto 'into the cave'
   await tap(page, 'e')
   await expect.poll(() => open(page)).toBe(false)

@@ -19,6 +19,7 @@ export const SHEETS = {
   'sprites/albatross': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // character sheet; he never gets off his stool, so all twelve frames are the same seated pose
   'sprites/shrimp': { frameWidth: 16, frameHeight: 24 },
+  'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
@@ -31,6 +32,8 @@ export const SHEETS = {
   'sprites/cave': { frameWidth: 16, frameHeight: 32 },
   'sprites/rack': { frameWidth: 16, frameHeight: 32 }, // one frame: a post hung with hats
   'sprites/carrot': { frameWidth: 16, frameHeight: 16 }, // one frame: a carrot growing in the soil
+  'sprites/machine': { frameWidth: 16, frameHeight: 16 }, // one frame: the desalinator 9000
+  'sprites/fence': { frameWidth: 16, frameHeight: 16 }, // one frame: a post with a rail across it
   'sprites/floor': { frameWidth: 16, frameHeight: 16 }, // one frame: the carpet, lying flat on its tile
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
   // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
@@ -52,6 +55,7 @@ export const JSONS = [
   'dialogue/away',
   'dialogue/bigtree',
   'dialogue/boat',
+  'dialogue/carrotfield',
   'dialogue/carrots',
   'dialogue/crate',
   'dialogue/etarp',
@@ -65,6 +69,7 @@ export const JSONS = [
   'dialogue/mich',
   'dialogue/negative',
   'dialogue/pirate',
+  'dialogue/seahorse',
   'dialogue/shake3',
   'dialogue/shake7',
   'dialogue/shrimp',

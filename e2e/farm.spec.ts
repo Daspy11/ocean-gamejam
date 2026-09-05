@@ -32,8 +32,8 @@ test('the shrimp asks for his carrots and hands over the award for them', async 
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   await page.locator('#game canvas').click() // focus first: a click on an open box advances it
 
-  // his stool is at 49,14; the grass right below it is where you stand to talk to him
-  await stand(page, 49, 15, 'up')
+  // his stool is at 49,13, over the gate in his fence; you stand in the gateway to talk to him
+  await stand(page, 49, 14, 'up')
   await press(page, 'e', () => window.island.world().dialogue?.key === 'shrimp')
   for (const node of ['2', '3', '4'])
     await press(page, 'e', (at) => window.island.world().dialogue?.node === at, node)
@@ -41,15 +41,16 @@ test('the shrimp asks for his carrots and hands over the award for them', async 
   await press(page, 'e', () => window.island.world().dialogue === null)
   expect(await page.evaluate(() => window.island.world().flags['shrimp:asked'])).toBe(true)
 
-  // three strips at x 47, 49 and 51, picked from the grass gaps between them
+  // four rows of three at x 47, 49, 51 and 53, down y 17 to 19, picked from the gaps between
   const spots = [
     [48, 'left'],
     [48, 'right'],
     [50, 'right'],
+    [52, 'right'],
   ] as const
   for (let n = 0; n < 12; n++) {
-    const [x, facing] = spots[n % 3]
-    await stand(page, x, 16 + Math.floor(n / 3), facing)
+    const [x, facing] = spots[n % 4]
+    await stand(page, x, 17 + Math.floor(n / 4), facing)
     // the first and the last are the ones with a box to them, so those two go through the keyboard;
     // the ten in between are the same interact, dispatched, to keep the run short
     if (n === 0 || n === 11)
