@@ -100,8 +100,8 @@ e2e/           Playwright specs.
   woken (`assets/dialogue/tree*.json`; Walter hands over the fashionable carpet before he settles under
   it, in `flower.json`), Etarp (he/him, a blind pirate, drawn facing the wrong
   way), and golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
-  pays with a golden egg, `assets/dialogue/albatross.json`), and the shrimp (he/him, French, unnamed so
-  far, farms carrots on the big island's east side from a stool; picking all twelve earns the
+  pays with a golden egg, `assets/dialogue/albatross.json`), and antoine le shrimp (he/him, a French
+  shrimp who farms carrots on the big island's east side from a stool; picking all twelve earns the
   certificate, `assets/dialogue/shrimp.json` and `carrots.json`). Do not invent further characters,
   names, or backstory.
 - No `Math.random` in `src/game`. If you need randomness, add a seeded rng to `World` first.

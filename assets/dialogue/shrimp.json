@@ -1,5 +1,5 @@
 {
-  "name": "[PLACEHOLDER shrimp farmer name]",
+  "name": "antoine le shrimp",
   "start": [
     { "when": "shrimp:thanked", "node": "after" },
     { "when": "shrimp:asked", "node": "4" },
