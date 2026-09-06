@@ -13,19 +13,7 @@
     "run": {
       "walk": {
         "id": "mich",
-        "path": [
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "down",
-          "right",
-          "right",
-          "right"
-        ],
+        "to": { "x": 23, "y": 16 },
         "run": true
       },
       "next": "a1"
@@ -105,13 +93,8 @@
     "6": {
       "walk": {
         "id": "mich",
-        "path": [
-          "left",
-          "left",
-          "left",
-          "left",
-          "up"
-        ]
+        "to": { "x": 19, "y": 15 },
+        "facing": "up"
       },
       "next": "7"
     },
@@ -150,11 +133,6 @@
     },
     "14": {
       "text": "i can't eat math this is worthless get this out of my face",
-      "next": "15"
-    },
-    "15": {
-      "who": "",
-      "text": "wow i always wanted to have 10 ??????s",
       "next": "16"
     },
     "16": {
@@ -172,13 +150,7 @@
     "17": {
       "walk": {
         "id": "walter",
-        "path": [
-          "down",
-          "down",
-          "down",
-          "down",
-          "down"
-        ],
+        "to": { "x": 24, "y": 14 },
         "run": true
       },
       "next": "18"
@@ -189,7 +161,7 @@
       "next": "19"
     },
     "19": {
-      "text": "can crabs wear hats?",
+      "text": "why {score}? didn't i just get +10?",
       "next": "20"
     },
     "20": {
@@ -277,16 +249,7 @@
     "walk": {
       "walk": {
         "id": "walter",
-        "path": [
-          "down",
-          "down",
-          "left",
-          "left",
-          "left",
-          "left",
-          "left",
-          "left"
-        ]
+        "to": { "x": 18, "y": 16 }
       },
       "next": [
         {
@@ -299,15 +262,13 @@
       ]
     },
     "22b": {
-      "text": "Beauty is merely the Spiritual making itself known sensuously",
+      "text": "beauty is merely the spiritual making itself known sensuously",
       "next": "23"
     },
     "under": {
       "walk": {
         "id": "walter",
-        "path": [
-          "left"
-        ]
+        "to": { "x": 17, "y": 16 }
       },
       "set": {
         "walter:under": true

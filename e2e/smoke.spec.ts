@@ -175,7 +175,7 @@ test('two salt bridge the gap to the second island', async ({ page }) => {
   await page.locator('#game canvas').screenshot({ path: 'test-results/bridge.png' })
 })
 
-test('talking to the npc runs a dialogue and sets a flag', async ({ page }) => {
+test('talking to the npc runs her line and turns her to face you', async ({ page }) => {
   await openIsland(page)
   await page.evaluate(() => {
     const w = window.island.world() // north of mich at 13,15
@@ -185,15 +185,12 @@ test('talking to the npc runs a dialogue and sets a flag', async ({ page }) => {
 
   await press(page, 'e', () => window.island.world().dialogue !== null)
   // Phaser steps scenes in reverse order, so the ui scene redraws the frame after island dispatched
-  await expect.poll(() => texts(page, 'ui')).toContain('[PLACEHOLDER greeting]')
+  await expect.poll(() => texts(page, 'ui')).toContain('fix the boat idiot')
   const npc = await page.evaluate(() => window.island.world().objects.find((o) => o.id === 'mich'))
   expect(npc && npc.kind === 'npc' && npc.facing).toBe('up') // the npc turns to face the player
   await page.locator('#game canvas').screenshot({ path: 'test-results/dialogue.png' })
 
-  await press(page, 'ArrowDown', () => window.island.world().dialogue?.choice === 1)
-  await press(page, 'e', () => window.island.world().flags.mich_met === true)
-  await press(page, 'e', () => window.island.world().dialogue === null)
-  expect(await page.evaluate(() => window.island.world().flags.mich_choice)).toBe(2)
+  await press(page, 'e', () => window.island.world().dialogue === null) // one line, no options
 })
 
 test('the crate beside the wreck gives up the orb exactly once', async ({ page }) => {
@@ -217,6 +214,7 @@ test('the second crate on the far island holds the horse electrolytes', async ({
   await page.evaluate(() => {
     const w = window.island.world() // crate2 sits at 24,17; stand on the sand just west of it
     w.player = { ...w.player, x: 23, y: 17, facing: 'right' }
+    w.tiles[16 * w.width + 21] = w.tiles[16 * w.width + 22] = 'salt' // the bridge Mich runs over
     // Mich's crate line is the tutorial test's job, so only the flower scene is left to queue
     window.island.load({ ...w, flags: { 'fired:crate': true } })
   })

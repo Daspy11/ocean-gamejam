@@ -42,7 +42,7 @@ test('the boxes are the ui/box nine-slice and the baked font is 1-bit', async ({
       ['ui/box', 624, 112], // the dialogue box
       ['ui/box', 184, 144], // the inventory panel
     ],
-    labels: ['basis33', 'nihonium'], // the hud and body, and the speaker's name
+    labels: ['nihonium', 'basis33'], // the hud and the speaker's name, and the body and slot counts
     texts: 0,
     blurred: 0,
   })

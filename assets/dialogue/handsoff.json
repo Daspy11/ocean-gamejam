@@ -1,0 +1,7 @@
+{
+  "name": "suspicious harry",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "GET YER HANDS OFF THOSE CHAIRS", "next": null }
+  }
+}

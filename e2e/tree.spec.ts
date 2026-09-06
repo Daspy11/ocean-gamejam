@@ -197,6 +197,7 @@ test('Walter walking to a tree that already left stops short of it', async ({ pa
   await page.waitForFunction(() => window.island?.game.scene.isActive('island'))
   await page.evaluate(() => {
     const w = window.island.world() // on the far island's sand at 23,17, facing crate2
+    w.tiles[16 * w.width + 21] = w.tiles[16 * w.width + 22] = 'salt' // the bridge Mich runs over
     window.island.load({
       ...w,
       flags: { 'had:electrolytes': true, 'tree:gone': true },

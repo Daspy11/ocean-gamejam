@@ -2,6 +2,8 @@
   "name": "antoine le shrimp",
   "start": [
     { "when": "shrimp:thanked", "node": "after" },
+    { "when": "shrimp:chair", "has": { "chair": 1 }, "node": "chair" },
+    { "when": "shrimp:chair", "node": "nochair" },
     { "when": "shrimp:asked", "node": "4" },
     { "node": "1" }
   ],
@@ -12,6 +14,17 @@
     "4": {
       "text": "could you euh, elp me peek thes, euh, carrotsch?",
       "set": { "shrimp:asked": true },
+      "next": null
+    },
+    "nochair": {
+      "text": "EYE AVE EUGH SOMETHIN FOR YOUR EICHLAND IF EUGH, YOU CAN ELP ME FIND A CHAIR",
+      "next": null
+    },
+    "chair": {
+      "text": "ah, thees is ah, very guod, sank you mozzure",
+      "take": "chair",
+      "give": "certificate",
+      "set": { "shrimp:thanked": true, "sprite:shrimp": "shrimpchair" },
       "next": null
     },
     "after": { "text": "ah, thees is ah, very guod, sank you mozzure", "next": null }

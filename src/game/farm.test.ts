@@ -11,10 +11,27 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: { '1': { text: '[PLACEHOLDER got {item}]', next: null } },
     },
+    // the shape of assets/dialogue/shrimp.json once he has asked for a chair: the award for one
     shrimp: {
       name: '[PLACEHOLDER NPC NAME]',
-      start: [{ node: '1' }],
-      nodes: { '1': { text: '[PLACEHOLDER the farmer asks]', next: null } },
+      start: [
+        { when: 'shrimp:thanked', node: 'after' },
+        { when: 'shrimp:chair', has: { chair: 1 }, node: 'chair' },
+        { when: 'shrimp:chair', node: 'nochair' },
+        { node: '1' },
+      ],
+      nodes: {
+        '1': { text: '[PLACEHOLDER the farmer asks]', next: null },
+        nochair: { text: '[PLACEHOLDER the farmer wants a chair]', next: null },
+        chair: {
+          text: '[PLACEHOLDER the farmer is grateful]',
+          take: 'chair',
+          give: 'certificate',
+          set: { 'shrimp:thanked': true },
+          next: null,
+        },
+        after: { text: '[PLACEHOLDER the farmer is grateful]', next: null },
+      },
     },
     // what the field reads out before he has asked for a hand with it
     carrotfield: {
@@ -22,16 +39,16 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: { '1': { text: '[PLACEHOLDER someone else grows these]', next: null } },
     },
-    // the shape of assets/dialogue/carrots.json: his thanks, and the award that comes with them
+    // the shape of assets/dialogue/carrots.json: his thanks, and then the chair he wants first
     carrots: {
       name: '[PLACEHOLDER NPC NAME]',
       trigger: { event: 'carrots:done' },
       start: [{ node: '1' }],
       nodes: {
-        '1': {
-          text: '[PLACEHOLDER the farmer is grateful]',
-          give: 'certificate',
-          set: { 'shrimp:thanked': true },
+        '1': { text: '[PLACEHOLDER the farmer is grateful]', next: '2' },
+        '2': {
+          text: '[PLACEHOLDER the farmer wants a chair]',
+          set: { 'shrimp:chair': true },
           next: null,
         },
       },
@@ -106,7 +123,7 @@ describe('the carrot field', () => {
     expect([w.inventory.carrot, w.dialogue]).toEqual([2, null])
   })
 
-  it('brings the farmer over with an award once the last one is up', () => {
+  it('brings the farmer over once the last one is up, asking for a chair before any award', () => {
     const w = atField(48, 17, 'left')
     // every carrot but this one already picked, so this interact empties the field
     w.objects = w.objects.filter((o) => o.kind !== 'carrot' || (o.x === 47 && o.y === 17))
@@ -115,8 +132,25 @@ describe('the carrot field', () => {
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.key).toBe('carrots')
     expect(w.flags['fired:carrots']).toBe(true)
-    expect(w.inventory.certificate).toBe(1)
-    expect(w.flags['had:certificate']).toBe(true)
+
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.node).toBe('2')
+    expect(w.flags['shrimp:chair']).toBe(true)
+    expect([w.inventory.certificate, w.flags['shrimp:thanked']]).toEqual([undefined, undefined])
+  })
+
+  it('hands over the award for a deck chair, and not before', () => {
+    const w = createWorld()
+    w.player = { ...w.player, x: 49, y: 14, facing: 'up' }
+    w.flags['shrimp:chair'] = true
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.node).toBe('nochair')
+    apply(w, { type: 'interact' }, content)
+
+    w.inventory.chair = 1
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.node).toBe('chair')
+    expect([w.inventory.chair, w.inventory.certificate]).toEqual([undefined, 1])
     expect(w.flags['shrimp:thanked']).toBe(true)
     expect(w.queue).toEqual([{ key: 'got', item: 'certificate' }]) // the award's box waits its turn
 

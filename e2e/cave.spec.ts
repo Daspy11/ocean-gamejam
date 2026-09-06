@@ -32,25 +32,25 @@ test('walking into the cave mouth comes out in the room under the map', async ({
   await page.waitForFunction(() => window.island.world().player.step === null)
   const inside = await player(page)
   expect(inside.x).toBe(10)
-  expect(inside.y).toBeLessThanOrEqual(40) // the held key carries him up the room, rack1 stops him
+  expect(inside.y).toBeLessThanOrEqual(40) // the held key carries him up the room, rum1 stops him
   expect(inside.y).toBeGreaterThanOrEqual(38)
   await page.locator('#game canvas').screenshot({ path: 'test-results/cave.png' })
 
-  // the rack at 10,37 is carried off whole, sprite and all
+  // the bottle at 10,37 is carried off whole, sprite and all
   await page.evaluate(() => {
     const w = window.island.world()
     window.island.load({ ...w, player: { ...w.player, x: 10, y: 38, facing: 'up', held: null } })
   })
-  const racks = () =>
+  const bottles = () =>
     page.evaluate(
       () =>
         (
           window.island.game.scene.getScene('island').children.list as Phaser.GameObjects.Sprite[]
-        ).filter((o) => o.texture?.key === 'sprites/rack').length,
+        ).filter((o) => o.texture?.key === 'sprites/rum').length,
     )
-  await expect.poll(racks).toBe(1)
-  await press(page, 'e', () => window.island.world().inventory.hatrack === 1)
-  await expect.poll(racks).toBe(0)
+  await expect.poll(bottles).toBe(1)
+  await press(page, 'e', () => window.island.world().inventory.rum === 1)
+  await expect.poll(bottles).toBe(0)
   await press(page, 'e', () => window.island.world().dialogue === null) // dismiss the got box
 
   // and the sand tile at 10,41 is the way back out, below the mouth on the big island
@@ -61,8 +61,31 @@ test('walking into the cave mouth comes out in the room under the map', async ({
   await press(page, 'ArrowDown', () => window.island.world().player.x === 42)
   await page.waitForFunction(() => window.island.world().player.step === null)
   const out = await player(page)
-  // the forest at 42,19 is in the way, so the held key cannot carry him past the tile he lands on
-  expect([out.x, out.y]).toEqual([42, 18])
+  // the corridor runs on down to the gate at 42,21, so the held key may carry him a tile or two
+  expect(out.x).toBe(42)
+  expect(out.y).toBeGreaterThanOrEqual(18)
+  expect(out.y).toBeLessThanOrEqual(20)
+})
+
+test('the gate on the corridor to the cave says locked, and opens for the key', async ({
+  page,
+}) => {
+  await openIsland(page, { player: { x: 42, y: 22, facing: 'up' } }) // gate1 at 42,21
+  await press(page, 'e', () => window.island.world().dialogue?.key === 'gate')
+  await press(page, 'e', () => window.island.world().dialogue === null)
+  expect(
+    await page.evaluate(() => window.island.world().objects.some((o) => o.id === 'gate1')),
+  ).toBe(true)
+
+  await page.evaluate(() => {
+    const w = window.island.world()
+    window.island.load({ ...w, inventory: { key: 1 }, flags: { 'had:key': true } })
+  })
+  await press(page, 'e', () => !window.island.world().objects.some((o) => o.id === 'gate1'))
+  expect(await page.evaluate(() => window.island.world().inventory)).toEqual({})
+  // and the way up the corridor is clear to the mouth, which puts him down in the room
+  await press(page, 'ArrowUp', () => window.island.world().player.y === 40)
+  expect((await player(page)).x).toBe(10)
 })
 
 test('the albatross trades the golden egg for ten twigs', async ({ page }) => {

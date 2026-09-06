@@ -23,14 +23,15 @@ describe('createWorld', () => {
     expect(w.objects.filter((o) => o.id.startsWith('tree') && o.id !== 'tree1').length).toBe(
       planted,
     )
-    // the forest walls the mouth in: every tile around it is a tree, until something clears them
+    // the forest walls the mouth in on three sides; the fourth is the corridor down to the gate
     for (const [x, y] of [
       [41, 17],
       [43, 17],
       [42, 16],
-      [42, 18],
     ])
       expect(objectAt(w, x, y)?.kind).toBe('tree')
+    for (let y = 18; y <= 20; y++) expect(objectAt(w, 42, y)).toBeUndefined()
+    expect(objectAt(w, 42, 21)?.kind).toBe('gate')
   })
 
   it('lays out the wreck shore, the southern spit, and the gap to the second island', () => {
@@ -80,7 +81,11 @@ describe('objectAt', () => {
     expect(objectAt(w, 36, 20)?.id).toBe('albatross') // out on the big island
     expect(objectAt(w, 48, 22)?.id).toBe('crate3') // and the crate on the grass east of the forest
     expect(objectAt(w, 42, 17)?.id).toBe('cave1') // the mouth, walled in by the forest
-    expect(objectAt(w, 10, 37)?.id).toBe('rack1') // and the rack in the room it leads to
+    expect(objectAt(w, 10, 37)?.id).toBe('rum1') // and the rum in the room it leads to
+    expect(objectAt(w, 42, 21)?.id).toBe('gate1') // the gate at the foot of the corridor to it
+    expect(objectAt(w, 19, 3)?.id).toBe('crate4') // the chest with the key, on the north island
+    expect(objectAt(w, 42, 25)?.id).toBe('harry') // over his chairs on the south shore
+    expect(objectAt(w, 43, 26)?.id).toBe('chair3')
   })
 
   it('finds the wrecked boat on both of its tiles', () => {
@@ -176,7 +181,20 @@ describe('the gallery map', () => {
       'g-machine',
       'g-seahorse',
       'g-wreck',
+      'g-shrimp',
+      'g-shrimpchair',
+      'g-egg',
+      'g-certificate',
       'g-etarp',
+      'g-harry',
+      'g-bar',
+      'g-bar-drink',
+      'g-gate',
+      'g-chair',
+      'g-rum',
+      'g-cannon',
+      'g-ball',
+      'g-cinder',
     ])
     // one orb still boiling its water tile, one already sat on the salt it made
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)

@@ -62,6 +62,8 @@ test('fifteen beauty brings the sea horse up, and his prototype takes the island
   expect(lines.at(-1)).toBe('oh, um, would you like me to fix that')
   expect(placed).toEqual({ x: 16, y: 20 }) // his left at 15,21 is sea, so it lands one up the spit
   await expect.poll(() => texts(page)).toContain('> yes') // the box is a frame behind the world
+  await press(page, 'ArrowDown', () => window.island.world().dialogue?.choice === 1)
+  await expect.poll(() => texts(page)).toContain('> no')
 
   const after = await page.evaluate(() => {
     const w = window.island.world()
@@ -70,7 +72,7 @@ test('fifteen beauty brings the sea horse up, and his prototype takes the island
       ashore: [him?.x, him?.y],
       running: w.objects.some((o) => o.kind === 'machine'),
       blast: w.tiles[23 * w.width + 16],
-      spared: w.tiles[24 * w.width + 16],
+      spared: w.tiles[20 * w.width + 24], // just outside the seven-tile disc
       score: w.score,
     }
   })

@@ -1,6 +1,6 @@
 {
   "name": "Mich",
-  "trigger": { "event": "score:negative", "when": "score:on" },
+  "trigger": { "event": "score:negative", "when": "score:on", "unless": "seahorse:met" },
   "start": [{ "node": "1" }],
   "nodes": {
     "1": { "text": "idiot look what you did", "next": "2" },

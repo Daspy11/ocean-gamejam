@@ -78,10 +78,34 @@ test('the shrimp asks for his carrots and hands over the award for them', async 
   expect(picked).toEqual({ carrot: 12, key: 'carrots', left: false })
   await page.locator('#game canvas').screenshot({ path: 'test-results/farm.png' })
 
+  // his thanks, and then the chair he wants before any award changes hands
+  await press(page, 'e', () => window.island.world().dialogue?.node === '2')
+  await expect.poll(() => texts(page)).toContain('CHAIR')
+  await press(page, 'e', () => window.island.world().dialogue === null)
+  const asked = await page.evaluate(() => {
+    const w = window.island.world()
+    return { chair: w.flags['shrimp:chair'], certificate: w.inventory.certificate }
+  })
+  expect(asked).toEqual({ chair: true, certificate: undefined })
+
+  // back at his stool with one of harry's deck chairs: the award at last
+  await page.evaluate(() => {
+    const w = window.island.world()
+    window.island.load({
+      ...w,
+      inventory: { ...w.inventory, chair: 1 },
+      player: { ...w.player, x: 49, y: 14, facing: 'up', step: null, held: null },
+    })
+  })
+  await press(page, 'e', () => window.island.world().dialogue?.node === 'chair')
   await press(page, 'e', () => window.island.world().dialogue?.key === 'got')
   const awarded = await page.evaluate(() => {
     const w = window.island.world()
-    return { certificate: w.inventory.certificate, item: w.dialogue?.item }
+    return {
+      certificate: w.inventory.certificate,
+      chair: w.inventory.chair,
+      item: w.dialogue?.item,
+    }
   })
-  expect(awarded).toEqual({ certificate: 1, item: 'certificate' })
+  expect(awarded).toEqual({ certificate: 1, chair: undefined, item: 'certificate' })
 })

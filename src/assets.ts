@@ -6,6 +6,7 @@ export const SHEETS = {
   'tiles/salt': { frameWidth: 16, frameHeight: 16 }, // 80x48: 5x3 terrain layout, see assets/README.md
   'tiles/sand': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   'tiles/grass': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
+  'tiles/charred': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout: grass the cannon burnt
   'tiles/farm': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   'tiles/rock': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
@@ -19,7 +20,10 @@ export const SHEETS = {
   'sprites/albatross': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // character sheet; he never gets off his stool, so all twelve frames are the same seated pose
   'sprites/shrimp': { frameWidth: 16, frameHeight: 24 },
+  // character sheet; the same seated pose on the deck chair he swaps the stool for
+  'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },
   'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
+  'sprites/harry': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
@@ -30,11 +34,19 @@ export const SHEETS = {
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
   // one frame, bottom-anchored on its 1x1 tile: a rock hump standing higher than the ground
   'sprites/cave': { frameWidth: 16, frameHeight: 32 },
-  'sprites/rack': { frameWidth: 16, frameHeight: 32 }, // one frame: a post hung with hats
+  'sprites/rum': { frameWidth: 16, frameHeight: 16 }, // one frame: the bottle, stood on its tile
+  'sprites/bar': { frameWidth: 16, frameHeight: 16 }, // 0 a piece of counter · 1 with a cocktail stood on it
+  'sprites/gate': { frameWidth: 16, frameHeight: 16 }, // one frame: the locked gate, filling the tile
+  'sprites/chair': { frameWidth: 16, frameHeight: 16 }, // one frame: a deck chair
   'sprites/carrot': { frameWidth: 16, frameHeight: 16 }, // one frame: a carrot growing in the soil
   'sprites/machine': { frameWidth: 16, frameHeight: 16 }, // one frame: the desalinator 9000
   'sprites/fence': { frameWidth: 16, frameHeight: 16 }, // one frame: a post with a rail across it
   'sprites/floor': { frameWidth: 16, frameHeight: 16 }, // one frame: the carpet, lying flat on its tile
+  'sprites/egg': { frameWidth: 16, frameHeight: 16 }, // one frame: the golden egg, stood on its tile
+  'sprites/certificate': { frameWidth: 16, frameHeight: 16 }, // one frame: the award, propped on its tile
+  'sprites/cannon': { frameWidth: 16, frameHeight: 16 }, // one frame: barrel over the block it sits on
+  'sprites/ball': { frameWidth: 16, frameHeight: 16 }, // one white frame, tinted red to white in flight
+  'sprites/cinder': { frameWidth: 16, frameHeight: 16 }, // one frame: a block of the sea horse's wall
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
   // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
   // row are stretched to whatever size the box is, so keep those flat along the way they stretch
@@ -55,13 +67,17 @@ export const JSONS = [
   'dialogue/away',
   'dialogue/bigtree',
   'dialogue/boat',
+  'dialogue/cannon',
   'dialogue/carrotfield',
   'dialogue/carrots',
   'dialogue/crate',
   'dialogue/etarp',
   'dialogue/firstsalt',
   'dialogue/flower',
+  'dialogue/gate',
   'dialogue/got',
+  'dialogue/handsoff',
+  'dialogue/harry',
   'dialogue/insalting',
   'dialogue/inventory1',
   'dialogue/inventory2',

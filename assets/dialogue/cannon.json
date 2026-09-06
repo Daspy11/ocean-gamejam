@@ -1,0 +1,50 @@
+{
+  "name": "Etarp",
+  "trigger": { "event": "done:seahorse" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "spawn": { "id": "cannon", "kind": "cannon", "x": 22, "y": 3 }, "next": "2" },
+    "2": {
+      "walk": {
+        "id": "etarp",
+        "to": { "x": 16, "y": 13 },
+        "push": "cannon",
+        "run": true,
+        "facing": "down"
+      },
+      "next": "3"
+    },
+    "3": { "text": "YARR, DON'T LET THAT SEA HORSE NEAR THIS ISLAND.", "next": "4" },
+    "4": { "who": "sea horse", "text": "oh hi again lol your name is backwards", "next": "5" },
+    "5": { "who": "sea horse", "text": "...", "next": "6" },
+    "6": { "who": "sea horse", "text": "is that one of my autocannon 9000s", "next": "7" },
+    "7": { "text": "yes", "next": "8" },
+    "8": { "walk": { "id": "walter", "to": { "x": 22, "y": 16 }, "run": true }, "next": "9" },
+    "9": { "fire": "cannon", "next": "10" },
+    "10": { "who": "sea horse", "text": "lol you missed", "next": "11" },
+    "11": {
+      "who": "sea horse",
+      "text": "but FINE you can have that part of the island and i'll have this part",
+      "next": "12"
+    },
+    "12": { "walk": { "id": "seahorse", "to": { "x": 10, "y": 24 } }, "next": "13" },
+    "13": { "wall": { "id": "seahorse", "y": 23, "from": 10, "to": 22 }, "next": "14" },
+    "14": { "walk": { "id": "seahorse", "to": { "x": 16, "y": 25 } }, "next": "15" },
+    "15": {
+      "put": { "by": "seahorse", "obj": { "id": "desalinator2", "kind": "machine", "x": 0, "y": 0 } },
+      "next": "16"
+    },
+    "16": {
+      "put": { "by": "seahorse", "obj": { "id": "desalinator3", "kind": "machine", "x": 0, "y": 0 } },
+      "next": "17"
+    },
+    "17": {
+      "put": { "by": "seahorse", "obj": { "id": "desalinator4", "kind": "machine", "x": 0, "y": 0 } },
+      "next": "18"
+    },
+    "18": {
+      "put": { "by": "seahorse", "obj": { "id": "desalinator5", "kind": "machine", "x": 0, "y": 0 } },
+      "next": null
+    }
+  }
+}

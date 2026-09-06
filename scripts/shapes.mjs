@@ -87,15 +87,21 @@ export const character = ({ hair, skin, shirt }) =>
 
 // Walter's sheet, in the same 3x4 character layout. A crab looks much the same from every side, so
 // all four rows share one picture; the walk columns lift alternate legs a pixel so the walk reads.
-// The shrimp farmer, in the same 3x4 character layout. He never gets off his stool, so every frame
-// is the same seated pose: a pink curl on a brown seat, feet clear of the ground.
-export const shrimp = () => {
+// The shrimp farmer, in the same 3x4 character layout. He never gets off his seat, so every frame
+// is the same seated pose: a pink curl on a brown stool, feet clear of the ground, or on the red
+// deck chair once he has one, the chair sheet's picture sat in the lower 16 rows of the frame
+export const shrimp = (deckchair = false) => {
   const pink = '#e2808f'
   const wood = '#7a5a3a'
+  const seat = deckchair
+    ? chair.map(([x, y, w, h, c]) => [x, y + 8, w, h, c])
+    : [
+        [5, 18, 2, 6, wood], // stool legs
+        [9, 18, 2, 6, wood],
+        [3, 16, 10, 2, wood], // seat
+      ]
   const sat = [
-    [5, 18, 2, 6, wood], // stool legs
-    [9, 18, 2, 6, wood],
-    [3, 16, 10, 2, wood], // seat
+    ...seat,
     [4, 5, 8, 11, pink], // body, curled forward over it
     [3, 12, 3, 4, pink], // tail
   ]
@@ -152,11 +158,83 @@ export const bird = () => {
   )
 }
 
-// the coat rack: a post with a crossbar, hung with three hats; it is carried off whole, so one frame
-export const rack = [
-  [7, 8, 2, 24, '#7a5a3a'], // post, crossbar down to the floor
-  [2, 8, 12, 2, '#7a5a3a'], // crossbar
-  [1, 5, 4, 3, '#c8b088'], // the three hats hung on it
-  [6, 5, 4, 3, '#c8b088'],
-  [11, 5, 4, 3, '#c8b088'],
+// Etarp's counter: a wooden front under a slab of top, the full width of the tile so the pieces
+// join up. Frame 0 bare, frame 1 with a cocktail stood on it.
+const counter = [
+  [0, 6, 16, 10, '#7a5a3a'], // the front
+  [0, 4, 16, 3, '#a08050'], // the top
+]
+export const bar = [counter, [...counter, [6, 0, 4, 5, '#a0e0c0']]]
+
+// the locked gate: two posts and two rails filling the tile
+export const gate = [
+  [1, 1, 3, 15, '#7a5a3a'],
+  [12, 1, 3, 15, '#7a5a3a'],
+  [1, 4, 14, 2, '#7a5a3a'],
+  [1, 10, 14, 2, '#7a5a3a'],
+]
+
+// a deck chair: canvas back and seat on two wooden legs; also its own icon in the items sheet
+export const chair = [
+  [3, 1, 10, 7, '#c04040'],
+  [2, 8, 12, 4, '#c04040'],
+  [3, 12, 2, 4, '#7a5a3a'],
+  [11, 12, 2, 4, '#7a5a3a'],
+]
+
+// the bottle of rum: dark glass with a cork; also its own icon in the items sheet
+export const bottle = [
+  [6, 6, 4, 10, '#3a5a3a'],
+  [7, 2, 2, 4, '#3a5a3a'],
+  [7, 1, 2, 1, '#a08050'],
+]
+
+// the inventory icons, one per item in ITEMS order (src/game/world.ts)
+export const items = [
+  [
+    [3, 9, 10, 4, '#c4ccd6'],
+    [5, 6, 6, 3, '#c4ccd6'],
+  ], // 0 salt, a pile
+  [
+    [5, 3, 6, 10, '#e07020'],
+    [3, 5, 10, 6, '#e07020'],
+  ], // 1 orb, as frame 0 of orb.png
+  [
+    [6, 3, 4, 3, '#8a7050'],
+    [4, 6, 8, 8, '#c8b088'],
+  ], // 2 electrolytes, a bag with a tied neck
+  [
+    [3, 10, 10, 2, '#7a5a3a'],
+    [9, 6, 2, 5, '#7a5a3a'],
+  ], // 3 twig, a stick with one shoot
+  [
+    [4, 6, 8, 7, '#9aa0a8'],
+    [5, 4, 6, 4, '#9aa0a8'],
+  ], // 4 seal, a blob with a head
+  [
+    [5, 4, 6, 9, '#e0c040'],
+    [4, 6, 8, 5, '#e0c040'],
+  ], // 5 egg
+  [
+    [6, 7, 4, 7, '#e08030'],
+    [7, 12, 2, 3, '#e08030'],
+    [5, 3, 6, 4, '#3f7f3f'],
+  ], // 6 carrot, as the sprite
+  [
+    [2, 3, 12, 10, '#e8e4d8'],
+    [9, 9, 4, 4, '#c04040'],
+  ], // 7 certificate, a pale sheet with a seal on it
+  [[3, 4, 10, 8, '#8a4a5a']], // 8 carpet, a square of rug
+  [
+    [3, 6, 5, 5, '#e0c040'],
+    [7, 8, 7, 2, '#e0c040'],
+    [11, 10, 2, 2, '#e0c040'],
+  ], // 9 key, a ring with a shaft and one tooth
+  bottle, // 10 rum, as the sprite
+  [
+    [5, 3, 6, 8, '#a0e0c0'],
+    [7, 11, 2, 3, '#d8dde3'],
+    [5, 13, 6, 1, '#d8dde3'],
+  ], // 11 otijom, a glass on a stem
+  chair, // 12 chair, as the sprite
 ]

@@ -10,8 +10,10 @@
     },
     "3": {
       "text": "i am trying to finish my nest but all the twigs on this island are TERRIBLE",
-      "next": null
+      "next": "3how"
     },
+    "3how": { "who": "", "text": "how many you need", "next": "3ten" },
+    "3ten": { "text": "idk like 10", "next": null },
     "3twigs": {
       "text": "i am trying to finish my nest but all the twigs on this island are TERRIBLE",
       "choices": [

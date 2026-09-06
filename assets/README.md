@@ -7,7 +7,7 @@ automatically (see `src/assets.ts`). Frame size and frame order for every sheet 
 them exactly. Sheets are grids of equal frames, read left to right then top to bottom from frame 0 at
 the top left, no padding, no trim. Characters are 3 columns x 4 rows; most other sheets are one row.
 
-Terrain sheets (`tiles/salt`, `tiles/sand`, `tiles/grass`, `tiles/farm`, `tiles/rock`) are one 80x48 picture, 5x3 cells of 16x16,
+Terrain sheets (`tiles/salt`, `tiles/sand`, `tiles/grass`, `tiles/charred`, `tiles/farm`, `tiles/rock`) are one 80x48 picture, 5x3 cells of 16x16,
 painted as three pieces on a transparent background. The placeholder is the template:
 
 ```

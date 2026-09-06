@@ -6,8 +6,8 @@
 // island is exactly two water tiles away at rows 15..17. An empty island sits far north at rows 1..5,
 // x 19..25 — above everything the camera can reach from either island, so you only find it by building.
 // The big island fills x 32..60, y 10..27, four water tiles east of the small one. A forest covers its
-// middle, and the cave mouth at 42,17 is sealed inside it: every tile round it is a tree, until
-// something clears them. The east side bulges out to make room for the shrimp's carrot field: twelve
+// middle, and the cave mouth at 42,17 sits at the top of a one-tile corridor down through it,
+// 42,18..21, with the locked gate (gate1 in world.ts) on its south end at 42,21. The east side bulges out to make room for the shrimp's carrot field: twelve
 // carrots in four rows a tile apart, with a clear tile inside the fence ring at 45..55,15..21 all the
 // way round them; the ring's one gate is at 49,15, with his stool
 // right above it at 49,13. The cave itself is the sand room at 8..13,37..40 inside the rock block in
@@ -38,10 +38,10 @@ export const MAPS = {
     '~~~~~~~~~~~~~.######.~~.##.~~~~~.##T###TTTTTT====#======#.~~~~~~',
     '~~~~~~~~~~~~~.######.~~.###.~~~~.######TTTTTT=#########=##.~~~~~',
     '~~~~~~~~~~~~~.######.~~.###.~~~~.#####TTTT#TT=#F#F#F#F#=##.~~~~~',
-    '~~~~~~~~~~~~~~.####.~~~~...~~~~~.#####TTTTTTT=#F#F#F#F#=##.~~~~~',
-    '~~~~~~~~~~~~~~.###.~~~~~~~~~~~~~~.####TTTTTTT=#F#F#F#F#=##.~~~~~',
-    '~~~~~~~~~~~~~~~.#.~~~~~~~~~~~~~~~.######TTTTT=#########=#.~~~~~~',
-    '~~~~~~~~~~~~~~~~.~~~~~~~~~~~~~~~~~.######TTT#===========#.~~~~~~',
+    '~~~~~~~~~~~~~~.####.~~~~...~~~~~.#####TTTT#TT=#F#F#F#F#=##.~~~~~',
+    '~~~~~~~~~~~~~~.###.~~~~~~~~~~~~~~.####TTTT#TT=#F#F#F#F#=##.~~~~~',
+    '~~~~~~~~~~~~~~~.#.~~~~~~~~~~~~~~~.######TT#TT=#########=#.~~~~~~',
+    '~~~~~~~~~~~~~~~~.~~~~~~~~~~~~~~~~~.######T#T#===========#.~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.###################..~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.T##########T###..~~~~~~~~~~~',
     '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.###########..~~~~~~~~~~~~~~',

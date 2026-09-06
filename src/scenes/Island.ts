@@ -5,7 +5,7 @@ import { dispatch, world } from '../store'
 
 // priority, lowest first; later fills draw over earlier ones, so each layer's mask counts every
 // terrain above it as itself
-const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass', 'farm', 'rock']
+const GROUND: Tile[] = ['water', 'salt', 'sand', 'grass', 'charred', 'farm', 'rock']
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 // anything drawn walking on the grid: the player, and npcs a cutscene is walking
@@ -148,6 +148,21 @@ export default class Island extends Phaser.Scene {
       )
     })
 
+    // the shelling: a ball flies straight down out of the muzzle at 24 tiles a second, glowing red
+    // to white as it goes, and the cannon rocks where it stands while it is firing
+    const heat = Math.round(((Math.sin(world.time / 50) + 1) / 2) * 255)
+    world.objects.forEach((o, i) => {
+      const sprite = this.objects[i]
+      if (!sprite) return
+      const shudder = Math.floor(world.time / 40) % 2 ? 1 : -1
+      if (o.kind === 'cannon' && o.firing) sprite.setX(o.x * 16 + shudder)
+      if (o.kind !== 'ball') return
+      sprite
+        .setY((o.y + 1) * 16 + Math.max(0, world.time - o.at) * 0.384)
+        .setDepth(9000) // in the air, so it flies over everything
+        .setTint(0xff0000 | (heat << 8) | heat)
+    })
+
     // a bloom crossfades to white over its 1500 ms and shakes a pixel each way, both off sim time
     for (const { base, white, bloomAt, x } of this.blooms) {
       const at = x + (Math.floor(world.time / 40) % 2 ? 1 : -1)
@@ -267,10 +282,14 @@ export default class Island extends Phaser.Scene {
       if (o.kind === 'crate') frame = o.open ? 1 : 0
       if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
+      if (o.kind === 'bar' && o.drink) frame = 1 // the cocktail stood on the counter
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
+      // flags['sprite:<id>'] draws an npc off another sheet: the shrimp once he has his deck chair
+      const skin = world.flags[`sprite:${o.id}`]
+      const sheet = o.kind !== 'npc' ? o.kind : typeof skin === 'string' ? skin : o.sprite
       return (
         this.add
-          .sprite(o.x * 16, feet, `sprites/${o.kind === 'npc' ? o.sprite : o.kind}`, frame)
+          .sprite(o.x * 16, feet, `sprites/${sheet}`, frame)
           .setOrigin(0, 1)
           // a floor lies flat on the ground, so he walks over it rather than behind it
           .setDepth(o.kind === 'floor' ? feet - 1 : feet)

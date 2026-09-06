@@ -16,7 +16,7 @@
       "set": { "seahorse:met": true },
       "next": "2"
     },
-    "2": { "walk": { "id": "seahorse", "path": ["up", "up"] }, "next": "3" },
+    "2": { "walk": { "id": "seahorse", "to": { "x": 16, "y": 21 } }, "next": "3" },
     "3": { "text": "FIFTEEN BEAUTY???", "next": "4" },
     "4": { "who": "Walter", "text": "i know right", "next": "5" },
     "5": { "who": "Walter", "text": "how's that for quantifiable beauty", "next": "6" },
@@ -25,7 +25,7 @@
     "8": { "who": "Mich", "text": "um", "next": "9" },
     "9": { "text": "look at this", "next": "10" },
     "10": {
-      "put": { "by": "seahorse", "obj": { "id": "desalinator", "kind": "machine", "x": 0, "y": 0, "left": 10 } },
+      "put": { "by": "seahorse", "obj": { "id": "desalinator", "kind": "machine", "x": 0, "y": 0 } },
       "next": "11"
     },
     "11": { "text": "this is my prototype of desalinator 9000", "next": "12" },
@@ -34,7 +34,7 @@
     "14": { "text": "no obviously not marvel in its glory", "next": "15" },
     "15": { "who": "Mich", "text": "what does it do", "next": "16" },
     "16": { "text": "um, it extracts salt from the surrounding environment", "next": "17" },
-    "17": { "gone": "desalinator", "next": "18" },
+    "17": { "boom": "desalinator", "next": "18" },
     "18": { "who": "Mich", "text": "what the hell man", "next": "19" },
     "19": { "text": "i said it was a prototype", "next": "20" },
     "20": {

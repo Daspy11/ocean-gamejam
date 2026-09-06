@@ -1,0 +1,30 @@
+{
+  "name": "suspicious harry",
+  "start": [
+    { "when": "harry:ok", "node": "after" },
+    { "when": "harry:asked", "has": { "otijom": 1 }, "node": "cocktail" },
+    { "when": "harry:asked", "node": "again" },
+    { "node": "1" }
+  ],
+  "nodes": {
+    "1": { "text": "hello", "next": "2" },
+    "2": { "who": "", "text": "can i steal these chairs", "next": "3" },
+    "3": { "text": "no", "next": "4" },
+    "4": { "who": "", "text": "what if i pay you", "next": "5" },
+    "5": { "text": "no", "next": "6" },
+    "6": { "who": "", "text": "cmon", "next": "7" },
+    "7": {
+      "text": "ok maybe if you bring me a nice cocktail",
+      "set": { "harry:asked": true },
+      "next": null
+    },
+    "again": { "text": "ok maybe if you bring me a nice cocktail", "next": null },
+    "cocktail": {
+      "text": "[PLACEHOLDER suspicious harry takes the cocktail]",
+      "take": "otijom",
+      "set": { "harry:ok": true },
+      "next": null
+    },
+    "after": { "text": "[PLACEHOLDER suspicious harry, the chairs are yours]", "next": null }
+  }
+}

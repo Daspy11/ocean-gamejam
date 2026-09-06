@@ -5,8 +5,11 @@
   "twig": { "name": "twig" },
   "seal": { "name": "stuffed seal" },
   "egg": { "name": "golden egg" },
-  "hatrack": { "name": "hat rack" },
   "carrot": { "name": "carrot" },
   "certificate": { "name": "shrimp welfare award certificate" },
-  "carpet": { "name": "fashionable carpet" }
+  "carpet": { "name": "fashionable carpet" },
+  "key": { "name": "key" },
+  "rum": { "name": "bottle of rum" },
+  "otijom": { "name": "Otijom" },
+  "chair": { "name": "deck chair" }
 }

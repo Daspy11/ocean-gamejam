@@ -110,7 +110,7 @@ describe('blocked', () => {
       [14, 16, 'left'], // the wrecked boat covers 12..13 x 16, right where the player spawns
       [14, 17, 'left'], // crate1 at 13,17
       [24, 16, 'down'], // crate2 at 24,17, over on the second island
-      [10, 38, 'up'], // rack1 at 10,37, in the cave room
+      [10, 38, 'up'], // rum1 at 10,37, in the cave room
     ] as const
     for (const [x, y, dir] of cases) {
       const w = at(x, y)

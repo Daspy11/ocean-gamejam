@@ -40,6 +40,7 @@ const openCrate2 = async (page: Page) => {
   await page.locator('#game canvas').click() // focus first: a click on an open box advances it
   await page.evaluate(() => {
     const w = window.island.world()
+    w.tiles[16 * w.width + 21] = w.tiles[16 * w.width + 22] = 'salt' // the bridge Mich runs over
     window.island.load({ ...w, player: { ...w.player, x: 23, y: 17, facing: 'right' } })
     window.island.dispatch({ type: 'interact' })
   })

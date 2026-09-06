@@ -7,7 +7,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
-import { bird, character, crab, dual, rack, shrimp } from './shapes.mjs'
+import { bar, bird, bottle, chair, character, crab, dual, gate, items, shrimp } from './shapes.mjs'
 
 // the sea horse, and the desalinator he is so proud of: a boiler with a chimney on top
 const seahorse = character({ hair: '#2a6f6f', skin: '#7fd0c8', shirt: '#2a6f6f' })
@@ -15,6 +15,16 @@ const machine = (x, y) => ((y > 8 ? x > 1 && x < 14 : x > 9 && x < 12 && y > 2) 
 
 // a fence post: one rail the full width of the tile, so a run of them joins up
 const fence = (x, y) => ((y > 5 && y < 8) || (x > 5 && x < 10 && y > 3) ? '#7a5a3a' : null)
+
+// the cannon on the block it rolls on, and a cinder block of the sea horse's wall
+const cannon = [
+  [2, 4, 12, 5, '#3a3a44'],
+  [3, 9, 10, 6, '#7a5a3a'],
+]
+const cinder = [
+  [1, 2, 14, 13, '#8a8a90'],
+  [1, 11, 14, 4, '#5a5a60'],
+]
 
 // the sign's one frame, out here so the sheets list below stays inside the file's line budget
 const signpost = [
@@ -31,6 +41,7 @@ const sheets = [
   { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
   { file: 'tiles/sand.png', w: 16, h: 16, cols: 5, frames: dual('#d8c58e') },
   { file: 'tiles/grass.png', w: 16, h: 16, cols: 5, frames: dual('#6da85a') },
+  { file: 'tiles/charred.png', w: 16, h: 16, cols: 5, frames: dual('#3a3028') },
   { file: 'tiles/farm.png', w: 16, h: 16, cols: 5, frames: dual('#6b4a2a') },
   { file: 'tiles/rock.png', w: 16, h: 16, cols: 5, frames: dual('#3a3a44') },
   {
@@ -57,7 +68,15 @@ const sheets = [
     frames: character({ hair: '#101010', skin: '#c8c0b8', shirt: '#b03030' }),
   },
   { file: 'sprites/albatross.png', w: 16, h: 24, cols: 3, frames: bird() },
+  {
+    file: 'sprites/harry.png',
+    w: 16,
+    h: 24,
+    cols: 3,
+    frames: character({ hair: '#806040', skin: '#c8c0b8', shirt: '#404860' }),
+  },
   { file: 'sprites/shrimp.png', w: 16, h: 24, cols: 3, frames: shrimp() },
+  { file: 'sprites/shrimpchair.png', w: 16, h: 24, cols: 3, frames: shrimp(true) },
   {
     file: 'sprites/orb.png',
     w: 16,
@@ -185,64 +204,41 @@ const sheets = [
       ],
     ],
   },
-  {
-    file: 'sprites/rack.png',
-    w: 16,
-    h: 32,
-    cols: 1,
-    frames: [rack],
-  },
-  {
-    file: 'sprites/items.png',
-    w: 16,
-    h: 16,
-    cols: 4,
-    frames: [
-      [
-        [3, 9, 10, 4, '#c4ccd6'],
-        [5, 6, 6, 3, '#c4ccd6'],
-      ], // 0 salt, a pile
-      [
-        [5, 3, 6, 10, '#e07020'],
-        [3, 5, 10, 6, '#e07020'],
-      ], // 1 orb, as frame 0 of orb.png
-      [
-        [6, 3, 4, 3, '#8a7050'],
-        [4, 6, 8, 8, '#c8b088'],
-      ], // 2 electrolytes, a bag with a tied neck
-      [
-        [3, 10, 10, 2, '#7a5a3a'],
-        [9, 6, 2, 5, '#7a5a3a'],
-      ], // 3 twig, a stick with one shoot
-      [
-        [4, 6, 8, 7, '#9aa0a8'],
-        [5, 4, 6, 4, '#9aa0a8'],
-      ], // 4 seal, a blob with a head
-      [
-        [5, 4, 6, 9, '#e0c040'],
-        [4, 6, 8, 5, '#e0c040'],
-      ], // 5 egg
-      [
-        [7, 6, 2, 8, '#7a5a3a'],
-        [3, 6, 10, 2, '#7a5a3a'],
-        [2, 3, 4, 3, '#c8b088'],
-        [10, 3, 4, 3, '#c8b088'],
-      ], // 6 hatrack, a post and crossbar with two hats on it
-      [
-        [6, 7, 4, 7, '#e08030'],
-        [7, 12, 2, 3, '#e08030'],
-        [5, 3, 6, 4, '#3f7f3f'],
-      ], // 7 carrot, as the sprite
-      [
-        [2, 3, 12, 10, '#e8e4d8'],
-        [9, 9, 4, 4, '#c04040'],
-      ], // 8 certificate, a pale sheet with a seal on it
-      [[3, 4, 10, 8, '#8a4a5a']], // 9 carpet, a square of rug
-    ],
-  },
+  { file: 'sprites/rum.png', w: 16, h: 16, cols: 1, frames: [bottle] },
+  { file: 'sprites/bar.png', w: 16, h: 16, cols: 2, frames: bar },
+  { file: 'sprites/gate.png', w: 16, h: 16, cols: 1, frames: [gate] },
+  { file: 'sprites/chair.png', w: 16, h: 16, cols: 1, frames: [chair] },
+  { file: 'sprites/cannon.png', w: 16, h: 16, cols: 1, frames: [cannon] },
+  { file: 'sprites/ball.png', w: 16, h: 16, cols: 1, frames: [[[5, 5, 6, 6, '#ffffff']]] },
+  { file: 'sprites/cinder.png', w: 16, h: 16, cols: 1, frames: [cinder] },
+  { file: 'sprites/items.png', w: 16, h: 16, cols: 4, frames: items },
   { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
   { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },
   { file: 'sprites/floor.png', w: 16, h: 16, cols: 1, frames: [[[1, 5, 14, 10, '#8a4a5a']]] },
+  {
+    file: 'sprites/egg.png',
+    w: 16,
+    h: 16,
+    cols: 1,
+    frames: [
+      [
+        [5, 3, 6, 11, '#e0c040'], // an oval, two overlapping rects
+        [4, 5, 8, 7, '#e0c040'],
+      ],
+    ],
+  },
+  {
+    file: 'sprites/certificate.png',
+    w: 16,
+    h: 16,
+    cols: 1,
+    frames: [
+      [
+        [2, 3, 12, 12, '#f0e8d0'], // the paper
+        [9, 10, 3, 3, '#c04040'], // its seal
+      ],
+    ],
+  },
   { file: 'ui/box.png', w: 24, h: 24, cols: 1, frames: [boxframe] },
 ]
 
@@ -272,7 +268,11 @@ function write(file, data) {
   console.log('wrote placeholder/' + file)
 }
 
+// `npm run placeholders -- sprites/egg.png` writes only the sheets named and leaves the rest alone,
+// since hand-drawn art has been dropped in here beside the generated stand-ins
+const only = process.argv.slice(2)
 for (const sheet of sheets) {
+  if (only.length && !only.includes(sheet.file)) continue
   const png = new PNG({
     width: sheet.cols * sheet.w,
     height: Math.ceil(sheet.frames.length / sheet.cols) * sheet.h,
@@ -316,5 +316,6 @@ const bigtree = {
   nodes: { 1: { text: '[PLACEHOLDER a tree on the big island]', next: null } },
 }
 
-for (const [key, data] of Object.entries({ mich, away, bigtree }))
-  write(`dialogue/${key}.json`, `${JSON.stringify(data, null, 2)}\n`)
+if (!only.length)
+  for (const [key, data] of Object.entries({ mich, away, bigtree }))
+    write(`dialogue/${key}.json`, `${JSON.stringify(data, null, 2)}\n`)

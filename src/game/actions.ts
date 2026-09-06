@@ -1,30 +1,13 @@
-import { stepObj, tickWalks } from './boat'
-import { putBy, tickMachines } from './machine'
-import { shakeTree, startTree, tickTrees, treeDone } from './tree'
-import { makeSalt, useItem } from './salt'
+import { actDone, startAct } from './act'
+import { tickWalks } from './boat'
+import { tickCannons } from './cannon'
+import { tickMachines, tickWalls } from './machine'
+import { shakeTree, tickTrees } from './tree'
+import { beauty, makeSalt, useItem } from './salt'
 import { DIRS, KINDS, objectAt, tileAt } from './world'
 import type { Action, Branch, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
-
-// is the open node's act over? Its dialogue then moves on by itself, with no interact
-function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode): boolean {
-  const walk = node.walk
-  if (walk) {
-    const o = w.objects.find((x) => x.id === walk.id)
-    return !o || (!o.step && !o.path?.length)
-  }
-  const bloom = node.bloom
-  if (bloom) {
-    const f = w.objects.find((o) => o.id === bloom)
-    return !f || f.kind !== 'flower' || !!f.white
-  }
-  if (node.gone !== undefined) return !w.objects.some((o) => o.id === node.gone)
-  if (node.fly !== undefined || node.land !== undefined) return treeDone(w, node)
-  if (node.wait !== undefined) return w.time >= (d.until ?? 0)
-  if (node.rumble !== undefined) return w.time >= w.rumble
-  return true // a spawn lands the moment the node opens, and a node with no act at all is over too
-}
 
 export function apply(w: World, a: Action, c: Content): void {
   const p = w.player
@@ -37,7 +20,7 @@ export function apply(w: World, a: Action, c: Content): void {
     const tile = tileAt(w, x, y)
     const obj = objectAt(w, x, y)
     // blocked: stand facing it, and no rev (a held key would otherwise spam it)
-    const ground = tile === 'salt' || tile === 'sand' || tile === 'grass' || tile === 'farm'
+    const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
     if (!ground || (obj && KINDS[obj.kind].solid)) return
     p.step = { x, y, t }
     w.rev++
@@ -63,26 +46,7 @@ export function apply(w: World, a: Action, c: Content): void {
     const spend = typeof to.take === 'string' ? { [to.take]: 1 } : (to.take ?? {})
     for (const [item, n] of Object.entries(spend)) take(item as Item, n)
     if (to.give) gain(to.give)
-    const walk = to.walk
-    if (walk) {
-      const o = w.objects.find((x) => x.id === walk.id) // a missing one just ends the act at once
-      if (o) {
-        if (o.kind === 'npc') delete o.ride // a walk of his own gets him off whatever he was riding
-        o.path = [...walk.path]
-        o.run = walk.run
-        stepObj(w, o, 0)
-      }
-    }
-    if (to.wait !== undefined) w.dialogue.until = w.time + to.wait
-    if (to.rumble !== undefined) w.rumble = w.time + to.rumble
-    const spawn = to.spawn
-    if (spawn && !w.objects.some((o) => o.id === spawn.id)) w.objects.push(structuredClone(spawn))
-    if (to.put) putBy(w, to.put)
-    const bloom = to.bloom
-    if (bloom) {
-      const f = w.objects.find((o) => o.id === bloom) // a missing flower just ends the act at once
-      if (f?.kind === 'flower') f.bloomAt = w.time
-    }
+    startAct(w, w.dialogue, to)
     if (to.shake !== undefined) {
       const shakes = shakeTree(w, to.shake)
       if (shakes) {
@@ -90,7 +54,6 @@ export function apply(w: World, a: Action, c: Content): void {
         fire(`tree:shake:${shakes}`)
       }
     }
-    if (to.fly !== undefined || to.land !== undefined) startTree(w, to)
     return true
   }
   // leaving the open node: follow `next`, or close and let the queue in. Shared by an interact on
@@ -104,18 +67,24 @@ export function apply(w: World, a: Action, c: Content): void {
     if (to !== null && open(d.key, to, d.item)) return
     w.dialogue = null
     w.rev++
-    const queued = w.queue.shift()
-    if (queued) open(queued.key, undefined, queued.item)
+    fire(`done:${d.key}`) // the box is shut: a scene waiting on this one can start now
+    // whatever was already queued waits its turn again if that event opened a box ahead of it
+    if (!w.dialogue) {
+      const queued = w.queue.shift()
+      if (queued) open(queued.key, undefined, queued.item)
+    }
   }
   // a line the sim starts waits its turn rather than cutting off the box already on screen
   const play = (key: string, item?: Item) =>
     w.dialogue ? w.queue.push({ key, item }) : open(key, undefined, item)
-  // every dialogue that asked for this event, whose `when` flag is set, and that has not played.
-  // The whole pass is picked before any flag is written, so one beat cannot chain into the next.
+  // every dialogue that asked for this event, whose `when` flag is set and `unless` flag is not,
+  // and that has not played. The whole pass is picked before any flag is written, so one beat
+  // cannot chain into the next.
   const fire = (e: string) => {
     const due = Object.entries(c.dialogues).filter(([key, dlg]) => {
       const t = dlg.trigger
-      return t && t.event === e && !w.flags[`fired:${key}`] && (!t.when || w.flags[t.when])
+      if (!t || t.event !== e || w.flags[`fired:${key}`]) return false
+      return (!t.when || w.flags[t.when]) && (!t.unless || !w.flags[t.unless])
     })
     for (const [key] of due) {
       w.flags[`fired:${key}`] = true
@@ -167,6 +136,7 @@ export function apply(w: World, a: Action, c: Content): void {
         w.rev++
       }
     tickMachines(w)
+    tickCannons(w)
     if (w.score < 0) fire('score:negative') // fires once, whenever beauty first reads below zero
     if (w.score >= 15) fire('score:fifteen') // and once, the first time it reads 15
     if (tickTrees(w)) fire('tree:near') // the promised tree, rested and back within three tiles
@@ -205,6 +175,7 @@ export function apply(w: World, a: Action, c: Content): void {
       }
     }
     tickWalks(w, a.dt)
+    tickWalls(w)
     const act = w.dialogue
     const on = act ? c.dialogues[act.key]?.nodes[act.node] : undefined
     if (act && on && on.text === undefined && actDone(w, act, on)) advance(act, on)
@@ -276,7 +247,12 @@ export function apply(w: World, a: Action, c: Content): void {
   if (p.step) return // you only interact while standing
   const x = p.x + DIRS[p.facing][0]
   const y = p.y + DIRS[p.facing][1]
-  const obj = objectAt(w, x, y)
+  let obj = objectAt(w, x, y)
+  // a bare bar is talked across: whoever stands on the far side of the counter is the one addressed
+  if (obj?.kind === 'bar' && !obj.drink) {
+    const past = objectAt(w, x + DIRS[p.facing][0], y + DIRS[p.facing][1])
+    if (past?.kind === 'npc') obj = past
+  }
   if (obj?.kind === 'npc') {
     fire(`talk:${obj.id}`) // a scene waiting on this npc cuts in ahead of their own lines
     if (!w.dialogue) open(obj.dialogue)
@@ -302,9 +278,29 @@ export function apply(w: World, a: Action, c: Content): void {
     fire('crate:open') // fired after the got box, so Mich's line queues up behind it
     return
   }
-  if (obj?.kind === 'rack') {
-    w.objects.splice(w.objects.indexOf(obj), 1) // hats and all: the whole rack goes in the bag
-    gain('hatrack')
+  if (obj?.kind === 'chair' && !w.flags['harry:ok']) {
+    open('handsoff') // harry is watching until he has had his cocktail
+    return
+  }
+  if (obj?.kind === 'rum' || obj?.kind === 'chair') {
+    w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag
+    if (obj.kind === 'chair') beauty(w, -5, x, y) // the 5 it was worth stood at home goes with it
+    gain(obj.kind)
+    return
+  }
+  if (obj?.kind === 'bar') {
+    if (!obj.drink) return // nothing on the counter and nobody behind it
+    delete obj.drink
+    gain('otijom')
+    return
+  }
+  if (obj?.kind === 'gate') {
+    if (!w.inventory.key) {
+      open('gate') // it just says locked
+      return
+    }
+    w.objects.splice(w.objects.indexOf(obj), 1) // unlocked, and out of the way for good
+    take('key', 1)
     return
   }
   if (obj?.kind === 'carrot') {

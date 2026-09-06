@@ -1,0 +1,7 @@
+{
+  "name": "Mich",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "don't just stand there, fix the boat idiot", "next": null }
+  }
+}
