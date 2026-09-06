@@ -1,27 +1,30 @@
+import { gallery } from './gallery'
 import { MAPS } from './map'
 
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
 export type Tile = 'water' | 'salt' | 'sand' | 'grass' | 'charred' | 'farm' | 'rock' // charred: grass the cannon burnt
 export type Dir = 'up' | 'down' | 'left' | 'right'
-export type Item =
-  | 'salt'
-  | 'orb'
-  | 'electrolytes'
-  | 'twig'
-  | 'seal'
-  | 'egg'
-  | 'carrot'
-  | 'certificate'
-  | 'carpet'
-  | 'key'
-  | 'rum'
-  | 'otijom'
-  | 'chair'
-// icon frame order in sprites/items
-export const ITEMS =
-  'salt orb electrolytes twig seal egg carrot certificate carpet key rum otijom chair'.split(
-    ' ',
-  ) as Item[]
+// every item there is, in icon frame order in sprites/items
+export const ITEMS = [
+  'salt',
+  'orb',
+  'electrolytes',
+  'twig',
+  'seal',
+  'egg',
+  'carrot',
+  'certificate',
+  'carpet',
+  'key',
+  'rum',
+  'otijom',
+  'chair',
+] as const
+export type Item = (typeof ITEMS)[number]
+
+// a cannon mid-act: the tiles still to shoot in order, the ms between shots, when the next is, when
+// the next ball for show leaves, and balls so far
+type Firing = { work: number[]; every: number; nextAt: number; ballAt: number; shot: number }
 
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
@@ -84,11 +87,12 @@ export type Obj = {
   | { kind: 'certificate' } // the shrimp welfare award, the same
   // Etarp's cannon: `firing` until there is nothing left to shell, `nextAt` the next shot's time
   // and `shots` the count so far, which names the balls
-  // firing: the tiles still to shoot in order, the ms between shots, when the next is, shots so far
-  | { kind: 'cannon'; firing?: { work: number[]; every: number; nextAt: number; shot: number } }
-  // a cannonball, for show only: it left the muzzle at x,y at `at` and flies straight down off the map
-  | { kind: 'ball'; at: number }
+  | { kind: 'cannon'; firing?: Firing }
+  // a cannonball, for show only: it left the muzzle at x,y at `at` and flies straight off the map,
+  // `dir` degrees off straight down
+  | { kind: 'ball'; at: number; dir: number }
   | { kind: 'cinder' } // a block of the sea horse's wall: solid, and 10 beauty gone
+  | { kind: 'flyingcarpet' } // what Tarq rides in on: walked by `path` like a boat, through anything
 )
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
@@ -113,6 +117,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   cannon: { w: 1, h: 1, solid: true },
   ball: { w: 1, h: 1, solid: false },
   cinder: { w: 1, h: 1, solid: true },
+  flyingcarpet: { w: 1, h: 1, solid: true },
 }
 
 export interface World {
@@ -144,6 +149,9 @@ export interface World {
   dialogue: null | { key: string; node: string; choice: number; item?: Item; until?: number }
   queue: { key: string; item?: Item }[] // dialogues waiting for the open one to close, in order
   menu: null | { screen: 'inventory'; cursor: number }
+  // a close-up over the world: `sheet` drawn big on black, its frames from `frame` every 400 ms
+  // from `at`, and the black has been up since `since`. Down when the box closes.
+  closeup: null | { sheet: string; frame: number; frames: number; at: number; since: number }
 }
 
 export type Action =
@@ -199,6 +207,8 @@ export interface DialogueNode {
   fire?: string // id of a cannon: 4 s of shots at every grass and object tile from its row down
   // an npc stood at from,y+1 walks right to to,y+1 standing a cinder block on the row above at each tile
   wall?: { id: string; y: number; from: number; to: number }
+  // the screen goes black and `sheet` plays big in the middle, `frames` of it from `frame` on
+  closeup?: { sheet: string; frame?: number; frames?: number }
   bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
   shake?: string // id of a tree: one more shake, and the twig it drops
   fly?: string // id of a tree: it lifts off and is gone 1500 ms later
@@ -284,46 +294,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
   }
   const objects: Obj[] =
     map === 'gallery'
-      ? [
-          { id: 'g-tree', kind: 'tree', x: 2, y: 18 },
-          { id: 'g-boat', kind: 'boat', x: 7, y: 18 },
-          { id: 'g-crate', kind: 'crate', x: 2, y: 20, open: false, item: 'orb' },
-          { id: 'g-crate-open', kind: 'crate', x: 4, y: 20, open: true, item: 'orb' },
-          npc('g-mich', 'mich', 6, 20, 'down', 'mich'),
-          // a day of sim time away, so this one keeps smoking however long the gallery is left open
-          { id: 'g-orb', kind: 'orb', x: 12, y: 18, doneAt: 86400000 },
-          { id: 'g-orb-salt', kind: 'orb', x: 12, y: 20, doneAt: 0 }, // already sat on its finished salt
-          // 8,18 is under g-boat's 2x1 footprint, so Walter stands in the next free slot along
-          npc('g-walter', 'walter', 9, 18, 'down', 'walter'),
-          { id: 'g-flower', kind: 'flower', x: 9, y: 20, white: false },
-          { id: 'g-flower-white', kind: 'flower', x: 10, y: 20, white: true },
-          { id: 'g-sign', kind: 'sign', x: 3, y: 20, dialogue: 'sign' },
-          { id: 'g-fence', kind: 'fence', x: 2, y: 19 }, // two in a row, so the rail line reads
-          { id: 'g-fence2', kind: 'fence', x: 3, y: 19 },
-          // a day of sim time away, so the prototype keeps smoking rather than blowing up in here
-          { id: 'g-machine', kind: 'machine', x: 5, y: 19, nextAt: 86400000 },
-          npc('g-seahorse', 'seahorse', 7, 19, 'down', 'seahorse'),
-          { id: 'g-wreck', kind: 'boat', x: 5, y: 17, wrecked: true }, // the smashed hull frame
-          // the farmer on his stool and on the deck chair he gets for the certificate, and the
-          // two prizes that stand on the ground out of the bag
-          npc('g-shrimp', 'shrimp', 8, 17, 'down', 'shrimp'),
-          npc('g-shrimpchair', 'shrimpchair', 9, 17, 'down', 'shrimp'),
-          { id: 'g-egg', kind: 'egg', x: 10, y: 17 },
-          { id: 'g-certificate', kind: 'certificate', x: 10, y: 19 },
-          // the pirate faces the way he is not looking, so this row draws his back
-          npc('g-etarp', 'etarp', 4, 18, 'down', 'etarp'),
-          npc('g-harry', 'harry', 8, 19, 'down', 'harry'),
-          // the bottom row: the bar bare and with a drink on it, the gate, a deck chair, the rum
-          { id: 'g-bar', kind: 'bar', x: 2, y: 21 },
-          { id: 'g-bar-drink', kind: 'bar', x: 3, y: 21, drink: true },
-          { id: 'g-gate', kind: 'gate', x: 5, y: 21 },
-          { id: 'g-chair', kind: 'chair', x: 7, y: 21 },
-          { id: 'g-rum', kind: 'rum', x: 9, y: 21 },
-          { id: 'g-cannon', kind: 'cannon', x: 4, y: 21 },
-          // fired a day of sim time from now, so this one hangs at the muzzle until then
-          { id: 'g-ball', kind: 'ball', x: 6, y: 21, at: 86400000 },
-          { id: 'g-cinder', kind: 'cinder', x: 8, y: 21 },
-        ]
+      ? gallery()
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
           { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false, item: 'orb' },
@@ -377,5 +348,6 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     dialogue: null,
     queue: [],
     menu: null,
+    closeup: null,
   }
 }

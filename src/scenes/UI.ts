@@ -13,12 +13,17 @@ export default class UI extends Phaser.Scene {
   private panel!: Phaser.GameObjects.NineSlice
   private label!: Phaser.GameObjects.BitmapText
   private slots: Phaser.GameObjects.GameObject[] = []
+  private black!: Phaser.GameObjects.Rectangle
+  private big!: Phaser.GameObjects.Image
 
   constructor() {
     super('ui')
   }
 
   create() {
+    // a close-up: the world goes black under a sheet drawn 7.5x, half the screen tall, over the box
+    this.black = this.add.rectangle(0, 0, 640, 360, 0x000000).setOrigin(0).setVisible(false)
+    this.big = this.add.image(320, 130, 'sprites/walter', 1).setScale(7.5).setVisible(false)
     this.hud = this.add.bitmapText(8, 6, 'nihonium', '')
 
     // dialogue box spans the bottom third of the 640x360 canvas; the 8px frame leaves 248..344
@@ -35,6 +40,14 @@ export default class UI extends Phaser.Scene {
   }
 
   update() {
+    // the black fades up over 500 ms off sim time, and the sheet shows once it is all black
+    const c = world.closeup
+    this.black.setVisible(!!c).setAlpha(c ? Math.min(1, (world.time - c.since) / 500) : 0)
+    this.big.setVisible(!!c && world.time - c.since >= 500)
+    if (c) {
+      const frame = Math.min(c.frames - 1, Math.floor(Math.max(0, world.time - c.at) / 400))
+      this.big.setTexture(`sprites/${c.sheet}`, c.frame + frame)
+    }
     if (world.rev === this.rev) return
     this.rev = world.rev
     this.sync()

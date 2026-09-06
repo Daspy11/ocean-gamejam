@@ -7,7 +7,22 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
-import { bar, bird, bottle, chair, character, crab, dual, gate, items, shrimp } from './shapes.mjs'
+import {
+  bar,
+  bird,
+  bottle,
+  certificate,
+  chair,
+  character,
+  crab,
+  dual,
+  egg,
+  flyingcarpet,
+  gate,
+  items,
+  serious,
+  shrimp,
+} from './shapes.mjs'
 
 // the sea horse, and the desalinator he is so proud of: a boiler with a chimney on top
 const seahorse = character({ hair: '#2a6f6f', skin: '#7fd0c8', shirt: '#2a6f6f' })
@@ -76,6 +91,14 @@ const sheets = [
     frames: character({ hair: '#806040', skin: '#c8c0b8', shirt: '#404860' }),
   },
   { file: 'sprites/shrimp.png', w: 16, h: 24, cols: 3, frames: shrimp() },
+  {
+    file: 'sprites/tarq.png',
+    w: 16,
+    h: 24,
+    cols: 3,
+    frames: character({ hair: '#e8d8a0', skin: '#c8c0b8', shirt: '#6a3a9a' }),
+  },
+  { file: 'sprites/serious.png', w: 16, h: 24, cols: 4, frames: serious() },
   { file: 'sprites/shrimpchair.png', w: 16, h: 24, cols: 3, frames: shrimp(true) },
   {
     file: 'sprites/orb.png',
@@ -211,34 +234,13 @@ const sheets = [
   { file: 'sprites/cannon.png', w: 16, h: 16, cols: 1, frames: [cannon] },
   { file: 'sprites/ball.png', w: 16, h: 16, cols: 1, frames: [[[5, 5, 6, 6, '#ffffff']]] },
   { file: 'sprites/cinder.png', w: 16, h: 16, cols: 1, frames: [cinder] },
+  { file: 'sprites/flyingcarpet.png', w: 16, h: 16, cols: 1, frames: [flyingcarpet] },
   { file: 'sprites/items.png', w: 16, h: 16, cols: 4, frames: items },
   { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
   { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },
   { file: 'sprites/floor.png', w: 16, h: 16, cols: 1, frames: [[[1, 5, 14, 10, '#8a4a5a']]] },
-  {
-    file: 'sprites/egg.png',
-    w: 16,
-    h: 16,
-    cols: 1,
-    frames: [
-      [
-        [5, 3, 6, 11, '#e0c040'], // an oval, two overlapping rects
-        [4, 5, 8, 7, '#e0c040'],
-      ],
-    ],
-  },
-  {
-    file: 'sprites/certificate.png',
-    w: 16,
-    h: 16,
-    cols: 1,
-    frames: [
-      [
-        [2, 3, 12, 12, '#f0e8d0'], // the paper
-        [9, 10, 3, 3, '#c04040'], // its seal
-      ],
-    ],
-  },
+  { file: 'sprites/egg.png', w: 16, h: 16, cols: 1, frames: [egg] },
+  { file: 'sprites/certificate.png', w: 16, h: 16, cols: 1, frames: [certificate] },
   { file: 'ui/box.png', w: 24, h: 24, cols: 1, frames: [boxframe] },
 ]
 

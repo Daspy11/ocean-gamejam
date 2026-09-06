@@ -86,7 +86,9 @@ e2e/           Playwright specs.
   (2 s of quarter turns every 50 ms, then back to how he faced, `src/game/boat.ts`), `drink` (a
   cocktail stood on the `bar` it names), `fire` a cannon down the island for 4 s
   (`src/game/cannon.ts`), `wall` (an npc stood at its start walks right along the row under it
-  standing a cinder block above every tile, `src/game/machine.ts`), and `gone`, which
+  standing a cinder block above every tile, `src/game/machine.ts`), `closeup` (the screen goes
+  black and a sheet's frames play big in the middle, `world.closeup`, drawn by the UI scene and
+  down again when the box closes), and `gone`, which
   just holds until the object it names has left the world. The box hides, the act runs, and the node
   advances itself. A walk with `to` finds its way by A* (`src/game/path.ts`): who can cross what is
   `MODES` there, keyed by sprite (a flyer is stopped only by another flyer, a swimmer by rock, solid
@@ -125,7 +127,7 @@ e2e/           Playwright specs.
   which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
   Z three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
   jump to any story beat — the beginning, the orb, beauty is on, ten twigs, fifteen beauty, rum for
-  the yarrtender, a cocktail for harry, etarp's cannon). A jump
+  the yarrtender, a cocktail for harry, etarp's cannon, tarq flies in). A jump
   builds a fresh world and fast-forwards it with flags, bag, score and where he stands, so whatever
   cutscene was running goes with the world it ran in. Add a beat: one row in `STATES`.
 - Cast so far: the main character (he/him, unnamed, says almost nothing), his friend Mich (she/her,
@@ -137,11 +139,12 @@ e2e/           Playwright specs.
   builds an L of four `bar` pieces (23,2 23,3 22,3 21,3) and stands behind it at 22,2 wanting rum,
   `assets/dialogue/pirate.json`; the rum from the cave across the counter gets `etarp.json`: he spins
   and stands the Otijom on `bar3`; once the sea horse's box shuts he shoves a cannon down the bridge
-  to the strip of three grass at the top of the island, stands on the middle one with the cannon
-  under him, and after the sea horse recognises his autocannon 9000 and Walter runs for the east
-  bridge, it shells the island below for 4 s, charring every grass tile at -3 and wrecking what
-  stood there; the sea horse, missed, then walls off the southern crust with 13 cinder blocks along
-  row 23 at -10 each and stands four more desalinators on his side that never explode,
+  to the top of the island, stands at 16,14 just under the strip of three grass with the cannon
+  under him at 16,15, and after the sea horse recognises his autocannon 9000 and Walter runs for
+  the east bridge, it shells the island from the cannon's row down for 4 s, charring every grass
+  tile there at -3 and wrecking what stood on it; the sea horse, missed, then walls off the southern
+  crust with 13 cinder blocks along row 22 at -10 each and stands four more desalinators on his
+  side that never explode,
   `assets/dialogue/cannon.json`, `src/game/cannon.ts`, `blast` and `wall` in
   `src/game/machine.ts`), golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
   pays with a golden egg, `assets/dialogue/albatross.json`), antoine le shrimp (he/him, a French
@@ -156,7 +159,11 @@ e2e/           Playwright specs.
   horse (he/him, who swims up to the spit at fifteen beauty and puts his smoking desalinator 9000
   down beside him: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea
   tile in a disc seven out from it and cuts the box straight to the node its `cut` names, wherever the conversation
-  had got to, `src/game/machine.ts` and `assets/dialogue/seahorse.json`). Do not invent further
+  had got to, `src/game/machine.ts` and `assets/dialogue/seahorse.json`), and Lord Tarqualius
+  ("Tarq", whose orb it was: 5 s after the cannon scene closes he flies in from the west edge on a
+  `flyingcarpet` he rides, wants the orb back off Mich, who steps back, and Walter steps in between
+  and the screen cuts to his close-up, `sprites/serious`, hat off and minigun out,
+  `assets/dialogue/tarq.json`). Do not invent further
   characters, names, or backstory.
 - No `Math.random` in `src/game`. `world.seed` is the rng: an lcg in `src/game/cannon.ts` the cannon
   draws its targets from, so a run of a scene is the same every time.

@@ -17,6 +17,12 @@ export function startAct(w: World, d: NonNullable<World['dialogue']>, to: Dialog
   if (to.boom !== undefined) armMachine(w, to.boom)
   if (to.fire !== undefined) startFire(w, to.fire)
   if (to.wall) startWall(w, to.wall)
+  const c = to.closeup
+  if (c) {
+    const since = w.closeup?.since ?? w.time // one already up keeps its black
+    w.closeup = { sheet: c.sheet, frame: c.frame ?? 0, frames: c.frames ?? 1, at: w.time, since }
+    w.rev++
+  }
   if (to.spin !== undefined) startSpin(w, to.spin)
   const bar = w.objects.find((o) => o.id === to.drink) // no such bar: no drink, and that is all
   if (bar?.kind === 'bar') {
@@ -43,6 +49,8 @@ export function actDone(w: World, d: NonNullable<World['dialogue']>, node: Dialo
   if (node.boom !== undefined) return !w.objects.some((o) => o.id === node.boom)
   if (node.fire !== undefined) return fireDone(w, node.fire)
   if (node.wall) return wallDone(w, node.wall.id)
+  // the 500 ms fade for a single frame, and 400 ms a frame after that
+  if (node.closeup) return !w.closeup || w.time >= w.closeup.at + 100 + w.closeup.frames * 400
   if (node.spin !== undefined) {
     const o = w.objects.find((x) => x.id === node.spin)
     return o?.kind !== 'npc' || o.spin === undefined

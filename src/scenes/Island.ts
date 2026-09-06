@@ -148,8 +148,8 @@ export default class Island extends Phaser.Scene {
       )
     })
 
-    // the shelling: a ball flies straight down out of the muzzle at 24 tiles a second, glowing red
-    // to white as it goes, and the cannon rocks where it stands while it is firing
+    // the shelling: a ball flies straight out of the muzzle at 24 tiles a second along its own
+    // angle, glowing red to white as it goes, and the cannon rocks where it stands while it fires
     const heat = Math.round(((Math.sin(world.time / 50) + 1) / 2) * 255)
     world.objects.forEach((o, i) => {
       const sprite = this.objects[i]
@@ -157,8 +157,10 @@ export default class Island extends Phaser.Scene {
       const shudder = Math.floor(world.time / 40) % 2 ? 1 : -1
       if (o.kind === 'cannon' && o.firing) sprite.setX(o.x * 16 + shudder)
       if (o.kind !== 'ball') return
+      const flown = Math.max(0, world.time - o.at) * 0.384
+      const rad = (o.dir * Math.PI) / 180
       sprite
-        .setY((o.y + 1) * 16 + Math.max(0, world.time - o.at) * 0.384)
+        .setPosition(o.x * 16 + flown * Math.sin(rad), (o.y + 1) * 16 + flown * Math.cos(rad))
         .setDepth(9000) // in the air, so it flies over everything
         .setTint(0xff0000 | (heat << 8) | heat)
     })

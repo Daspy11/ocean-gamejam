@@ -82,6 +82,18 @@ const cocktail = (w: World) => {
   w.player = { ...w.player, x: 42, y: 24, facing: 'down' }
 }
 
+// the world the sea horse's scene leaves behind: Etarp at his bar with the bridge home, the sea
+// horse ashore on the spit, and the crust his prototype left, which his wall goes up on
+const afterSeahorse = (w: World) => {
+  beautyOn(w)
+  yarrtender(w)
+  w.objects.push(npc('seahorse', 'seahorse', 16, 21, 'up', 'seahorse'))
+  blast(w, 16, 20)
+  w.score = 15
+  Object.assign(w.flags, { 'seahorse:met': true, 'fired:seahorse': true })
+  w.player = { ...w.player, x: 16, y: 19, facing: 'down' }
+}
+
 // the beats, in the order the story reaches them. `at` is the world by the time that one plays.
 const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
   { label: 'the beginning' }, // a fresh world is exactly where the intro leaves him
@@ -105,19 +117,26 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
       w.player = { ...w.player, x: 16, y: 19, facing: 'down' }
     },
   },
+  // straight into the scene the sea horse leaves behind: talk opens it once the world is loaded
+  { label: "etarp's cannon", at: afterSeahorse, talk: 'cannon' },
   {
-    // straight into the scene the sea horse leaves behind: talk opens it once the world is loaded
-    label: "etarp's cannon",
+    // and the one the cannon leaves: Etarp up top with it, Walter out at the east bridge, the sea
+    // horse south of his wall, and Mich where the flower scene put her. The island is not charred.
+    label: 'tarq flies in',
     at: (w) => {
-      beautyOn(w)
-      yarrtender(w)
-      w.objects.push(npc('seahorse', 'seahorse', 16, 21, 'up', 'seahorse'))
-      blast(w, 16, 20) // the crust his prototype left, which his wall goes up on
-      w.score = 15
-      Object.assign(w.flags, { 'seahorse:met': true, 'fired:seahorse': true })
-      w.player = { ...w.player, x: 16, y: 19, facing: 'down' }
+      afterSeahorse(w)
+      const move = (id: string, x: number, y: number) => {
+        const o = w.objects.find((x) => x.id === id)
+        if (o) Object.assign(o, { x, y })
+      }
+      move('etarp', 16, 14)
+      move('walter', 22, 16)
+      move('seahorse', 16, 25)
+      move('mich', 19, 15)
+      w.objects.push({ id: 'cannon', kind: 'cannon', x: 16, y: 15 })
+      w.flags['fired:cannon'] = true
     },
-    talk: 'cannon',
+    talk: 'tarq',
   },
   { label: 'rum for the yarrtender', at: yarrtender },
   { label: 'a cocktail for harry', at: cocktail },

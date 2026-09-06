@@ -13,7 +13,7 @@ const at = (page: Page) =>
     const w = window.island.world()
     if (!w.dialogue) return null
     const node = window.island.content().dialogues[w.dialogue.key]?.nodes[w.dialogue.node]
-    return { node: w.dialogue.node, text: node?.text ?? null }
+    return { key: w.dialogue.key, node: w.dialogue.node, text: node?.text ?? null }
   })
 
 test('etarp shoves his cannon ashore and shells the island, and the sea horse walls off his half', async ({
@@ -75,10 +75,10 @@ test('etarp shoves his cannon ashore and shells the island, and the sea horse wa
   let arrived: number[][] | null = null
   for (let n = 0; n < 600; n++) {
     const on = await at(page)
-    if (!on) break
+    if (!on || on.key !== 'cannon') break // Tarq's scene follows on from this one's close
     if (on.text !== null) {
       lines.push(on.text)
-      // the first line is said stood on the strip at the top, the cannon under him
+      // the first line is said stood just under the strip at the top, the cannon under him
       arrived ??= await page.evaluate(() =>
         ['etarp', 'cannon'].map((id) => {
           const o = window.island.world().objects.find((x) => x.id === id)!
@@ -108,8 +108,8 @@ test('etarp shoves his cannon ashore and shells the island, and the sea horse wa
     "but FINE you can have that part of the island and i'll have this part",
   ])
   expect(arrived).toEqual([
-    [16, 13],
     [16, 14],
+    [16, 15],
   ])
   expect(glowed).toBe(true)
 
@@ -129,7 +129,7 @@ test('etarp shoves his cannon ashore and shells the island, and the sea horse wa
     return {
       walter: where('walter'),
       seahorse: where('seahorse'),
-      open: w.dialogue,
+      next: w.dialogue?.key ?? null,
       standing: w.objects.filter((o) => !spared.includes(o.kind) && w.main[o.y * w.width + o.x])
         .length,
       wrecked: ['boat1', 'crate1', 'tree1'].filter((id) => w.objects.some((o) => o.id === id)),
@@ -144,16 +144,16 @@ test('etarp shoves his cannon ashore and shells the island, and the sea horse wa
   expect(after).toMatchObject({
     walter: [22, 16], // out in the water on the way to the second island
     seahorse: [16, 25], // south of his wall, on his part
-    open: null,
+    next: 'tarq', // waiting his five seconds
     standing: 0,
     wrecked: [], // the hull, the chest and the tree that stood on the island are all gone
     mich: [13, 15], // the cast is never hit
-    green: 3, // the strip he fires from is the only grass left
-    charred: 31, // every other grass tile of the main island, 3 beauty each
-    wall: Array.from({ length: 13 }, (_, i) => [10 + i, 23]),
+    green: 8, // the strip and the row he stands on, above the muzzle, are the only grass left
+    charred: 26, // every grass tile from the cannon's row down, 3 beauty each
+    wall: Array.from({ length: 13 }, (_, i) => [10 + i, 22]),
     machines: 4,
   })
-  expect(after.score).toBeLessThanOrEqual(15 - 31 * 3 - 13 * 10) // and the machines eat on
+  expect(after.score).toBeLessThanOrEqual(15 - 26 * 3 - 13 * 10) // and the machines eat on
 
   await page.evaluate(() => {
     const cam = window.island.game.scene.getScene('island').cameras.main

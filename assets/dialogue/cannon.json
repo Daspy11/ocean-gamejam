@@ -7,7 +7,7 @@
     "2": {
       "walk": {
         "id": "etarp",
-        "to": { "x": 16, "y": 13 },
+        "to": { "x": 16, "y": 14 },
         "push": "cannon",
         "run": true,
         "facing": "down"
@@ -27,8 +27,8 @@
       "text": "but FINE you can have that part of the island and i'll have this part",
       "next": "12"
     },
-    "12": { "walk": { "id": "seahorse", "to": { "x": 10, "y": 24 } }, "next": "13" },
-    "13": { "wall": { "id": "seahorse", "y": 23, "from": 10, "to": 22 }, "next": "14" },
+    "12": { "walk": { "id": "seahorse", "to": { "x": 10, "y": 23 } }, "next": "13" },
+    "13": { "wall": { "id": "seahorse", "y": 22, "from": 10, "to": 22 }, "next": "14" },
     "14": { "walk": { "id": "seahorse", "to": { "x": 16, "y": 25 } }, "next": "15" },
     "15": {
       "put": { "by": "seahorse", "obj": { "id": "desalinator2", "kind": "machine", "x": 0, "y": 0 } },

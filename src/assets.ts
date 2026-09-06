@@ -24,6 +24,7 @@ export const SHEETS = {
   'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },
   'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/harry': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
+  'sprites/tarq': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
   'sprites/tree': { frameWidth: 16, frameHeight: 32 }, // 1x1 footprint, bottom-anchored
@@ -47,6 +48,10 @@ export const SHEETS = {
   'sprites/cannon': { frameWidth: 16, frameHeight: 16 }, // one frame: barrel over the block it sits on
   'sprites/ball': { frameWidth: 16, frameHeight: 16 }, // one white frame, tinted red to white in flight
   'sprites/cinder': { frameWidth: 16, frameHeight: 16 }, // one frame: a block of the sea horse's wall
+  'sprites/flyingcarpet': { frameWidth: 16, frameHeight: 16 }, // one frame: Tarq's carpet, lying flat
+  // 4 frames of 16x24 for the close-up, drawn 7.5x: Walter as he stands, his hat lifted off, the hat
+  // gone and a barrel coming out, and the minigun out across him
+  'sprites/serious': { frameWidth: 16, frameHeight: 24 },
   'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
   // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
   // row are stretched to whatever size the box is, so keep those flat along the way they stretch
@@ -90,6 +95,7 @@ export const JSONS = [
   'dialogue/shake7',
   'dialogue/shrimp',
   'dialogue/sign',
+  'dialogue/tarq',
   'dialogue/tree',
   'dialogue/tree2',
   'dialogue/treealive',

@@ -1,0 +1,88 @@
+{
+  "name": "Tarq",
+  "trigger": { "event": "done:cannon" },
+  "start": [{ "when": "tarq:here", "node": "again" }, { "node": "1" }],
+  "nodes": {
+    "1": { "wait": 5000, "set": { "tarq:here": true }, "next": "2" },
+    "2": {
+      "spawn": { "id": "flyingcarpet1", "kind": "flyingcarpet", "x": 0, "y": 15 },
+      "next": "3"
+    },
+    "3": {
+      "spawn": {
+        "id": "tarq",
+        "kind": "npc",
+        "sprite": "tarq",
+        "x": 0,
+        "y": 15,
+        "facing": "right",
+        "dialogue": "tarq",
+        "ride": "flyingcarpet1"
+      },
+      "next": "4"
+    },
+    "4": {
+      "walk": {
+        "id": "flyingcarpet1",
+        "path": [
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right",
+          "right"
+        ],
+        "run": true
+      },
+      "next": "5"
+    },
+    "5": {
+      "text": "i was just gonna watch but seriously how did you mess this up so badly",
+      "next": "6"
+    },
+    "6": { "who": "Mich", "text": "how are you here", "next": "7" },
+    "7": {
+      "text": "i didn't actually need you to smuggle that orb i just thought it would be funny",
+      "next": "8"
+    },
+    "8": { "who": "Mich", "text": "rude", "next": "9" },
+    "9": { "text": "can i have it back though", "next": "10" },
+    "10": { "who": "Mich", "text": "...", "next": "11" },
+    "11": { "who": "Mich", "text": "no", "next": "12" },
+    "12": { "text": "...", "next": "13" },
+    "13": { "who": "Mich", "text": "...", "next": "14" },
+    "14": { "walk": { "id": "flyingcarpet1", "path": ["right"] }, "next": "15" },
+    "15": { "text": "give it back", "next": "16" },
+    "16": { "walk": { "id": "mich", "to": { "x": 20, "y": 15 }, "facing": "left" }, "next": "17" },
+    "17": { "who": "Mich", "text": "no", "next": "18" },
+    "18": { "walk": { "id": "flyingcarpet1", "path": ["right"] }, "next": "19" },
+    "19": { "text": "pls", "next": "20" },
+    "20": {
+      "who": "Mich",
+      "text": "our boat is exploded now, we gotta build a salt wall back to land",
+      "next": "21"
+    },
+    "21": { "text": "cool story but give me the orb", "next": "22" },
+    "22": {
+      "walk": { "id": "walter", "to": { "x": 19, "y": 15 }, "facing": "left" },
+      "next": "23"
+    },
+    "23": { "who": "Walter", "text": "that's enough", "next": "24" },
+    "24": { "closeup": { "sheet": "walter", "frame": 1 }, "next": "25" },
+    "25": { "who": "Walter", "text": "it's time", "next": "26" },
+    "26": { "who": "Walter", "text": "to get serious", "next": "27" },
+    "27": { "closeup": { "sheet": "serious", "frames": 4 }, "next": "28" },
+    "28": { "wait": 1500, "next": null },
+    "again": { "text": "[PLACEHOLDER Tarq, again]", "next": null }
+  }
+}

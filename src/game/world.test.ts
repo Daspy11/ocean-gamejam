@@ -195,6 +195,8 @@ describe('the gallery map', () => {
       'g-cannon',
       'g-ball',
       'g-cinder',
+      'g-tarq',
+      'g-flyingcarpet',
     ])
     // one orb still boiling its water tile, one already sat on the salt it made
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)

@@ -79,6 +79,7 @@ test('?map=gallery draws every terrain template and every object with the game c
     'sprites/etarp',
     'sprites/fence',
     'sprites/flower',
+    'sprites/flyingcarpet',
     'sprites/gate',
     'sprites/harry',
     'sprites/machine',
@@ -91,6 +92,7 @@ test('?map=gallery draws every terrain template and every object with the game c
     'sprites/shrimpchair',
     'sprites/sign',
     'sprites/smoke',
+    'sprites/tarq',
     'sprites/tree',
     'sprites/walter',
   ])

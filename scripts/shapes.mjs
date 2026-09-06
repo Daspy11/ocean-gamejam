@@ -108,6 +108,45 @@ export const shrimp = (deckchair = false) => {
   return Array.from({ length: 12 }, () => sat)
 }
 
+// Walter's close-up, four frames of 16x24 drawn big: as he stands, the hat lifted off, the hat gone
+// and a barrel poking out, and the minigun out across him. Rudimentary on purpose.
+export const serious = () => {
+  const red = '#c8402a'
+  const brown = '#7a5a3a'
+  const grey = '#5a5a66'
+  const body = [
+    [4, 10, 2, 2, red], // eye stalks
+    [10, 10, 2, 2, red],
+    [2, 12, 12, 6, red], // body
+    ...[2, 5, 9, 12].map((x) => [x, 18, 2, 3, red]),
+  ]
+  const hat = (dy) => [
+    [1, 8 + dy, 14, 2, brown],
+    [5, 4 + dy, 6, 4, brown],
+  ]
+  return [
+    [...hat(0), ...body],
+    [...hat(-4), ...body],
+    [...body, [11, 13, 5, 3, grey]],
+    [...body, [0, 12, 16, 4, grey], [12, 11, 4, 6, grey]],
+  ]
+}
+
+// the golden egg, the shrimp welfare award and Tarq's flying carpet, one 16x16 frame each
+export const egg = [
+  [5, 3, 6, 11, '#e0c040'], // an oval, two overlapping rects
+  [4, 5, 8, 7, '#e0c040'],
+]
+export const certificate = [
+  [2, 3, 12, 12, '#f0e8d0'], // the paper
+  [9, 10, 3, 3, '#c04040'], // its seal
+]
+export const flyingcarpet = [
+  [1, 6, 14, 8, '#8a3a8a'], // the carpet, lying flat
+  [0, 8, 1, 4, '#e0c040'], // a tassel each end
+  [15, 8, 1, 4, '#e0c040'],
+]
+
 export const crab = () => {
   const red = '#c8402a'
   const brown = '#7a5a3a'

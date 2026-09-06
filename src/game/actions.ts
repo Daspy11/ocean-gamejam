@@ -66,6 +66,7 @@ export function apply(w: World, a: Action, c: Content): void {
     const to = (Array.isArray(next) ? pick(next) : next) ?? null
     if (to !== null && open(d.key, to, d.item)) return
     w.dialogue = null
+    w.closeup = null // a close-up only ever lasts the box it went up under
     w.rev++
     fire(`done:${d.key}`) // the box is shut: a scene waiting on this one can start now
     // whatever was already queued waits its turn again if that event opened a box ahead of it

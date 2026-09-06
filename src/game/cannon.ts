@@ -5,8 +5,9 @@ import type { Obj, World } from './world'
 // Etarp's cannon. The `fire` act shells the main island from the muzzle down for 4 seconds: every
 // grass tile and every tile with something to wreck on it gets a shot, in a random order, spread
 // evenly over the time. A shot chars its grass for good, 3 beauty a tile, and whatever stood there
-// is gone. The balls themselves are only for show: each flies straight down out of the muzzle and
-// off the map, and hits nothing.
+// is gone. The balls themselves are only for show: one leaves the muzzle every 20 ms the whole
+// time, flying straight off the map at a random angle in a 170 degree cone downwards, and hits
+// nothing.
 
 // what a shot leaves standing: the cast, the cannon, its own balls, the orb and the sea horse's wall
 const SPARED = ['npc', 'cannon', 'ball', 'cinder', 'orb', 'cave']
@@ -36,7 +37,7 @@ export function startFire(w: World, id: string): void {
     const j = Math.floor(rnd(w) * (i + 1))
     ;[work[i], work[j]] = [work[j], work[i]]
   }
-  c.firing = { work, every: 4000 / work.length, nextAt: w.time, shot: 0 }
+  c.firing = { work, every: 4000 / work.length, nextAt: w.time, ballAt: w.time, shot: 0 }
   w.rev++
 }
 
@@ -63,8 +64,13 @@ export function tickCannons(w: World): void {
     while (f.work.length && w.time >= f.nextAt) {
       const at = f.work.shift()!
       hit(w, at % w.width, Math.floor(at / w.width))
-      w.objects.push({ id: `ball${f.shot++}`, kind: 'ball', x: c.x, y: c.y, at: f.nextAt })
       f.nextAt += f.every
+      w.rev++
+    }
+    while (w.time >= f.ballAt) {
+      const dir = (rnd(w) * 2 - 1) * 85 // degrees off straight down, either way
+      w.objects.push({ id: `ball${f.shot++}`, kind: 'ball', x: c.x, y: c.y, at: f.ballAt, dir })
+      f.ballAt += 20
       w.rev++
     }
     if (!f.work.length) {

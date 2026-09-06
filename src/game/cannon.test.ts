@@ -117,21 +117,23 @@ function island(cannonY = 0): World {
 }
 
 describe('the cannon', () => {
-  it('spreads one shot per tile over 4 s, each charring its tile as a ball leaves the muzzle', () => {
+  it('spreads one shot per tile over 4 s, with a ball out of the muzzle every 20 ms for show', () => {
     const w = island()
     apply(w, { type: 'talk', key: 'boom' }, content)
     const f = at(w, 'cannon').kind === 'cannon' ? at(w, 'cannon') : null
     expect(f?.kind === 'cannon' && f.firing).toMatchObject({ every: 400, nextAt: 0 }) // 10 tiles
     apply(w, { type: 'tick', dt: 250 }, content)
-    const flying = w.objects.filter((o) => o.kind === 'ball')
-    expect(flying.length).toBe(1) // 0 ms has gone; 400 has not
-    expect(flying[0]).toMatchObject({ id: 'ball0', x: 0, y: 0, at: 0 }) // at the muzzle, for show
-    expect([charred(w), w.score]).toEqual([1, -3]) // the shot itself already told
+    expect([charred(w), w.score]).toEqual([1, -3]) // the one shot so far has told; 400 is next
     expect(w.pops.at(-1)).toMatchObject({ text: '-3' })
+    const flying = w.objects.filter((o) => o.kind === 'ball')
+    expect(flying.length).toBe(13) // 0, 20 .. 240
+    expect(flying[0]).toMatchObject({ id: 'ball0', x: 0, y: 0, at: 0 }) // every one from the muzzle
+    for (const b of flying) if (b.kind === 'ball') expect(Math.abs(b.dir)).toBeLessThanOrEqual(85)
+    expect(new Set(flying.map((b) => b.kind === 'ball' && b.dir)).size).toBeGreaterThan(1) // sprayed
 
     apply(w, { type: 'tick', dt: 1250 }, content)
     expect(w.objects.some((o) => o.id === 'ball0')).toBe(false) // 1500 ms: off the map and gone
-    expect(w.objects.filter((o) => o.kind === 'ball').length).toBe(3) // 400, 800 and 1200 still up
+    expect(w.objects.filter((o) => o.kind === 'ball').length).toBe(75) // 20 .. 1500 still up
   })
 
   it('chars every grass tile, wrecks what stood there, spares the cast, and moves the scene on', () => {
