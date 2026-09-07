@@ -38,12 +38,16 @@ const content: Content = {
   items: { salt: { name: '[PLACEHOLDER salt]' }, orb: { name: '[PLACEHOLDER orb]' } },
 }
 
-// east beach at 20,16 facing the open water at 21,16, orb in hand and the crate box already seen
+// east beach at 20,16 facing the open water at 21,16, the orb picked up off the sand and in hand
 function shore(): World {
   const w = createWorld()
   w.player.x = 20
   w.player.y = 16
   w.player.facing = 'right'
+  w.objects.splice(
+    w.objects.findIndex((o) => o.id === 'orb1'),
+    1,
+  )
   w.inventory.orb = 1
   w.flags['had:orb'] = true
   return w

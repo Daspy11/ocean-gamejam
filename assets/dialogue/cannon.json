@@ -3,15 +3,9 @@
   "trigger": { "event": "done:seahorse" },
   "start": [{ "node": "1" }],
   "nodes": {
-    "1": { "spawn": { "id": "cannon", "kind": "cannon", "x": 22, "y": 3 }, "next": "2" },
+    "1": { "spawn": { "id": "cannon", "kind": "cannon", "x": 21, "y": 2 }, "next": "2" },
     "2": {
-      "walk": {
-        "id": "etarp",
-        "to": { "x": 16, "y": 14 },
-        "push": "cannon",
-        "run": true,
-        "facing": "down"
-      },
+      "walk": { "id": "etarp", "to": { "x": 19, "y": 15 }, "push": "cannon", "run": true, "facing": "left" },
       "next": "3"
     },
     "3": { "text": "YARR, DON'T LET THAT SEA HORSE NEAR THIS ISLAND.", "next": "4" },
@@ -19,31 +13,17 @@
     "5": { "who": "sea horse", "text": "...", "next": "6" },
     "6": { "who": "sea horse", "text": "is that one of my autocannon 9000s", "next": "7" },
     "7": { "text": "yes", "next": "8" },
-    "8": { "walk": { "id": "walter", "to": { "x": 22, "y": 16 }, "run": true }, "next": "9" },
+    "8": {
+      "walk": { "id": "walter", "path": ["down", "down"], "run": true },
+      "next": [{ "in": { "x": 14, "y": 15, "w": 4, "h": 1 }, "node": "8b" }, { "node": "9" }]
+    },
+    "8b": { "who": "Walter", "text": "we should probably get out of the way", "next": "8c" },
+    "8c": { "clear": { "x": 14, "y": 15, "w": 4, "h": 1 }, "next": "9" },
     "9": { "fire": "cannon", "next": "10" },
     "10": { "who": "sea horse", "text": "lol you missed", "next": "11" },
     "11": {
       "who": "sea horse",
       "text": "but FINE you can have that part of the island and i'll have this part",
-      "next": "12"
-    },
-    "12": { "walk": { "id": "seahorse", "to": { "x": 10, "y": 23 } }, "next": "13" },
-    "13": { "wall": { "id": "seahorse", "y": 22, "from": 10, "to": 22 }, "next": "14" },
-    "14": { "walk": { "id": "seahorse", "to": { "x": 16, "y": 25 } }, "next": "15" },
-    "15": {
-      "put": { "by": "seahorse", "obj": { "id": "desalinator2", "kind": "machine", "x": 0, "y": 0 } },
-      "next": "16"
-    },
-    "16": {
-      "put": { "by": "seahorse", "obj": { "id": "desalinator3", "kind": "machine", "x": 0, "y": 0 } },
-      "next": "17"
-    },
-    "17": {
-      "put": { "by": "seahorse", "obj": { "id": "desalinator4", "kind": "machine", "x": 0, "y": 0 } },
-      "next": "18"
-    },
-    "18": {
-      "put": { "by": "seahorse", "obj": { "id": "desalinator5", "kind": "machine", "x": 0, "y": 0 } },
       "next": null
     }
   }

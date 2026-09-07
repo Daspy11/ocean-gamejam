@@ -3,6 +3,7 @@ import Boot from './scenes/Boot'
 import Debug from './scenes/Debug'
 import Intro from './scenes/Intro'
 import Island from './scenes/Island'
+import Outro from './scenes/Outro'
 import UI from './scenes/UI'
 import { content, dispatch, load, world } from './store'
 
@@ -15,7 +16,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   roundPixels: true,
   scale: { mode: Phaser.Scale.NONE, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [Boot, Intro, Island, UI, Debug],
+  scene: [Boot, Intro, Island, UI, Debug, Outro],
 })
 
 // A game pixel has to be a whole number of screen pixels or the browser draws some of them two wide

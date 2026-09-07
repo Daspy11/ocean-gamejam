@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, type Content, type World } from './world'
 
-// mich starts at 13,15; the walk goes right over the player at 15,15 and on down onto tree1 at
+// mich starts at 13,17; the walk goes right over the player at 15,17 and on up onto tree1 at
 // 16,16, so the whole path crosses things a walking player could never cross
 const content: Content = {
   dialogues: {
@@ -11,7 +11,7 @@ const content: Content = {
       start: [{ node: '1' }],
       nodes: {
         '1': { text: '[PLACEHOLDER scene 1]', next: 'walk' },
-        walk: { walk: { id: 'mich', path: ['right', 'right', 'right', 'down'] }, next: 'wait' },
+        walk: { walk: { id: 'mich', path: ['right', 'right', 'right', 'up'] }, next: 'wait' },
         wait: { wait: 500, next: 'spawn' },
         spawn: { spawn: { id: 'tree2', kind: 'tree', x: 18, y: 12 }, next: 'end' },
         end: { text: '[PLACEHOLDER scene 2]', next: null },
@@ -49,7 +49,7 @@ const node = (w: World) =>
 function walking(): World {
   const w = createWorld()
   w.player.x = 15
-  w.player.y = 15
+  w.player.y = 17
   apply(w, { type: 'talk', key: 'scene' }, content)
   apply(w, { type: 'interact' }, content)
   return w
@@ -60,7 +60,7 @@ describe('act nodes', () => {
     const w = walking()
     expect(w.dialogue?.node).toBe('walk')
     expect(node(w)?.text).toBeUndefined() // no text: the UI draws no box
-    expect(mich(w).step).toEqual({ x: 14, y: 15, t: 0 })
+    expect(mich(w).step).toEqual({ x: 14, y: 17, t: 0 })
 
     apply(w, { type: 'tick', dt: 125 }, content)
     apply(w, { type: 'interact' }, content)
@@ -71,16 +71,16 @@ describe('act nodes', () => {
   it('walks the npc a tile every 250 ms, through the player and a tree', () => {
     const w = walking()
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y]).toEqual([14, 15])
+    expect([mich(w).x, mich(w).y]).toEqual([14, 17])
 
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y]).toEqual([15, 15]) // straight over the player's tile
+    expect([mich(w).x, mich(w).y]).toEqual([15, 17]) // straight over the player's tile
 
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y]).toEqual([16, 15])
+    expect([mich(w).x, mich(w).y]).toEqual([16, 17])
 
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([mich(w).x, mich(w).y, mich(w).facing]).toEqual([16, 16, 'down']) // and down onto tree1
+    expect([mich(w).x, mich(w).y, mich(w).facing]).toEqual([16, 16, 'up']) // and up onto tree1
     expect(mich(w).step).toBe(null)
     expect(w.dialogue?.node).toBe('wait') // arrived, so the node moved on by itself
   })
@@ -89,7 +89,7 @@ describe('act nodes', () => {
     const w = createWorld()
     apply(w, { type: 'talk', key: 'run' }, content)
     apply(w, { type: 'tick', dt: 125 }, content)
-    expect([mich(w).x, mich(w).y]).toEqual([13, 14])
+    expect([mich(w).x, mich(w).y]).toEqual([13, 16])
     expect(w.dialogue?.node).toBe('end') // the walk was over inside this same tick
   })
 
@@ -262,12 +262,12 @@ const talkContent: Content = {
   items: {},
 }
 
-// on the sand at 13,14, facing mich at 13,15
+// on the grass at 14,17, facing mich at 13,17
 function atMich(flag = false): World {
   const w = createWorld()
-  w.player.x = 13
-  w.player.y = 14
-  w.player.facing = 'down'
+  w.player.x = 14
+  w.player.y = 17
+  w.player.facing = 'left'
   if (flag) w.flags['had:x'] = true
   return w
 }
@@ -277,7 +277,7 @@ describe('the talk:<npc id> event', () => {
     const w = atMich()
     apply(w, { type: 'interact' }, talkContent)
     expect(w.dialogue?.key).toBe('mich')
-    expect(mich(w).facing).toBe('up')
+    expect(mich(w).facing).toBe('right')
   })
 
   it('lets a due scene cut in instead, and still turns the npc', () => {
@@ -286,7 +286,7 @@ describe('the talk:<npc id> event', () => {
     expect(w.dialogue?.key).toBe('cutin')
     expect(w.flags['fired:cutin']).toBe(true)
     expect(w.queue).toEqual([]) // it cut in, so her own lines never queued up behind it
-    expect(mich(w).facing).toBe('up')
+    expect(mich(w).facing).toBe('right')
   })
 
   it('goes back to the npc own dialogue once the scene has played', () => {
@@ -297,5 +297,34 @@ describe('the talk:<npc id> event', () => {
 
     apply(w, { type: 'interact' }, talkContent)
     expect(w.dialogue?.key).toBe('mich')
+  })
+})
+
+// a line that times out on its own, and the spin of surprise after it
+const hopContent: Content = {
+  dialogues: {
+    hop: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: 'dots' }],
+      nodes: {
+        dots: { text: '...', after: 500, next: 'spin' },
+        spin: { spin: 'mich', next: 'end' },
+        end: { text: '[PLACEHOLDER hop 1]', next: null },
+      },
+    },
+  },
+  items: {},
+}
+
+describe('a line that times out', () => {
+  it('holds for its `after`, then moves on with no press', () => {
+    const w = createWorld()
+    apply(w, { type: 'talk', key: 'hop' }, hopContent)
+    apply(w, { type: 'tick', dt: 400 }, hopContent)
+    expect(w.dialogue?.node).toBe('dots') // still up: no press, and its half second is not out
+    apply(w, { type: 'tick', dt: 100 }, hopContent)
+    expect(w.dialogue?.node).toBe('spin')
+    apply(w, { type: 'tick', dt: 2000 }, hopContent)
+    expect(w.dialogue?.node).toBe('end')
   })
 })

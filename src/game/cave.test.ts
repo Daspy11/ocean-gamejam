@@ -36,7 +36,7 @@ describe('the cave', () => {
 
     const back = at(10, 40, 'down') // and caveout at 10,41 brings him back below the mouth
     apply(back, { type: 'move', dir: 'down' }, content)
-    apply(back, { type: 'tick', dt: 250 }, content)
+    apply(back, { type: 'tick', dt: 217 }, content)
     expect([back.player.x, back.player.y, back.player.facing]).toEqual([42, 18, 'down'])
     expect(back.player.step).toEqual({ x: 42, y: 19, t: 0 }) // and on down the corridor
   })

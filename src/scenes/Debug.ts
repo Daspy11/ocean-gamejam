@@ -9,10 +9,10 @@ import { dispatch, load, world } from '../store'
 // Never opened in the itch build, so the labels are plain English.
 const gallery = () => new URLSearchParams(location.search).get('map') === 'gallery'
 
-// crate1 open and the orb in the bag, under the name both inventory beats leave it with
+// orb1 picked up off the sand and in the bag, under the name both inventory beats leave it with
 const orb = (w: World) => {
-  const crate = w.objects.find((o) => o.id === 'crate1')
-  if (crate?.kind === 'crate') crate.open = true
+  const at = w.objects.findIndex((o) => o.id === 'orb1')
+  if (at >= 0) w.objects.splice(at, 1)
   w.inventory.orb = 1
   Object.assign(w.flags, {
     'had:orb': true,
@@ -30,7 +30,7 @@ const beautyOn = (w: World) => {
   orb(w)
   const crate = w.objects.find((o) => o.id === 'crate2')
   if (crate?.kind === 'crate') crate.open = true
-  w.objects.push({ id: 'flower1', kind: 'flower', x: 19, y: 14, white: true })
+  w.objects.push({ id: 'flower1', kind: 'flower', x: 18, y: 14, white: true })
   w.objects.push(npc('walter', 'walter', 17, 16, 'left', 'walter'))
   w.inventory.carpet = 1
   w.score = 10
@@ -49,7 +49,7 @@ const beautyOn = (w: World) => {
 // the bar he built on the north island, waiting on rum
 const north = (w: World) => {
   for (let y = 6; y <= 13; y++) w.tiles[y * w.width + 20] = 'salt' // 20,13 is the tile that lands it
-  w.objects.push({ id: 'ship', kind: 'boat', x: 21, y: 8, wrecked: true })
+  w.objects.push({ id: 'ship', kind: 'boat', x: 21, y: 8, wrecked: true, dialogue: 'ship' })
   w.objects.push(npc('etarp', 'etarp', 22, 2, 'down', 'etarp'))
   w.objects.push({ id: 'bar1', kind: 'bar', x: 23, y: 2 }, { id: 'bar2', kind: 'bar', x: 23, y: 3 })
   w.objects.push({ id: 'bar3', kind: 'bar', x: 22, y: 3 }, { id: 'bar4', kind: 'bar', x: 21, y: 3 })
@@ -65,16 +65,14 @@ const yarrtender = (w: World) => {
   w.player = { ...w.player, x: 22, y: 4, facing: 'up' } // across the counter from him
 }
 
-// antoine's field picked and his chair asked for, with a cocktail for harry in the bag, stood north
+// antoine's carrots handed over and his chair asked for, with a cocktail for harry in the bag, stood north
 // of harry and his deck chairs on the big island's south shore
 const cocktail = (w: World) => {
   beautyOn(w)
   w.objects = w.objects.filter((o) => o.kind !== 'carrot')
-  w.inventory.carrot = 12
   w.inventory.otijom = 1
   Object.assign(w.flags, {
     'shrimp:asked': true,
-    'fired:carrots': true,
     'shrimp:chair': true,
     'had:carrot': true,
     'had:otijom': true,
@@ -82,16 +80,42 @@ const cocktail = (w: World) => {
   w.player = { ...w.player, x: 42, y: 24, facing: 'down' }
 }
 
+// everything the bag ever puts down, stood on the island: the carpet, the golden egg and the
+// certificate are what add up to fifteen beauty, so by then all three are down. One of Harry's deck
+// chairs has gone to the shrimp for that certificate, and he is sat on it.
+const placed = (w: World) => {
+  w.objects.push({ id: 'floor15-14', kind: 'floor', x: 15, y: 14 })
+  w.objects.push({ id: 'egg15-17', kind: 'egg', x: 15, y: 17 })
+  w.objects.push({ id: 'certificate17-17', kind: 'certificate', x: 17, y: 17 })
+  w.objects = w.objects.filter((o) => o.kind !== 'carrot' && o.id !== 'chair1')
+  delete w.inventory.carpet
+  Object.assign(w.flags, {
+    'placed:carpet': true,
+    'placed:egg': true,
+    'placed:certificate': true,
+    'had:twig': true,
+    'had:egg': true,
+    'had:carrot': true,
+    'had:otijom': true,
+    'had:certificate': true,
+    'shrimp:asked': true,
+    'shrimp:chair': true,
+    'sprite:shrimp': 'shrimpchair',
+    'harry:ok': true,
+  })
+}
+
 // the world the sea horse's scene leaves behind: Etarp at his bar with the bridge home, the sea
-// horse ashore on the spit, and the crust his prototype left, which his wall goes up on
+// horse ashore at the island's north tip, and the crust his prototype left
 const afterSeahorse = (w: World) => {
   beautyOn(w)
   yarrtender(w)
-  w.objects.push(npc('seahorse', 'seahorse', 16, 21, 'up', 'seahorse'))
-  blast(w, 16, 20)
+  placed(w)
+  w.objects.push(npc('seahorse', 'seahorse', 13, 15, 'right', 'seahorse'))
+  blast(w, 13, 14)
   w.score = 15
   Object.assign(w.flags, { 'seahorse:met': true, 'fired:seahorse': true })
-  w.player = { ...w.player, x: 16, y: 19, facing: 'down' }
+  w.player = { ...w.player, x: 16, y: 15, facing: 'left' } // in the line of fire, so Walter waves him out
 }
 
 // the beats, in the order the story reaches them. `at` is the world by the time that one plays.
@@ -109,19 +133,33 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
     },
   },
   {
+    // the moment before pirate.json: the bridge is up the 20 column and he has just stepped ashore
+    // on the north island, which is what fires it. `fired:pirate` so walking about cannot fire it
+    // again behind the scene the jump opens.
+    label: "etarp's arrival",
+    at: (w) => {
+      beautyOn(w)
+      for (let y = 6; y <= 13; y++) w.tiles[y * w.width + 20] = 'salt'
+      w.flags['fired:pirate'] = true
+      w.player = { ...w.player, x: 20, y: 5, facing: 'up' }
+    },
+    talk: 'pirate',
+  },
+  {
     label: 'fifteen beauty',
     at: (w) => {
       beautyOn(w)
       yarrtender(w) // Etarp, his bar and his bridge home are all there by now, with rum in the bag
-      w.score = 15 // the next tick brings the sea horse up out of the sea at the spit
-      w.player = { ...w.player, x: 16, y: 19, facing: 'down' }
+      placed(w) // and the carpet, the egg and the certificate are down, which is what got it to 15
+      w.score = 15 // the next tick brings the sea horse in from the west, under the chest
+      w.player = { ...w.player, x: 16, y: 17, facing: 'left' }
     },
   },
   // straight into the scene the sea horse leaves behind: talk opens it once the world is loaded
   { label: "etarp's cannon", at: afterSeahorse, talk: 'cannon' },
   {
-    // and the one the cannon leaves: Etarp up top with it, Walter out at the east bridge, the sea
-    // horse south of his wall, and Mich where the flower scene put her. The island is not charred.
+    // and the one the cannon leaves: Etarp with it on the island's west side, Walter two tiles
+    // south of his tree, and Mich where the flower scene put her
     label: 'tarq flies in',
     at: (w) => {
       afterSeahorse(w)
@@ -129,14 +167,21 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
         const o = w.objects.find((x) => x.id === id)
         if (o) Object.assign(o, { x, y })
       }
-      move('etarp', 16, 14)
-      move('walter', 22, 16)
-      move('seahorse', 16, 25)
-      move('mich', 19, 15)
-      w.objects.push({ id: 'cannon', kind: 'cannon', x: 16, y: 15 })
+      move('etarp', 19, 15)
+      move('walter', 17, 18)
+      move('mich', 18, 15)
+      w.objects.push({ id: 'cannon', kind: 'cannon', x: 18, y: 15 })
       w.flags['fired:cannon'] = true
     },
     talk: 'tarq',
+  },
+  {
+    // the flight out: the UI scene sees the flag and hands over to the Outro, Walter aboard
+    label: 'leaving the island',
+    at: (w) => {
+      afterSeahorse(w)
+      Object.assign(w.flags, { 'fired:tarq': true, 'walter:aboard': true, outro: true })
+    },
   },
   { label: 'rum for the yarrtender', at: yarrtender },
   { label: 'a cocktail for harry', at: cocktail },

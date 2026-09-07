@@ -1,8 +1,7 @@
 import Phaser from 'phaser'
-import { dispatch } from '../store'
 
-// assets/text/intro.json: human-written, read verbatim. The only thing here that touches `world`
-// is the landing conversation the cutscene hands over to.
+// assets/text/intro.json: human-written, read verbatim. Nothing here touches `world`: the island
+// scene takes the crash over and opens the landing conversation once they are ashore.
 type Script = { cast: Record<string, { name: string }>; lines: { who: string; text: string }[] }
 
 const ZOOM = 3 // the cutscene sits a step closer than gameplay: art at 3x, the dialogue box at 1x
@@ -141,9 +140,9 @@ export default class Intro extends Phaser.Scene {
     this.cameras.main.once('camerafadeoutcomplete', () => this.land())
   }
 
-  // gameplay opens on the two of them arguing about the wreck; ?scene=island skips this with the rest
+  // the island scene finishes the crash � the boat coming ashore and the two of them flipping out
+  // of it � and opens the landing conversation off the back of it; ?scene=island skips the lot
   private land() {
-    dispatch({ type: 'talk', key: 'landing' })
-    this.scene.start('island')
+    this.scene.start('island', { crash: true })
   }
 }

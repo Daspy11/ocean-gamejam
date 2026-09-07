@@ -6,8 +6,6 @@
       "Bash(npm install*)",
       "Bash(npm ci*)",
       "Bash(npx vitest *)",
-      "Bash(npx playwright test*)",
-      "Bash(npx playwright install*)",
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
       "Bash(npx prettier *)",

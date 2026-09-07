@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { blast } from './machine'
 import { findPath } from './path'
-import { createWorld, npc, objectAt, type Content, type Obj, type World } from './world'
+import { createWorld, npc, type Content, type Obj, type World } from './world'
 
 // a tiny world drawn by hand: `#` grass · `.` sand · `s` salt · `~` water. Beauty is showing, and
 // the player stands in the far corner
@@ -28,7 +28,15 @@ const content: Content = {
       name: '[PLACEHOLDER NPC NAME]',
       start: [{ node: 'walk' }],
       nodes: {
-        walk: { walk: { id: 'a', to: { x: 4, y: 0 }, push: 'cannon' }, next: 'end' },
+        walk: {
+          walk: {
+            id: 'a',
+            path: ['right', 'right', 'up', 'right'],
+            facing: 'down',
+            push: 'cannon',
+          },
+          next: 'end',
+        },
         end: { text: '[PLACEHOLDER shove 1]', next: null },
       },
     },
@@ -40,12 +48,14 @@ const content: Content = {
         end: { text: '[PLACEHOLDER boom 1]', next: null },
       },
     },
-    build: {
+    // a line for somebody stood in the way, and a wait until he has moved out of it
+    duck: {
       name: '[PLACEHOLDER NPC NAME]',
-      start: [{ node: 'wall' }],
+      start: [{ in: { x: 0, y: 0, w: 2, h: 2 }, node: 'line' }, { node: 'end' }],
       nodes: {
-        wall: { wall: { id: 'seahorse', y: 1, from: 0, to: 4 }, next: 'end' },
-        end: { text: '[PLACEHOLDER build 1]', next: null },
+        line: { text: '[PLACEHOLDER duck 1]', next: 'hold' },
+        hold: { clear: { x: 0, y: 0, w: 2, h: 2 }, next: 'end' },
+        end: { text: '[PLACEHOLDER duck 2]', next: null },
       },
     },
     // a scene waiting for another box to shut, and the one it waits on
@@ -72,22 +82,28 @@ const content: Content = {
 }
 
 describe('pushing something along', () => {
-  it('keeps it a tile ahead the whole way and leaves it where the walk ends', () => {
+  it('leads him by a step round every corner and swings out to face his way at the end', () => {
     const w = room(
       ['######', '######'],
       [npc('a', 'mich', 0, 1, 'right', 'mich'), { id: 'cannon', kind: 'cannon', x: 1, y: 1 }],
     )
     apply(w, { type: 'talk', key: 'shove' }, content)
-    expect(at(w, 'a').push).toEqual({ id: 'cannon', dx: 1, dy: 0 })
+    expect(at(w, 'a').push).toBe('cannon')
 
+    const seen: string[] = []
     for (let n = 0; n < 12; n++) {
       apply(w, { type: 'tick', dt: 125 }, content)
       const [me, it] = [at(w, 'a'), at(w, 'cannon')]
-      expect([it.x - me.x, it.y - me.y]).toEqual([1, 0]) // rigidly one tile ahead, mid-step and all
-      if (me.step) expect(it.step).toEqual({ x: me.step.x + 1, y: me.step.y, t: me.step.t })
+      if (!me.step) continue
+      // it is stepping out of the tile he is stepping into, in time with him
+      expect([it.x, it.y, it.step?.t]).toEqual([me.step.x, me.step.y, me.step.t])
+      seen.push(`${it.x},${it.y}>${it.step?.x},${it.step?.y}`)
     }
-    expect([at(w, 'a').x, at(w, 'a').y]).toEqual([4, 0])
-    expect([at(w, 'cannon').x, at(w, 'cannon').y]).toEqual([5, 0]) // left standing where he stopped
+    // the corner up at 2,1 and the turn down at the end, as he is to face down when he stops
+    expect([...new Set(seen)]).toEqual(['1,1>2,1', '2,1>2,0', '2,0>3,0', '3,0>3,1'])
+    const me = at(w, 'a')
+    expect([me.x, me.y, me.kind === 'npc' && me.facing]).toEqual([3, 0, 'down'])
+    expect([at(w, 'cannon').x, at(w, 'cannon').y]).toEqual([3, 1]) // in front of him, where he looks
     expect(at(w, 'cannon').step).toBe(null)
     expect(at(w, 'a').push).toBeUndefined()
     expect(w.dialogue?.node).toBe('end') // the walk act moved the scene on
@@ -97,38 +113,37 @@ describe('pushing something along', () => {
     const me = npc('a', 'mich', 0, 0, 'right', 'mich')
     const w = room(['####'], [me, { id: 'cannon', kind: 'cannon', x: 1, y: 0 }])
     expect(findPath(w, me, { x: 2, y: 0 })).toBe(null) // solid, and no way round it in a corridor
-    me.push = { id: 'cannon', dx: 1, dy: 0 }
+    me.push = 'cannon'
     expect(findPath(w, me, { x: 2, y: 0 })).toEqual(['right', 'right'])
   })
 })
 
-// two rows of grass off a sandy point, the cannon on the sand and things standing about on the grass
-function island(cannonY = 0): World {
+// two rows of grass off a sandy point on the east, the cannon on the sand and things standing about
+// on the grass, none of which it touches
+function island(): World {
   return room(
-    ['.#####', '.#####'],
+    ['#####.', '#####.'],
     [
-      { id: 'cannon', kind: 'cannon', x: 0, y: cannonY },
+      { id: 'cannon', kind: 'cannon', x: 5, y: 0 },
       { id: 'crate1', kind: 'crate', x: 2, y: 0, open: false, item: 'orb' },
       { id: 'tree1', kind: 'tree', x: 4, y: 1 },
-      { id: 'orb1', kind: 'orb', x: 5, y: 0, doneAt: 0 },
+      { id: 'orb1', kind: 'orb', x: 0, y: 0, doneAt: 0 },
       npc('mich', 'mich', 1, 1, 'down', 'mich'),
     ],
   )
 }
 
 describe('the cannon', () => {
-  it('spreads one shot per tile over 4 s, with a ball out of the muzzle every 20 ms for show', () => {
+  it('puts a ball out of the muzzle every 20 ms in a cone to the left, for show', () => {
     const w = island()
     apply(w, { type: 'talk', key: 'boom' }, content)
     const f = at(w, 'cannon').kind === 'cannon' ? at(w, 'cannon') : null
-    expect(f?.kind === 'cannon' && f.firing).toMatchObject({ every: 400, nextAt: 0 }) // 10 tiles
+    expect(f?.kind === 'cannon' && f.firing).toMatchObject({ until: 4000, ballAt: 0 })
     apply(w, { type: 'tick', dt: 250 }, content)
-    expect([charred(w), w.score]).toEqual([1, -3]) // the one shot so far has told; 400 is next
-    expect(w.pops.at(-1)).toMatchObject({ text: '-3' })
     const flying = w.objects.filter((o) => o.kind === 'ball')
     expect(flying.length).toBe(13) // 0, 20 .. 240
-    expect(flying[0]).toMatchObject({ id: 'ball0', x: 0, y: 0, at: 0 }) // every one from the muzzle
-    for (const b of flying) if (b.kind === 'ball') expect(Math.abs(b.dir)).toBeLessThanOrEqual(85)
+    expect(flying[0]).toMatchObject({ id: 'ball0', x: 5, y: 0, at: 0 }) // every one from the muzzle
+    for (const b of flying) if (b.kind === 'ball') expect(Math.abs(b.dir)).toBeLessThanOrEqual(15)
     expect(new Set(flying.map((b) => b.kind === 'ball' && b.dir)).size).toBeGreaterThan(1) // sprayed
 
     apply(w, { type: 'tick', dt: 1250 }, content)
@@ -136,84 +151,129 @@ describe('the cannon', () => {
     expect(w.objects.filter((o) => o.kind === 'ball').length).toBe(75) // 20 .. 1500 still up
   })
 
-  it('chars every grass tile, wrecks what stood there, spares the cast, and moves the scene on', () => {
+  it('is over after its 4 s with nothing on the island touched, and moves the scene on', () => {
     const w = island()
     apply(w, { type: 'talk', key: 'boom' }, content)
     for (let n = 0; n < 100 && w.dialogue?.node === 'fire'; n++)
       apply(w, { type: 'tick', dt: 100 }, content)
-    expect(w.time).toBeLessThanOrEqual(4000) // the last of ten shots goes at 3600
-    expect(w.dialogue?.node).toBe('end') // over with the last shot, balls or no balls
+    expect([w.time, w.dialogue?.node]).toEqual([4000, 'end']) // over with the last ball out
     apply(w, { type: 'tick', dt: 1500 }, content)
     expect(has(w, 'ball')).toBe(false)
-    expect([has(w, 'crate'), has(w, 'tree')]).toEqual([false, false])
-    expect([has(w, 'npc'), has(w, 'cannon'), has(w, 'orb')]).toEqual([true, true, true])
-    expect([charred(w), w.score]).toEqual([10, -30]) // 3 a tile, and the sand is left alone
-    expect(w.tiles[0]).toBe('sand')
+    expect(['crate', 'tree', 'npc', 'cannon', 'orb'].map((k) => has(w, k))).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+    ])
+    // the cannon still burns and breaks nothing; the only mark it leaves is the balls stuck in the ground
+    expect(charred(w)).toBe(0)
+    const stuck = w.objects.filter((o) => o.kind === 'embedded')
+    expect(w.score).toBe(stuck.length * -3)
   })
 
-  it('only ever fires down the island, never back over its own row', () => {
-    const w = island(1)
-    apply(w, { type: 'talk', key: 'boom' }, content)
-    for (let n = 0; n < 100 && w.dialogue?.node === 'fire'; n++)
-      apply(w, { type: 'tick', dt: 100 }, content)
-    expect([charred(w), w.score, has(w, 'crate'), has(w, 'tree')]).toEqual([5, -15, true, false])
-  })
-
-  it('shoots the tiles in the same order from the same seed', () => {
-    const order = () => {
+  it('sprays the same angles from the same seed', () => {
+    const dirs = () => {
       const w = island()
       apply(w, { type: 'talk', key: 'boom' }, content)
-      const c = at(w, 'cannon')
-      return c.kind === 'cannon' ? [...c.firing!.work] : []
+      apply(w, { type: 'tick', dt: 250 }, content)
+      return w.objects.map((b) => b.kind === 'ball' && b.dir)
     }
-    expect(order().length).toBe(10)
-    expect(order()).toEqual(order())
-    expect(order()).not.toEqual([...order()].sort((a, b) => a - b)) // shuffled, not in reading order
+    expect(dirs()).toEqual(dirs())
   })
 })
 
-describe("the sea horse's wall", () => {
-  it('goes up a block at a time along the row above him as he walks, at 10 beauty each', () => {
-    const w = room(
-      ['~~~~~', 'sssss', 'sssss'],
-      [npc('seahorse', 'seahorse', 0, 2, 'up', 'seahorse')],
+describe('cannonballs stuck in the island', () => {
+  // a long grass room with the cannon on the east end, so the cone has room to spread
+  const range = () =>
+    room(
+      [
+        '####################',
+        '####################',
+        '###################~',
+        '####################',
+        '####################',
+      ],
+      [
+        { id: 'cannon', kind: 'cannon', x: 19, y: 2 },
+        { id: 'tree1', kind: 'tree', x: 17, y: 2 },
+      ],
     )
-    apply(w, { type: 'talk', key: 'build' }, content)
-    apply(w, { type: 'tick', dt: 16 }, content)
-    expect(objectAt(w, 0, 1)).toMatchObject({ kind: 'cinder' }) // the first, where he stood
-    expect(w.score).toBe(-10)
-    for (let n = 0; n < 8 && w.dialogue?.node === 'wall'; n++)
-      apply(w, { type: 'tick', dt: 250 }, content)
-    expect(w.objects.filter((o) => o.kind === 'cinder').map((o) => [o.x, o.y])).toEqual(
-      [0, 1, 2, 3, 4].map((x) => [x, 1]),
-    )
-    expect([at(w, 'seahorse').x, at(w, 'seahorse').y, w.score]).toEqual([4, 2, -50])
-    expect(w.dialogue?.node).toBe('end')
+
+  it('buries one every so often down the cone and takes 3 beauty for each', () => {
+    const w = range()
+    apply(w, { type: 'talk', key: 'boom' }, content)
+    for (let n = 0; n < 40 && w.dialogue?.node === 'fire'; n++)
+      apply(w, { type: 'tick', dt: 100 }, content)
+
+    const stuck = w.objects.filter((o) => o.kind === 'embedded')
+    expect(stuck.length).toBeGreaterThan(2) // a bunch of them, not one and not the whole cone
+    expect(new Set(stuck.map((o) => `${o.x},${o.y}`)).size).toBe(stuck.length) // one to a tile
+    expect(new Set(stuck.map((o) => o.y)).size).toBeGreaterThan(1) // sprayed, not a single row
+    for (const o of stuck) {
+      const d = 19 - o.x
+      expect(d).toBeGreaterThan(0) // all of them out to the left of the muzzle
+      expect(Math.abs(o.y - 2)).toBeLessThanOrEqual(Math.round(d * Math.tan((15 * Math.PI) / 180)))
+      expect(w.tiles[o.y * w.width + o.x]).not.toBe('water') // nothing sticks in the sea
+    }
+    expect(w.score).toBe(stuck.length * -3)
+    expect(at(w, 'tree1').kind).toBe('tree') // 17,2 is dead ahead, and still the tree's tile
+    expect(w.objects.some((o) => o.kind === 'embedded' && o.x === 17 && o.y === 2)).toBe(false)
   })
 
-  it('is over at once when he is not stood at its start', () => {
-    const w = room(
-      ['~~~~~', 'sssss', 'sssss'],
-      [npc('seahorse', 'seahorse', 2, 2, 'up', 'seahorse')],
-    )
-    apply(w, { type: 'talk', key: 'build' }, content)
-    apply(w, { type: 'tick', dt: 16 }, content)
-    expect([has(w, 'cinder'), w.dialogue?.node]).toEqual([false, 'end'])
+  it('leaves the same ones from the same seed, and none at all until it fires', () => {
+    const dig = () => {
+      const w = range()
+      apply(w, { type: 'talk', key: 'boom' }, content)
+      for (let n = 0; n < 40 && w.dialogue?.node === 'fire'; n++)
+        apply(w, { type: 'tick', dt: 100 }, content)
+      return w.objects.filter((o) => o.kind === 'embedded').map((o) => `${o.x},${o.y}`)
+    }
+    expect(dig()).toEqual(dig())
+    const quiet = range()
+    apply(quiet, { type: 'tick', dt: 4000 }, content)
+    expect(has(quiet, 'embedded')).toBe(false)
+  })
+})
+
+describe('asking him out of the way', () => {
+  it('holds with the box down until he has walked out of the rect, and only walking gets through', () => {
+    const w = room(['####', '####', '####', '####'])
+    w.player = { ...w.player, x: 1, y: 1, facing: 'right' } // in the rect
+    apply(w, { type: 'talk', key: 'duck' }, content)
+    expect(w.dialogue?.node).toBe('line')
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.node).toBe('hold')
+    apply(w, { type: 'tick', dt: 500 }, content)
+    apply(w, { type: 'interact' }, content) // nothing to skip: the scene waits on him
+    apply(w, { type: 'menu' }, content)
+    expect([w.dialogue?.node, w.menu]).toEqual(['hold', null])
+
+    apply(w, { type: 'move', dir: 'right' }, content)
+    apply(w, { type: 'tick', dt: 250 }, content) // one tile, and 2,1 is outside
+    expect([w.player.x, w.player.y, w.dialogue?.node]).toEqual([2, 1, 'end'])
+    apply(w, { type: 'move', dir: null }, content)
+  })
+
+  it('is not said at all to somebody already clear of it', () => {
+    const w = room(['####', '####', '####', '####'])
+    apply(w, { type: 'talk', key: 'duck' }, content) // stood in the far corner
+    expect(w.dialogue?.node).toBe('end')
   })
 })
 
 describe('the blast', () => {
   it('crusts the sea seven out and joins the whole disc to home, not just the near side', () => {
     const w = createWorld()
-    blast(w, 16, 20)
+    blast(w, 14, 18)
     for (const [x, y] of [
-      [10, 23],
-      [22, 23],
-      [16, 25],
-      [16, 27],
+      [12, 12],
+      [12, 24],
+      [9, 18],
+      [7, 18],
     ])
       expect([w.tiles[y * w.width + x], w.main[y * w.width + x]]).toEqual(['salt', true])
-    expect(w.tiles[28 * w.width + 16]).toBe('water') // eight down is outside the circle
+    expect(w.tiles[18 * w.width + 6]).toBe('water') // eight out is outside the circle
   })
 })
 

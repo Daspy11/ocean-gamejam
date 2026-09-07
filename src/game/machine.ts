@@ -1,11 +1,9 @@
-import { stepObj } from './boat'
 import { beauty, makeSalt } from './salt'
 import { objectAt, tileAt } from './world'
-import type { DialogueNode, Obj, World } from './world'
+import type { Obj, World } from './world'
 
 // The desalinator 9000. Put down beside its owner, it drains a beauty every 2 seconds, and a `boom`
-// act blows it up, crusting the sea over for seven tiles around. And the sea horse's wall of cinder
-// blocks, which goes up along the crust once the cannon has done.
+// act blows it up, crusting the sea over for seven tiles around.
 
 // where it can go: his left before anything else, then the nearest ground working outwards
 const SPOTS = [
@@ -88,39 +86,5 @@ export function blast(w: World, x0: number, y0: number): void {
         w.main[i + w.width]
       if (near) w.main[i] = grew = true
     }
-  }
-}
-
-// one block of the wall, above him, unless one is there already
-function layBlock(w: World, o: Obj & { kind: 'npc' }): void {
-  const y = o.lay!
-  if (objectAt(w, o.x, y)) return
-  w.objects.push({ id: `cinder${o.x}-${y}`, kind: 'cinder', x: o.x, y })
-  beauty(w, -10, o.x, y)
-  w.rev++
-}
-
-// a node's `wall` act: stood at its start, he walks right along the row under it, and a block goes
-// down above him at every tile he reaches. Not stood there, and the act is over at once.
-export function startWall(w: World, wall: NonNullable<DialogueNode['wall']>): void {
-  const o = w.objects.find((x) => x.id === wall.id)
-  if (o?.kind !== 'npc' || o.x !== wall.from || o.y !== wall.y + 1) return
-  o.lay = wall.y
-  o.path = Array.from({ length: wall.to - wall.from }, () => 'right' as const)
-  layBlock(w, o)
-  stepObj(w, o, 0)
-}
-
-export function wallDone(w: World, id: string): boolean {
-  const o = w.objects.find((x) => x.id === id)
-  return o?.kind !== 'npc' || o.lay === undefined
-}
-
-// after the walking: a block over every tile he has reached, and the job is over with the walk
-export function tickWalls(w: World): void {
-  for (const o of w.objects) {
-    if (o.kind !== 'npc' || o.lay === undefined) continue
-    layBlock(w, o)
-    if (!o.step && !o.path?.length) delete o.lay
   }
 }

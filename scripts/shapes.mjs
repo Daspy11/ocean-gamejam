@@ -142,10 +142,13 @@ export const certificate = [
   [9, 10, 3, 3, '#c04040'], // its seal
 ]
 export const flyingcarpet = [
-  [1, 6, 14, 8, '#8a3a8a'], // the carpet, lying flat
-  [0, 8, 1, 4, '#e0c040'], // a tassel each end
-  [15, 8, 1, 4, '#e0c040'],
+  [2, 10, 28, 12, '#8a3a8a'], // the carpet, lying flat, two tiles across
+  [0, 14, 2, 4, '#e0c040'], // a tassel each end
+  [30, 14, 2, 4, '#e0c040'],
 ]
+
+// the shade under anything in the air: one flat disc, faded down by the scene that draws it
+export const shadow = (x, y) => ((x - 15.5) ** 2 + (y - 15.5) ** 2 < 196 ? '#101820' : null)
 
 export const crab = () => {
   const red = '#c8402a'
@@ -277,3 +280,25 @@ export const items = [
   ], // 11 otijom, a glass on a stem
   chair, // 12 chair, as the sprite
 ]
+
+// the cannon on the block it rolls on, and a cinder block of the sea horse's old wall
+export const cannon = [
+  [2, 4, 12, 5, '#3a3a44'],
+  [3, 9, 10, 6, '#7a5a3a'],
+]
+export const cinder = [
+  [1, 2, 14, 13, '#8a8a90'],
+  [1, 11, 14, 4, '#5a5a60'],
+]
+
+// the sign: a board on a post
+export const signpost = [
+  [7, 8, 2, 8, '#7a5a3a'],
+  [2, 2, 12, 7, '#a08050'],
+]
+
+// the little heart the two of them share on the way out, in the same pink the score pops use
+export const heart = (x, y) => {
+  const lobes = (x - 5.5) ** 2 + (y - 6) ** 2 < 11 || (x - 10.5) ** 2 + (y - 6) ** 2 < 11
+  return lobes || (y >= 6 && y <= 13 && Math.abs(x - 8) <= 13 - y) ? '#d63a6a' : null
+}

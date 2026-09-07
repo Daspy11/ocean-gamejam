@@ -44,6 +44,7 @@ export const gallery = (): Obj[] => [
   // fired a day of sim time from now, so this one hangs at the muzzle until then
   { id: 'g-ball', kind: 'ball', x: 6, y: 21, at: 86400000, dir: 0 },
   { id: 'g-cinder', kind: 'cinder', x: 8, y: 21 },
+  { id: 'g-embedded', kind: 'embedded', x: 10, y: 21 },
   // the lord and the carpet he flies in on
   npc('g-tarq', 'tarq', 4, 19, 'down', 'tarq'),
   { id: 'g-flyingcarpet', kind: 'flyingcarpet', x: 6, y: 19 },

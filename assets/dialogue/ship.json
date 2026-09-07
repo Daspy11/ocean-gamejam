@@ -1,0 +1,7 @@
+{
+  "name": "",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "Etarp's boat. the front is smashed in.", "next": null }
+  }
+}

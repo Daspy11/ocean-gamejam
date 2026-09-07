@@ -17,15 +17,15 @@ function at(x: number, y: number, facing: Dir = 'down'): World {
 }
 
 describe('walking', () => {
-  it('takes 250 ms per tile and keeps going while the key is held', () => {
+  it('takes 217 ms per tile and keeps going while the key is held', () => {
     const w = at(14, 15, 'right') // the clear grass row north of the tree
     apply(w, { type: 'move', dir: 'right' }, content)
-    apply(w, { type: 'tick', dt: 250 }, content)
+    apply(w, { type: 'tick', dt: 217 }, content)
     expect([w.player.x, w.player.y]).toEqual([15, 15])
     expect(w.player.step).toEqual({ x: 16, y: 15, t: 0 }) // held: the next step starts at once
 
     apply(w, { type: 'move', dir: null }, content) // release
-    apply(w, { type: 'tick', dt: 250 }, content)
+    apply(w, { type: 'tick', dt: 217 }, content)
     expect([w.player.x, w.player.y]).toEqual([16, 15])
     expect(w.player.step).toBe(null)
   })
@@ -34,27 +34,27 @@ describe('walking', () => {
     const w = at(14, 15, 'right')
     apply(w, { type: 'move', dir: 'right' }, content)
     const before = w.rev
-    for (let i = 0; i < 6; i++) apply(w, { type: 'tick', dt: 100 }, content) // 600 ms = 2.4 tiles
+    for (let i = 0; i < 6; i++) apply(w, { type: 'tick', dt: 100 }, content) // 600 ms = 2.76 tiles
     expect(w.player.x).toBe(16)
-    expect(w.player.step?.t).toBeCloseTo(0.4)
+    expect(w.player.step?.t).toBeCloseTo(166 / 217)
     expect(w.rev).toBe(before + 5) // 3 steps started + 2 arrivals; progress itself bumps nothing
   })
 
-  it('runs at 125 ms per tile', () => {
+  it('runs at 144 ms per tile', () => {
     const w = createWorld()
     apply(w, { type: 'move', dir: 'right', run: true }, content)
-    apply(w, { type: 'tick', dt: 125 }, content)
+    apply(w, { type: 'tick', dt: 144 }, content)
     expect([w.player.x, w.player.y]).toEqual([15, 16])
   })
 
   it('applies a direction change at the next tile boundary', () => {
     const w = createWorld()
     apply(w, { type: 'move', dir: 'right' }, content)
-    apply(w, { type: 'tick', dt: 125 }, content)
+    apply(w, { type: 'tick', dt: 100 }, content)
     apply(w, { type: 'move', dir: 'down' }, content)
     expect(w.player.facing).toBe('right') // mid-step, so the turn waits
 
-    apply(w, { type: 'tick', dt: 125 }, content)
+    apply(w, { type: 'tick', dt: 117 }, content)
     expect([w.player.x, w.player.y, w.player.facing]).toEqual([15, 16, 'down'])
     expect(w.player.step).toEqual({ x: 15, y: 17, t: 0 }) // no turn delay while already walking
   })
@@ -69,7 +69,7 @@ describe('turning', () => {
     expect(w.player.step).toBe(null)
     expect(w.rev).toBe(before + 1)
 
-    apply(w, { type: 'tick', dt: 50 }, content)
+    apply(w, { type: 'tick', dt: 25 }, content)
     apply(w, { type: 'move', dir: null }, content) // released inside the turn delay
     apply(w, { type: 'tick', dt: 200 }, content)
     expect([w.player.x, w.player.y, w.player.step]).toEqual([14, 16, null])
@@ -78,7 +78,7 @@ describe('turning', () => {
   it('walks once the key has been held for the turn delay', () => {
     const w = createWorld()
     apply(w, { type: 'move', dir: 'down' }, content)
-    apply(w, { type: 'tick', dt: 99 }, content)
+    apply(w, { type: 'tick', dt: 49 }, content)
     expect(w.player.step).toBe(null)
 
     apply(w, { type: 'tick', dt: 1 }, content)
@@ -106,9 +106,9 @@ describe('blocked', () => {
     const cases = [
       [15, 16, 'right'], // tree1 in the middle of the island at 16,16
       [16, 17, 'up'],
-      [14, 15, 'left'], // mich at 13,15
+      [14, 15, 'left'], // orb1 lying in the sand at 13,15
       [14, 16, 'left'], // the wrecked boat covers 12..13 x 16, right where the player spawns
-      [14, 17, 'left'], // crate1 at 13,17
+      [14, 17, 'left'], // mich at 13,17
       [24, 16, 'down'], // crate2 at 24,17, over on the second island
       [10, 38, 'up'], // rum1 at 10,37, in the cave room
     ] as const
@@ -136,22 +136,21 @@ describe('interact', () => {
   })
 })
 
-describe('the crate', () => {
-  it('hands over the orb once and then stays open and empty', () => {
-    const w = at(14, 17, 'left') // crate1 at 13,17
+describe('the orb in the sand', () => {
+  it('picks it up once, leaving nothing behind', () => {
+    const w = at(14, 15, 'left') // orb1 at 13,15
     apply(w, { type: 'interact' }, content)
-    const crate = w.objects.find((o) => o.id === 'crate1')
-    expect(crate?.kind === 'crate' && crate.open).toBe(true)
+    expect(w.objects.some((o) => o.id === 'orb1')).toBe(false)
     expect(w.inventory.orb).toBe(1)
 
     const before = w.rev
-    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'interact' }, content) // nothing there any more: the sand is bare
     expect(w.inventory.orb).toBe(1)
     expect(w.rev).toBe(before)
   })
 
   it('gives the orb the first inventory slot however late it is found', () => {
-    const w = at(14, 17, 'left') // crate1 at 13,17
+    const w = at(14, 15, 'left') // orb1 at 13,15
     w.inventory = { salt: 2, twig: 1 }
     apply(w, { type: 'interact' }, content)
     expect(Object.keys(w.inventory)).toEqual(['orb', 'salt', 'twig'])
@@ -159,7 +158,7 @@ describe('the crate', () => {
   })
 
   it('leaves the slot order alone once the orb has been had', () => {
-    const w = at(14, 17, 'left')
+    const w = at(14, 15, 'left')
     w.inventory = { salt: 2, twig: 1 }
     w.flags['had:orb'] = true
     apply(w, { type: 'interact' }, content)
@@ -199,7 +198,8 @@ describe('placing salt', () => {
     apply(w, { type: 'interact' }, content)
     expect(tileAt(w, 21, 16)).toBe('salt')
     expect(w.inventory).toEqual({ salt: 0, orb: 1 })
-    expect(w.objects.some((o) => o.kind === 'orb')).toBe(false)
+    // nothing was thrown: the only orb in the world is the one still lying back at the wreck
+    expect(w.objects.some((o) => o.kind === 'orb' && o.x === 21)).toBe(false)
   })
 })
 
@@ -300,10 +300,10 @@ describe('rev', () => {
     apply(w, { type: 'move', dir: 'down' }, content) // turn
     expect(w.rev).toBe(idle + 1)
 
-    apply(w, { type: 'tick', dt: 100 }, content) // starts the step
+    apply(w, { type: 'tick', dt: 50 }, content) // starts the step
     const walking = w.rev
     apply(w, { type: 'tick', dt: 100 }, content) // progress only
     expect(w.rev).toBe(walking)
-    expect(w.player.step?.t).toBeCloseTo(0.8)
+    expect(w.player.step?.t).toBeCloseTo(150 / 217)
   })
 })

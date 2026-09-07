@@ -48,8 +48,14 @@ export const SHEETS = {
   'sprites/certificate': { frameWidth: 16, frameHeight: 16 }, // one frame: the award, propped on its tile
   'sprites/cannon': { frameWidth: 16, frameHeight: 16 }, // one frame: barrel over the block it sits on
   'sprites/ball': { frameWidth: 16, frameHeight: 16 }, // one white frame, tinted red to white in flight
+  // one frame: a ball half sunk in the ground where it fell, drawn flat so he walks over it
+  'sprites/embedded': { frameWidth: 16, frameHeight: 16 },
   'sprites/cinder': { frameWidth: 16, frameHeight: 16 }, // one frame: a block of the sea horse's wall
-  'sprites/flyingcarpet': { frameWidth: 16, frameHeight: 16 }, // one frame: Tarq's carpet, lying flat
+  // one frame each: Tarq's carpet, two tiles of art centred on the tile it flies over, and the
+  // disc of shade the scene draws on the ground under it
+  'sprites/flyingcarpet': { frameWidth: 32, frameHeight: 32 },
+  'sprites/shadow': { frameWidth: 32, frameHeight: 32 },
+  'sprites/heart': { frameWidth: 16, frameHeight: 16 }, // one frame: the heart on the way out
   // 4 frames of 16x24 for the close-up, drawn 7.5x: Walter as he stands, his hat lifted off, the hat
   // gone and a barrel coming out, and the minigun out across him
   'sprites/serious': { frameWidth: 16, frameHeight: 24 },
@@ -73,9 +79,9 @@ export const JSONS = [
   'dialogue/away',
   'dialogue/bigtree',
   'dialogue/boat',
+  'dialogue/ship',
   'dialogue/cannon',
   'dialogue/carrotfield',
-  'dialogue/carrots',
   'dialogue/crate',
   'dialogue/etarp',
   'dialogue/firstsalt',
@@ -108,7 +114,7 @@ export const JSONS = [
 
 export function resolve(file: string): { url: string; placeholder: boolean } {
   // Vite needs these two calls written out literally; it rewrites them at build time. They live in
-  // here rather than at module scope so e2e tests can import DUAL_FRAME from this file under node.
+  // here rather than at module scope so DUAL_FRAME can be imported from this file under node.
   // ttf only on this side: there is no stand-in font, assets/fonts/*.ttf have to be there
   const real = import.meta.glob<string>('/assets/**/*.{png,json,ttf}', {
     eager: true,
