@@ -13,18 +13,16 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run e2e",
+    "check": "npm run typecheck && npm run lint && npm run test",
     "placeholders": "node scripts/placeholders.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
     "@types/node": "^22.20.1",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",

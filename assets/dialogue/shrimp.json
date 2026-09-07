@@ -1,19 +1,69 @@
 {
   "name": "antoine le shrimp",
   "start": [
-    { "when": "shrimp:thanked", "node": "after" },
-    { "when": "shrimp:chair", "has": { "chair": 1 }, "node": "chair" },
-    { "when": "shrimp:chair", "node": "nochair" },
-    { "when": "shrimp:asked", "node": "4" },
-    { "node": "1" }
+    {
+      "when": "shrimp:thanked",
+      "node": "after"
+    },
+    {
+      "when": "shrimp:chair",
+      "has": {
+        "chair": 1
+      },
+      "node": "chair"
+    },
+    {
+      "when": "shrimp:chair",
+      "node": "nochair"
+    },
+    {
+      "when": "shrimp:asked",
+      "has": {
+        "carrot": 12
+      },
+      "node": "carrots"
+    },
+    {
+      "when": "shrimp:asked",
+      "node": "4"
+    },
+    {
+      "node": "1"
+    }
   ],
   "nodes": {
-    "1": { "text": "euch, excuse em wah mozzure, ey cannot euh, farm eneuf carrots", "next": "2" },
-    "2": { "text": "because of my CHREEPLING bach pen", "next": "3" },
-    "3": { "who": "", "text": "wow that sucks", "next": "4" },
+    "1": {
+      "text": "euch, excuse em wah mozzure, ey cannot euh, farm eneuf carrots",
+      "next": "2"
+    },
+    "2": {
+      "text": "because of my CHREEPLING bach pen",
+      "next": "3"
+    },
+    "3": {
+      "who": "",
+      "text": "wow that sucks",
+      "next": "4"
+    },
     "4": {
       "text": "could you euh, elp me peek thes, euh, carrotsch?",
-      "set": { "shrimp:asked": true },
+      "set": {
+        "shrimp:asked": true
+      },
+      "next": null
+    },
+    "carrots": {
+      "text": "ah, thees is ah, very guod, sank you mozzure",
+      "take": {
+        "carrot": 12
+      },
+      "next": "askchair"
+    },
+    "askchair": {
+      "text": "EYE AVE EUGH SOMETHIN FOR YOUR EICHLAND IF EUGH, YOU CAN ELP ME FIND A CHAIR",
+      "set": {
+        "shrimp:chair": true
+      },
       "next": null
     },
     "nochair": {
@@ -24,9 +74,15 @@
       "text": "ah, thees is ah, very guod, sank you mozzure",
       "take": "chair",
       "give": "certificate",
-      "set": { "shrimp:thanked": true, "sprite:shrimp": "shrimpchair" },
+      "set": {
+        "shrimp:thanked": true,
+        "sprite:shrimp": "shrimpchair"
+      },
       "next": null
     },
-    "after": { "text": "ah, thees is ah, very guod, sank you mozzure", "next": null }
+    "after": {
+      "text": "ah, thees is ah, very guod, sank you mozzure",
+      "next": null
+    }
   }
 }

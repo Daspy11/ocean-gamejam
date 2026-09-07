@@ -90,12 +90,12 @@ const content: Content = {
   },
 }
 
-// north of mich (13,15), facing her
+// east of mich (13,17), facing her
 function atNpc(): World {
   const w = createWorld()
-  w.player.x = 13
-  w.player.y = 14
-  w.player.facing = 'down'
+  w.player.x = 14
+  w.player.y = 17
+  w.player.facing = 'left'
   return w
 }
 
@@ -104,7 +104,7 @@ describe('talking to an npc', () => {
     const w = atNpc()
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.key).toBe('mich')
-    expect(w.objects.find((o) => o.kind === 'npc')?.facing).toBe('up')
+    expect(w.objects.find((o) => o.kind === 'npc')?.facing).toBe('right')
   })
 
   it('runs a choice route and reopens on the flag route', () => {
@@ -140,7 +140,7 @@ describe('talking to an npc', () => {
     apply(w, { type: 'move', dir: 'right' }, content)
     expect(w.dialogue?.choice).toBe(1)
     expect(w.rev).toBe(before)
-    expect(w.player.facing).toBe('down') // the box swallowed the move, so the player never turned
+    expect(w.player.facing).toBe('left') // the box swallowed the move, so the player never turned
 
     apply(w, { type: 'tick', dt: 300 }, content)
     expect(w.player.step).toBe(null) // a held key does not walk during a dialogue
@@ -149,7 +149,7 @@ describe('talking to an npc', () => {
     apply(w, { type: 'interact' }, content) // choose B
     apply(w, { type: 'interact' }, content) // close
     apply(w, { type: 'tick', dt: 300 }, content)
-    expect([w.player.x, w.player.y, w.player.step]).toEqual([13, 14, null])
+    expect([w.player.x, w.player.y, w.player.step]).toEqual([14, 17, null])
   })
 
   it('swallows the inventory key while the box is open', () => {
@@ -205,11 +205,11 @@ describe('talk', () => {
   })
 })
 
-// standing east of crate1 at 13,17 and facing it is the whole of the first tutorial beat
+// standing east of orb1 at 13,15 and facing it is the whole of the first tutorial beat
 function atCrate(): World {
   const w = createWorld()
   w.player.x = 14
-  w.player.y = 17
+  w.player.y = 15
   w.player.facing = 'left'
   return w
 }

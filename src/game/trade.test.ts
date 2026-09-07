@@ -40,6 +40,15 @@ const content: Content = {
         after: { text: '[PLACEHOLDER albatross after]', next: null },
       },
     },
+    // a give with more to say after it: the got box cuts in, then the talk carries on
+    gifter: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: '1' }],
+      nodes: {
+        '1': { text: '[PLACEHOLDER gifter 1]', give: 'egg', next: '2' },
+        '2': { text: '[PLACEHOLDER gifter 2]', next: null },
+      },
+    },
   },
   items: { twig: { name: '[PLACEHOLDER twig]' }, egg: { name: '[PLACEHOLDER egg]' } },
 }
@@ -93,5 +102,24 @@ describe('an npc who wants ten twigs', () => {
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.node).toBe('after')
     expect(w.inventory.twig).toBe(10) // nothing is spent on the way through
+  })
+
+  it('shows the got box straight after a give that has more to say, then carries on', () => {
+    const w = createWorld()
+    apply(w, { type: 'talk', key: 'gifter' }, content)
+    expect(w.queue).toEqual([{ key: 'got', item: 'egg' }])
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toEqual({
+      key: 'got',
+      node: '1',
+      choice: 0,
+      item: 'egg',
+      back: { key: 'gifter', node: '2' },
+    })
+    expect(w.queue).toEqual([])
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toMatchObject({ key: 'gifter', node: '2' }) // back where he left off
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBeNull()
   })
 })

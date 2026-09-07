@@ -3,7 +3,7 @@ name: feature
 description: Implement a gameplay feature end to end (sim, unit tests, render, check).
 ---
 
-Implement the feature described in $ARGUMENTS, following CLAUDE.md.
+Implement the feature described in $ARGUMENTS, following AGENTS.md.
 
 1. Read `src/game/world.ts` and `src/game/actions.ts`. Decide the smallest change to `World` / `Action`.
 2. Write the unit test first in `src/game/*.test.ts`, then implement in `apply`.

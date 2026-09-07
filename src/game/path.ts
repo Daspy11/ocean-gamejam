@@ -24,7 +24,7 @@ function costs(w: World, mover: Obj): number[] {
     if (tileAt(w, x, y) !== undefined) cost[i] = Math.max(cost[i], c) // a wall stays a wall
   }
   for (const o of w.objects) {
-    if (o === mover || o.id === mover.push?.id) continue // what he pushes is never in his own way
+    if (o === mover || o.id === mover.push) continue // what he pushes is never in his own way
     const flyer = o.kind === 'npc' && MODES[o.sprite] === 'fly'
     // one in the air and one on the ground pass each other by. 1000 a character, so a route
     // through one loses to any detour the map can offer

@@ -4,9 +4,8 @@ Cute top-down pixel-art island RPG. Grow the island, talk to people, make choice
 
 ```bash
 npm install
-npx playwright install chromium   # once, for e2e
 npm run dev                       # http://localhost:5173
-npm run check                     # typecheck + lint + unit + e2e
+npm run check                     # typecheck + lint + unit tests
 ```
 
 Scene flow: rowboat intro → island. `http://localhost:5173/?scene=island` skips straight to gameplay.

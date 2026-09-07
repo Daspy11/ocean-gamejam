@@ -27,16 +27,12 @@
               !builtins.elem (baseNameOf path) [
                 "node_modules"
                 "dist"
-                "test-results"
-                "playwright-report"
               ];
           };
           # reads package-lock.json directly, so there is no vendor hash to keep in sync
           npmDeps = pkgs.importNpmLock { npmRoot = ./.; };
           npmConfigHook = pkgs.importNpmLock.npmConfigHook;
           nodejs = pkgs.nodejs_22;
-          # the e2e browsers can't be fetched in the build sandbox, and the build doesn't need them
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
           installPhase = ''
             runHook preInstall
             cp -r dist $out

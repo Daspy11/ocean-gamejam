@@ -93,7 +93,7 @@
     "6": {
       "walk": {
         "id": "mich",
-        "to": { "x": 19, "y": 15 },
+        "to": { "x": 18, "y": 15 },
         "facing": "up"
       },
       "next": "7"
@@ -102,7 +102,7 @@
       "spawn": {
         "id": "flower1",
         "kind": "flower",
-        "x": 19,
+        "x": 18,
         "y": 14
       },
       "next": "8"
@@ -161,14 +161,22 @@
       "next": "19"
     },
     "19": {
-      "text": "why {score}? didn't i just get +10?",
+      "text": "who are you",
       "next": "20"
     },
     "20": {
       "who": "Walter",
-      "text": "what a stupid question",
-      "next": "21"
+      "text": "i'm",
+      "next": "20a"
     },
+    "20a": { "closeup": { "sheet": "walter", "frame": 1, "burst": true }, "next": "20b" },
+    "20b": { "burst": true, "next": "20c" },
+    "20c": {
+      "who": "Walter",
+      "text": "walter",
+      "next": "20d"
+    },
+    "20d": { "closeup": null, "next": "21" },
     "21": {
       "who": "Walter",
       "text": "ANYWAY nice beauty score",
@@ -306,11 +314,11 @@
     },
     "carpet2": {
       "who": "Walter",
-      "text": "just remember only things on your main island count towards your beauty score",
+      "text": "to place something on your island, open your inventory, select the item, and press e",
       "next": "carpet3"
     },
     "carpet3": {
-      "text": "this is NOT our main island we don't have one we are gonna leave this stupid island soon",
+      "text": "what",
       "next": "carpet4"
     },
     "carpet4": {

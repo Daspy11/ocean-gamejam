@@ -32,6 +32,18 @@ export function makeSalt(w: World, x: number, y: number): boolean {
   return w.main[at]
 }
 
+// per tick: every orb that has finished boiling its sea tile lays the crust it made. True when
+// one did, which is what the caller fires salt:spawn on.
+export function tickOrbs(w: World): boolean {
+  let laid = false
+  for (const o of w.objects)
+    if (o.kind === 'orb' && tileAt(w, o.x, o.y) === 'water' && w.time >= o.doneAt) {
+      makeSalt(w, o.x, o.y) // the orb stays put, now sitting on the crust it boiled
+      laid = true
+    }
+  return laid
+}
+
 // using one out of the bag on the tile at x,y: salt and the orb go in the sea, a carpet goes down on
 // bare ground. 'used' is "it happened, with nothing to say about it"; null is "nothing happened".
 export function useItem(

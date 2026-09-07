@@ -2,7 +2,7 @@ import { gallery } from './gallery'
 import { MAPS } from './map'
 
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
-export type Tile = 'water' | 'salt' | 'sand' | 'grass' | 'charred' | 'farm' | 'rock' // charred: grass the cannon burnt
+export type Tile = 'water' | 'salt' | 'sand' | 'grass' | 'charred' | 'farm' | 'rock' // charred: burnt grass, laid by nothing yet
 export type Dir = 'up' | 'down' | 'left' | 'right'
 // every item there is, in icon frame order in sprites/items
 export const ITEMS = [
@@ -22,9 +22,8 @@ export const ITEMS = [
 ] as const
 export type Item = (typeof ITEMS)[number]
 
-// a cannon mid-act: the tiles still to shoot in order, the ms between shots, when the next is, when
-// the next ball for show leaves, and balls so far
-type Firing = { work: number[]; every: number; nextAt: number; ballAt: number; shot: number }
+// a cannon mid-act: when it stops, when the next ball leaves, and balls so far
+type Firing = { until: number; ballAt: number; shot: number }
 
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
@@ -39,9 +38,10 @@ export type Obj = {
   path?: Dir[]
   run?: boolean
   parity?: boolean
-  // what he is shoving along: it holds this offset from him for the whole walk and is left behind
-  push?: { id: string; dx: number; dy: number }
-  lay?: number // the row he stands a cinder block on above every tile he walks, until the walk ends
+  // id of what he is shoving along: it goes the step ahead of him for the whole walk and is left behind
+  push?: string
+  // the tile it left a hand on and when: the scene arcs it over from there for 300 ms
+  thrown?: { x: number; y: number; at: number }
 } & (
   | {
       kind: 'npc'
@@ -51,10 +51,10 @@ export type Obj = {
       ride?: string // id of the object he stands on: he takes its tile and its step
       face?: Dir // where he turns once the walk or the spin runs out: a walk up to somebody ends looking at him
       spin?: number // the sim time a spin act ends; until then he turns a quarter every 50 ms
+      flat?: boolean // knocked off what he was riding: he lies face down, a quarter turn over
     }
-  // thrown into the sea it boils its tile into salt once w.time reaches doneAt; `thrown` is the
-  // tile it left the hand on and when, so the scene can arc it over for the first 300 ms
-  | { kind: 'orb'; doneAt: number; thrown?: { x: number; y: number; at: number } }
+  // thrown into the sea it boils its tile into salt once w.time reaches doneAt
+  | { kind: 'orb'; doneAt: number }
   // shaken for twigs; flyAt/landAt are when it started leaving / arriving, 1500 ms each
   // a tree with its own dialogue is talked to, not shaken
   | {
@@ -65,7 +65,8 @@ export type Obj = {
       flyAt?: number
       landAt?: number
     }
-  | { kind: 'boat'; wrecked?: boolean } // wrecked: it sailed into something, so the bow is stove in
+  // wrecked: it sailed into something, so the bow is stove in. dialogue: what interact reads out, else `boat`
+  | { kind: 'boat'; wrecked?: boolean; dialogue?: string }
   | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
@@ -85,14 +86,17 @@ export type Obj = {
   | { kind: 'floor' } // laid on the ground out of the bag: he walks over it, and it is worth 5 beauty
   | { kind: 'egg' } // the golden egg, stood on the ground out of the bag: solid, and worth 5 at home
   | { kind: 'certificate' } // the shrimp welfare award, the same
-  // Etarp's cannon: `firing` until there is nothing left to shell, `nextAt` the next shot's time
-  // and `shots` the count so far, which names the balls
+  // Etarp's cannon: `firing` for its 4 s of noise, `shot` counting the balls, which names them
   | { kind: 'cannon'; firing?: Firing }
   // a cannonball, for show only: it left the muzzle at x,y at `at` and flies straight off the map,
-  // `dir` degrees off straight down
+  // `dir` degrees off straight left
   | { kind: 'ball'; at: number; dir: number }
-  | { kind: 'cinder' } // a block of the sea horse's wall: solid, and 10 beauty gone
-  | { kind: 'flyingcarpet' } // what Tarq rides in on: walked by `path` like a boat, through anything
+  // a ball that stuck where it fell instead of flying on: walked over, and an eyesore at -3 beauty
+  | { kind: 'embedded' }
+  | { kind: 'cinder' } // a solid block: nothing stands one any more, so the sheet is spare
+  // what Tarq rides in on: walked by `path` like a boat, through anything. landAt is when it
+  // started wafting down out of the sky, 3 s before it settles
+  | { kind: 'flyingcarpet'; landAt?: number }
 )
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
@@ -116,6 +120,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   certificate: { w: 1, h: 1, solid: true },
   cannon: { w: 1, h: 1, solid: true },
   ball: { w: 1, h: 1, solid: false },
+  embedded: { w: 1, h: 1, solid: false },
   cinder: { w: 1, h: 1, solid: true },
   flyingcarpet: { w: 1, h: 1, solid: true },
 }
@@ -124,7 +129,7 @@ export interface World {
   rev: number // bumped by apply() on every visible change; scenes resync when it moves
   time: number // sim milliseconds
   rumble: number // the sim time the screen shake ends; the scene jitters the camera until then
-  seed: number // the sim's only randomness, an lcg the cannon draws its targets from
+  seed: number // the sim's only randomness, an lcg the cannon draws its ball angles from
   width: number
   height: number
   tiles: Tile[] // row-major, index = y * width + x
@@ -138,6 +143,9 @@ export interface World {
     run: boolean
     turnedAt: number // sim time facing last changed while standing; walking waits 100ms after a turn
     parity: boolean // flips every step so the walk cycle alternates feet
+    path?: Dir[] // the steps a cutscene is walking him, and the way it leaves him facing
+    face?: Dir
+    ride?: string // id of what he is standing on: he takes its tile and its step, like any npc
   }
   inventory: Partial<Record<Item, number>>
   score: number // beauty: -1 per salt block placed, +10 a bloomed flower; hidden until flags['score:on']
@@ -146,12 +154,32 @@ export interface World {
   // story state. Strings let dialogue rename things: flags['name:orb'] overrides the item's display name
   flags: Record<string, boolean | number | string>
   // item fills {item} in text; until is the sim time a `wait` act on the open node ends
-  dialogue: null | { key: string; node: string; choice: number; item?: Item; until?: number }
+  dialogue: null | {
+    key: string
+    node: string
+    choice: number
+    item?: Item
+    until?: number
+    back?: { key: string; node: string; item?: Item } // where a got box that cut in returns to
+  }
   queue: { key: string; item?: Item }[] // dialogues waiting for the open one to close, in order
+  // the `throw` act in flight: what he is fetching, who it is for, and when it left his hand
+  throwing: null | { kind: Obj['kind']; at: string; flew?: number }
   menu: null | { screen: 'inventory'; cursor: number }
   // a close-up over the world: `sheet` drawn big on black, its frames from `frame` every 400 ms
-  // from `at`, and the black has been up since `since`. Down when the box closes.
-  closeup: null | { sheet: string; frame: number; frames: number; at: number; since: number }
+  // from `at`, and the black has been up since `since`. Down when the box closes. With `burst`
+  // the camera zooms in on the npc instead, under shooting stars: null until the burst act, then
+  // when he started to shake white, shattering 1200 ms on; `down` is when the zoom back out began.
+  closeup: null | {
+    sheet: string
+    frame: number
+    frames: number
+    at: number
+    since: number
+    burst?: null | number
+    down?: number
+    zoom?: number // how far the burst camera comes in, 7.5x by default
+  }
 }
 
 export type Action =
@@ -161,74 +189,12 @@ export type Action =
   | { type: 'talk'; key: string } // open a dialogue by key (scripted scenes; npcs go through interact)
   | { type: 'menu' } // toggle the inventory screen
 
-// one entry of a `start` or a branching `next`: it wins if its flag is set and the bag holds `has`
-export type Branch = { when?: string; has?: Partial<Record<Item, number>>; node: string }
+import type { Rect } from './script'
+export type { Branch, Content, Dialogue, DialogueNode, Rect } from './script'
 
-export interface Dialogue {
-  name: string
-  // plays once, when the sim emits `event`, flag `when` (if given) is truthy and flag `unless` (if
-  // given) is not; sets flags['fired:<key>'].
-  // events: crate:open · menu:close · salt:spawn · salt:place · salt:away (a block laid off the main
-  // island) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
-  // zero) · score:fifteen (beauty has first reached 15) · arrive:north (stepped ashore up north) ·
-  // carrots:done (the last carrot pulled up) · done:<dialogue key> (that box has just closed)
-  trigger?: { event: string; when?: string; unless?: string }
-  start: Branch[] // first entry that matches wins
-  nodes: Record<string, DialogueNode>
-}
-export interface DialogueNode {
-  text?: string // may contain {item}, replaced with the display name of dialogue.item
-  who?: string // speaker name for this node; absent = the dialogue's name, '' = no name line
-  // A node without text is an act: the box hides, the act runs, and the node advances to `next` by
-  // itself once it is done (walk: the npc has arrived; wait: the time has passed; spawn and shake:
-  // at once; fly: the tree has gone; land: it has come down; rumble: the shake is over). Interact
-  // and move are ignored while an act runs.
-  // walk: `to` is a tile, and the way there is found (src/game/path.ts): no way at all, and he stays
-  // put; somebody standing on it, and he stops on the closest free tile he can reach and turns to
-  // face him. `near` is something to walk up to instead — an object id, or `player` — and his tile
-  // is the `to`; a solid thing like a boat is stepped onto less the last step.
-  // `path` is the exact steps, walked through everything; a boat sails that way. `facing` is the
-  // way he turns on arrival, when the last step should not decide it.
-  // `push` is an object he shoves along, a fixed tile ahead of him the whole way and through anything
-  walk?: {
-    id: string
-    to?: { x: number; y: number }
-    near?: string
-    path?: Dir[]
-    run?: boolean
-    facing?: Dir
-    push?: string
-  }
-  wait?: number // ms
-  rumble?: number // ms of screen shake, from now
-  spawn?: Obj
-  put?: { by: string; obj: Obj } // spawn, but on the nearest free ground beside `by`, his left first
-  boom?: string // id of a machine: it goes off 2 s from here, and the act holds until it has
-  fire?: string // id of a cannon: 4 s of shots at every grass and object tile from its row down
-  // an npc stood at from,y+1 walks right to to,y+1 standing a cinder block on the row above at each tile
-  wall?: { id: string; y: number; from: number; to: number }
-  // the screen goes black and `sheet` plays big in the middle, `frames` of it from `frame` on
-  closeup?: { sheet: string; frame?: number; frames?: number }
-  bloom?: string // id of a flower: it starts blooming here, and the act is over once it has gone white
-  shake?: string // id of a tree: one more shake, and the twig it drops
-  fly?: string // id of a tree: it lifts off and is gone 1500 ms later
-  land?: string // id of a tree: it comes down out of the sky over 1500 ms
-  spin?: string // id of an npc: he whirls round for 2 s, and ends facing the way he was
-  drink?: string // id of a bar: a cocktail goes down on it, to be picked up with interact
-  // spends items as the node opens, one of an Item or the counts in a record; no got box
-  take?: Item | Partial<Record<Item, number>>
-  give?: Item // hands over one as the node opens: a crate's gain, got box and all, from a line
-  set?: Record<string, boolean | number | string>
-  // used when there are no choices; null or missing closes the dialogue. A list is read like `start`:
-  // the first matching entry wins, and none matching closes it.
-  next?: string | null | Branch[]
-  choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
-}
-
-export interface Content {
-  dialogues: Record<string, Dialogue>
-  items: Partial<Record<Item, { name: string }>>
-}
+// is the player stood inside this rect of tiles
+export const inside = (w: World, r: Rect) =>
+  w.player.x >= r.x && w.player.x < r.x + r.w && w.player.y >= r.y && w.player.y < r.y + r.h
 
 export const DIRS: Record<Dir, [number, number]> = {
   up: [0, -1],
@@ -297,10 +263,11 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
       ? gallery()
       : [
           { id: 'boat1', kind: 'boat', x: 12, y: 16 },
-          { id: 'crate1', kind: 'crate', x: 13, y: 17, open: false, item: 'orb' },
+          // thrown clear of the boat in the crash and left lying in the sand: picked up, not opened
+          { id: 'orb1', kind: 'orb', x: 13, y: 15, doneAt: 0 },
           // the second crate, over on the far island: the reason to bridge the gap
           { id: 'crate2', kind: 'crate', x: 24, y: 17, open: false, item: 'electrolytes' },
-          npc('mich', 'mich', 13, 15, 'right', 'mich'),
+          npc('mich', 'mich', 13, 17, 'right', 'mich'),
           { id: 'tree1', kind: 'tree', x: 16, y: 16 },
           { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
           // out on the big island, on the grass the forest leaves clear
@@ -348,6 +315,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     dialogue: null,
     queue: [],
     menu: null,
+    throwing: null,
     closeup: null,
   }
 }

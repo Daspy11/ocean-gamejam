@@ -15,14 +15,14 @@ const content: Content = {
             id: 'seahorse',
             kind: 'npc',
             sprite: 'seahorse',
-            x: 16,
-            y: 23,
-            facing: 'up',
+            x: 6,
+            y: 15,
+            facing: 'right',
             dialogue: 'seahorse',
           },
           next: '2',
         },
-        '2': { walk: { id: 'seahorse', to: { x: 16, y: 21 } }, next: '3' },
+        '2': { walk: { id: 'seahorse', to: { x: 13, y: 15 }, run: true }, next: '3' },
         '3': { text: '[PLACEHOLDER he is impressed]', next: '4' },
         '4': {
           put: { by: 'seahorse', obj: { id: 'desalinator', kind: 'machine', x: 0, y: 0 } },
@@ -37,26 +37,29 @@ const content: Content = {
   items: {},
 }
 
-// fifteen beauty, then the ticks that bring him up the two tiles onto the spit and open his first line
+// fifteen beauty, then the ticks that bring him in under the chest and open his first line (a tick
+// only ever finishes one step, so at 250 ms a tick his run is no quicker here)
 function arrived(): World {
   const w = createWorld()
+  w.objects = w.objects.filter((o) => o.id !== 'orb1') // in the bag long before beauty reads 15
   w.score = 15
-  for (let n = 0; n < 4; n++) apply(w, { type: 'tick', dt: 250 }, content)
+  for (let n = 0; n < 10; n++) apply(w, { type: 'tick', dt: 250 }, content)
   return w
 }
 
 describe('the sea horse', () => {
   it('comes up out of the sea the first time beauty reads 15', () => {
     const w = createWorld()
+    w.objects = w.objects.filter((o) => o.id !== 'orb1') // his landing tile, and long since picked up
     w.score = 15
     apply(w, { type: 'tick', dt: 16 }, content)
     expect(w.flags['fired:seahorse']).toBe(true)
     expect(w.dialogue?.key).toBe('seahorse')
     const him = () => w.objects.find((o) => o.id === 'seahorse')
-    expect([him()?.x, him()?.y]).toEqual([16, 23]) // out in the water off the southern spit
+    expect([him()?.x, him()?.y]).toEqual([6, 15]) // out in the water off the west shore
 
-    for (let n = 0; n < 4; n++) apply(w, { type: 'tick', dt: 250 }, content)
-    expect([him()?.y, w.dialogue?.node]).toEqual([21, '3']) // ashore, and talking
+    for (let n = 0; n < 9; n++) apply(w, { type: 'tick', dt: 250 }, content)
+    expect([him()?.x, w.dialogue?.node]).toEqual([13, '3']) // ashore above the wreck at a run, and talking
   })
 
   it('only ever turns up once, however far beauty swings after it', () => {
@@ -74,7 +77,7 @@ describe('the desalinator 9000', () => {
     const w = arrived()
     apply(w, { type: 'interact' }, content) // past his line, onto the act that puts it down
     apply(w, { type: 'tick', dt: 16 }, content)
-    expect(objectAt(w, 16, 20)?.id).toBe('desalinator') // 15,21 is his left, and it is water
+    expect(objectAt(w, 13, 14)?.id).toBe('desalinator') // his left is sea, so it goes up onto the sand
     expect(w.dialogue?.node).toBe('5')
   })
 
@@ -102,10 +105,10 @@ describe('the desalinator 9000', () => {
 
     expect(w.objects.some((o) => o.kind === 'machine')).toBe(false)
     expect(w.dialogue?.node).toBe('7') // the act is over the moment the thing is gone
-    expect(tileAt(w, 16, 23)).toBe('salt') // a disc seven tiles out from 16,20
-    expect(tileAt(w, 23, 20)).toBe('salt') // the last tile inside the circle
-    expect(tileAt(w, 21, 16)).toBe('salt') // the near half of the gap to the second island
-    expect(tileAt(w, 24, 20)).toBe('water') // and not a tile further
+    expect(tileAt(w, 13, 21)).toBe('salt') // a disc seven tiles out from 13,14
+    expect(tileAt(w, 6, 14)).toBe('salt') // the last tile inside the circle, out west
+    expect(tileAt(w, 20, 14)).toBe('salt') // and east, off the island's far shore
+    expect(tileAt(w, 5, 14)).toBe('water') // and not a tile further
     expect(w.score).toBeLessThan(0) // what it ate, plus a beauty for every tile of new crust
     expect(w.rumble).toBeGreaterThan(w.time)
   })

@@ -1,17 +1,20 @@
-import { actDone, startAct } from './act'
+import { nodeDone, pickBranch, startAct, tickCloseup } from './act'
 import { tickWalks } from './boat'
 import { tickCannons } from './cannon'
-import { tickMachines, tickWalls } from './machine'
+import { tickMachines } from './machine'
+import { tickThrow } from './throw'
 import { shakeTree, tickTrees } from './tree'
-import { beauty, makeSalt, useItem } from './salt'
+import { beauty, tickOrbs, useItem } from './salt'
 import { DIRS, KINDS, objectAt, tileAt } from './world'
-import type { Action, Branch, Content, DialogueNode, Item, World } from './world'
+import type { Action, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 
 export function apply(w: World, a: Action, c: Content): void {
   const p = w.player
-  const busy = w.dialogue !== null || w.menu !== null
+  // the node the box is on, if any: a `clear` act frees him to walk while the scene waits on it
+  const cur = w.dialogue ? c.dialogues[w.dialogue.key]?.nodes[w.dialogue.node] : undefined
+  const busy = (w.dialogue !== null && !cur?.clear) || w.menu !== null
   // two call sites: the start from standing and the restart at a tile boundary
   const startStep = (t: number) => {
     const [dx, dy] = DIRS[p.facing]
@@ -25,18 +28,10 @@ export function apply(w: World, a: Action, c: Content): void {
     p.step = { x, y, t }
     w.rev++
   }
-  // both `start` and a branching `next` are read this way: first entry whose `when` flag is truthy
-  // and whose `has` items are all in the bag. Nothing matching means there is nowhere to go.
-  const pick = (list: Branch[] | undefined) =>
-    list?.find(
-      (s) =>
-        (!s.when || !!w.flags[s.when]) &&
-        Object.entries(s.has ?? {}).every(([item, n]) => (w.inventory[item as Item] ?? 0) >= n),
-    )?.node
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item) => {
     const dlg = c.dialogues[key]
-    const at = node ?? pick(dlg?.start)
+    const at = node ?? pickBranch(w, dlg?.start)
     const to = at === undefined ? undefined : dlg?.nodes[at]
     if (at === undefined || !to) return false
     Object.assign(w.flags, to.set)
@@ -63,8 +58,16 @@ export function apply(w: World, a: Action, c: Content): void {
     if (chosen) Object.assign(w.flags, chosen.set)
     // a missing node is broken content: close rather than throw, a human fixes the json
     const next = node ? (chosen ? chosen.next : node.next) : null
-    const to = (Array.isArray(next) ? pick(next) : next) ?? null
+    const to = (Array.isArray(next) ? pickBranch(w, next) : next) ?? null
+    // a give's got box cuts in right after his line; the rest of the talk waits in `back`
+    const got = w.queue.findIndex((q) => q.key === 'got' && node?.give && q.item === node.give)
+    if (to !== null && got >= 0 && open('got', undefined, w.queue[got].item)) {
+      w.queue.splice(got, 1)
+      w.dialogue!.back = { key: d.key, node: to, item: d.item }
+      return
+    }
     if (to !== null && open(d.key, to, d.item)) return
+    if (d.back && open(d.back.key, d.back.node, d.back.item)) return
     w.dialogue = null
     w.closeup = null // a close-up only ever lasts the box it went up under
     w.rev++
@@ -99,14 +102,16 @@ export function apply(w: World, a: Action, c: Content): void {
     else delete w.inventory[item]
     w.rev++
   }
+  // true when this is the first of that item ever picked up
   const gain = (item: Item) => {
     w.inventory[item] = (w.inventory[item] ?? 0) + 1
     w.rev++
-    if (w.flags[`had:${item}`]) return
+    if (w.flags[`had:${item}`]) return false
     w.flags[`had:${item}`] = true
     // the orb tutorial talks to whatever the cursor starts on, so the orb keeps the first slot
     if (item === 'orb') w.inventory = { orb: w.inventory.orb, ...w.inventory }
     play('got', item) // the first of anything ever picked up gets a "you got X" box
+    return true
   }
 
   // record the controller even in a dialogue or the menu, so a release is never missed
@@ -117,11 +122,7 @@ export function apply(w: World, a: Action, c: Content): void {
 
   if (a.type === 'tick') {
     w.time += a.dt
-    for (const o of w.objects)
-      if (o.kind === 'orb' && tileAt(w, o.x, o.y) === 'water' && w.time >= o.doneAt) {
-        makeSalt(w, o.x, o.y) // the orb stays put, now sitting on the crust it boiled
-        fire('salt:spawn')
-      }
+    if (tickOrbs(w)) fire('salt:spawn')
     for (const o of w.objects)
       if (
         o.kind === 'flower' &&
@@ -141,15 +142,16 @@ export function apply(w: World, a: Action, c: Content): void {
     if (w.score < 0) fire('score:negative') // fires once, whenever beauty first reads below zero
     if (w.score >= 15) fire('score:fifteen') // and once, the first time it reads 15
     if (tickTrees(w)) fire('tree:near') // the promised tree, rested and back within three tiles
+    tickCloseup(w)
     const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
     if (live.length !== w.pops.length) {
       w.pops = live
       w.rev++
     }
-    const ms = p.run ? 125 : 250 // ms per tile: 250 walking, 125 running
-    // 100 ms turn delay: a tapped direction only turns, a held one walks
-    if (!p.step && !busy && p.facing === p.held && w.time - p.turnedAt >= 100) startStep(0)
-    if (p.step) {
+    const ms = p.run ? 144 : 217 // ms per tile: 217 walking (4.6 tiles/s), 144 running
+    // 50 ms turn delay: a tapped direction only turns, a held one walks
+    if (!p.step && !busy && p.facing === p.held && w.time - p.turnedAt >= 50) startStep(0)
+    if (p.step && !p.ride) {
       p.step.t += a.dt / ms // progress alone is not a visible change, so no rev
       if (p.step.t >= 1) {
         const leftover = (p.step.t - 1) * ms
@@ -176,10 +178,10 @@ export function apply(w: World, a: Action, c: Content): void {
       }
     }
     tickWalks(w, a.dt)
-    tickWalls(w)
+    tickThrow(w)
     const act = w.dialogue
     const on = act ? c.dialogues[act.key]?.nodes[act.node] : undefined
-    if (act && on && on.text === undefined && actDone(w, act, on)) advance(act, on)
+    if (act && on && nodeDone(w, act, on)) advance(act, on)
     return
   }
 
@@ -197,7 +199,9 @@ export function apply(w: World, a: Action, c: Content): void {
   }
 
   const d = w.dialogue
-  if (d) {
+  if (d && cur?.clear) {
+    if (a.type !== 'move') return // asked out of the way: walking is all he can do until he is
+  } else if (d) {
     const node = c.dialogues[d.key]?.nodes[d.node]
     if (node && node.text === undefined) return // an act runs to its end; input cannot skip it
     if (node && a.type === 'move') {
@@ -239,7 +243,7 @@ export function apply(w: World, a: Action, c: Content): void {
   if (a.type === 'move') {
     if (!p.step && a.dir && p.facing !== a.dir) {
       p.facing = a.dir
-      p.turnedAt = w.time // walking waits 100 ms from here, so a tap only turns
+      p.turnedAt = w.time // walking waits 50 ms from here, so a tap only turns
       w.rev++
     }
     return
@@ -265,7 +269,7 @@ export function apply(w: World, a: Action, c: Content): void {
     return
   }
   if (obj?.kind === 'boat') {
-    open('boat') // the wreck reads out like a sign, with no one speaking
+    open(obj.dialogue ?? 'boat') // a wreck reads out like a sign, with no one speaking
     return
   }
   if (obj?.kind === 'tree') {
@@ -311,12 +315,13 @@ export function apply(w: World, a: Action, c: Content): void {
     }
     w.objects.splice(w.objects.indexOf(obj), 1) // pulled up, leaving the tilled soil bare
     gain('carrot')
-    if (!w.objects.some((o) => o.kind === 'carrot')) fire('carrots:done') // the field is picked
     return
   }
   if (obj?.kind === 'orb') {
     w.objects.splice(w.objects.indexOf(obj), 1) // boiling or finished, it always comes back to hand
-    gain('orb')
+    // picking the wreck's one up is the tutorial beat: `crate:open` is the event crate.json and the
+    // flower scene still trigger on, from when it came out of a chest
+    if (gain('orb')) fire('crate:open')
     return
   }
   if (obj) return

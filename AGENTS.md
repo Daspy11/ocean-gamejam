@@ -46,15 +46,9 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `flags['harry:ok']`, and before that it is Harry's `handsoff.json`. A `bar` is talked across: interact
   on a bare piece of counter reaches the npc on its far side, and with a drink on it takes the drink
   (`otijom`). A `cannon` is solid and, once a `fire` act lights it, spits a `ball` every 20 ms for
-  4 s, each flying straight out to the left of the muzzle in a 30 degree cone and off the map over
-  1500 ms; it breaks nothing, but every third ball drops short and sticks in the ground as an
-  `embedded` — a random bare tile down the cone, walked over rather than into, and -3 beauty each. A `cinder` is a solid block;
-  nothing stands one any more, so the sheet is spare. A `flyingcarpet` is the one thing
-  drawn bigger than its tile, and the one thing drawn off the ground: 32x32 of art centred on the
-  1x1 it flies over, so it hangs half a tile over its neighbours, and it and its rider are drawn
-  24 px up while it flies. `sprites/shadow` is the faded disc on the ground under it, marking the
-  tile it is really on, shrinking as it comes down and gone once it is landed (`landAt` is when it
-  started down, and it stays set, so a carpet on the ground has no height and no shadow). A `boat` reads out on interact: `boat.json`, or the `dialogue` it
+  4 s, each flying straight out to the left of the muzzle in a 10 degree cone and off the map over
+  1500 ms; it hits nothing and touches nothing on the island. A `cinder` is a solid block of the
+  sea horse's wall, -10 each. A `boat` reads out on interact: `boat.json`, or the `dialogue` it
   names (Etarp's ship reads `ship.json`). Sprites come from `sprites/<kind>`, are bottom-anchored, and are depth-sorted by their feet Y,
   so tall things overlap what's behind them (top-down oblique). To add an object kind: one
   union member, one `KINDS` row, one manifest entry, one placeholder entry.
@@ -72,7 +66,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `world.dialogue`; the inventory screen's cursor lives in `world.menu`. The UI is stateless, so every
   dialogue path and menu state is testable without Phaser.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
-  sim emits that event (`crate:open` (a crate opened, or the orb picked up off the sand), `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
+  sim emits that event (`crate:open`, `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
   `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `salt:away` (any item put down off
   the main island), `score:fifteen`, `done:<dialogue key>` (that box has just
   closed), add more in `apply`) and the `when` flag is
@@ -92,24 +86,16 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   flower, `shake` / `fly` / `land` a tree (`src/game/tree.ts`), `rumble` the screen, `spin` an npc
   (2 s of quarter turns every 50 ms, then back to how he faced, `src/game/boat.ts`), `drink` (a
   cocktail stood on the `bar` it names), `fire` a cannon at the sea horse for 4 s of noise
-  (`src/game/cannon.ts`), `face` (turns an npc on the spot, for one riding something and unable to
-  walk), `throw` (the player walks to the first object of that `kind` standing on the island, picks
-  it up and hucks it at the npc `at`; only the golden egg does anything — it knocks Tarq off his
-  carpet: he is flung two tiles to the right and lands face down there (`thrown` is the tile he
-  left and when, the same field a thrown thing arcs over on), and the carpet wafts down over 3 s,
-  swinging side to side, and is worth 200 beauty where it lands, `src/game/throw.ts`),
-  `closeup` (the screen goes
+  (`src/game/cannon.ts`), `wall` (an npc stood at its start walks down the column left of it
+  standing a cinder block on his right at every tile, `src/game/machine.ts`), `closeup` (the screen goes
   black and a sheet's frames play big in the middle, `world.closeup`, drawn by the UI scene and
   down again when the box closes, or at a `closeup: null`; with `burst: true` there is no black:
-  the camera eases 1 s onto the npc drawn off that sheet under shooting stars, as far in as `zoom`
-  asks (7.5x by default, and a second close-up on the same npc punches straight to its own zoom), a `burst` act
+  the camera eases 1 s onto the npc drawn off that sheet under shooting stars, a `burst` act
   then shakes him white and apart into stars for 2 s, and `closeup: null` eases it back out
   over 1 s (`down`), Walter's entry in `flower.json`), `clear` (the box hides and the player is free to walk; the act
   is over once he stands outside its rect), and `gone`, which
   just holds until the object it names has left the world. The box hides, the act runs, and the node
-  advances itself. A walk naming `player` walks the player himself, the same A* and the same steps,
-  with his path on `world.player` (`walkPlayer` in `src/game/boat.ts`); he is carried the same way
-  too, by `player.ride`. A walk with `to` finds its way by A* (`src/game/path.ts`): who can cross what is
+  advances itself. A walk with `to` finds its way by A* (`src/game/path.ts`): who can cross what is
   `MODES` there, keyed by sprite (a flyer is stopped only by another flyer, a swimmer by rock, solid
   objects and anyone on the ground, a walker by water too); another character is crossed only when
   there is no other way, the player being the one to push past first; and no way at all means he
@@ -123,8 +109,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   names. A walk with `near` walks up to something — an object id, or `player` — using its tile as
   the `to`, so a character is faced from beside him as above, and a solid thing like a boat is
   stopped at on the tile before it. See `assets/dialogue/flower.json` and `pirate.json`.
-- The island grows by the orb, which starts as `orb1` lying in the sand at 13,15 where the crash threw
-  it (interact picks it up, and that first pickup is the tutorial beat, `crate:open`): thrown on a water tile it boils it (smoke) and after 2 s that tile is
+- The island grows by the orb: thrown on a water tile it boils it (smoke) and after 2 s that tile is
   `salt`, and the orb is picked back up. A crust once laid stays laid — there is no digging it back up,
   so every block costs its beauty for good. A `salt` item in hand still fills a water tile in the same
   way, but nothing hands one out any more, so `salt:place` (`insalting.json`) is unreachable for now.
@@ -138,36 +123,17 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
   farmland with a carrot on it, `=` is grass with a fence post on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets
-  it). A bloomed flower is +10, a `floor` +5, Tarq's carpet on the ground +200, placing salt is -1,
-  but only on the main island:
+  it). A bloomed flower is +10, a `floor` +5, placing salt is -1, but only on the main island:
   `world.main` is flood-filled from the spawn when the world is made and grows through salt laid next
-  to it, and the desalinator's blast joins its whole crust (`blast` in `src/game/machine.ts`). Anything put down anywhere else counts for nothing and fires `salt:away` (Walter's reminder in
+  to it, and the desalinator's blast joins its whole crust (`blast` in `src/game/machine.ts`). A
+  cinder block is -10. Anything put down anywhere else counts for nothing and fires `salt:away` (Walter's reminder in
   `assets/dialogue/away.json`) instead of `salt:place`. `world.pops` are the floating +N/-N.
-- The Outro (`src/scenes/Outro.ts`) is the last scene, and the island hands over to it without a cut:
-  Island sees `flags['outro']` and runs `flyOut` (`src/scenes/leave.ts`), which stops the camera
-  following, drops a sea tilesprite past the map's east edge and slides the carpet, its riders and
-  the camera 34 tiles east over 3.2 s, accelerating; then it stops UI and starts the Outro. The Outro
-  opens at the island's 2x on the same sea running at the same speed and eases to 3x over 1.8 s, so
-  the join is one continuous shot. Then the two of them fly on (with Walter on Mich's head if
-  `flags['walter:aboard']`), the player looks over at her and leans in, one small heart drifts up
-  between them, and a spotlight closes on the party into the credits. The names fade up a
-  pair at a time, then two cards ("thanks for playing", "our first game") each hold 4 s or until
-  Enter, the black holds 4 s on its own, and "Play again?" comes up with a chevron: Enter there
-  loads a fresh `createWorld()` and starts the Intro again. Otherwise it reads `world` and changes
-  nothing.
 - Scene flow: Boot → Intro (the rowboat cutscene, data in `assets/text/intro.json`; it opens on the
   sea and waits for a press before the first line) → Island,
-  which launches UI. Intro starts it with `{ crash: true }`, and the crash itself plays there
-  (`src/scenes/crash.ts`): the boat flies in flat from the west, slams onto the shore and the orb,
-  Mich and the player are all thrown out of it, somersaulting onto the tiles they spawn on, and only
-  then does `landing.json` open. All tweens over a world that already has them ashore; the sim
-  knows nothing about it. `flipOff` in the same file draws any npc stepping off a boat that has
-  just been wrecked as that same somersault, so Etarp comes off his ship the way they come off theirs.
-  `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
+  which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
   Z three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
-  jump to any story beat — the beginning, the orb, beauty is on, ten twigs, etarp's arrival, fifteen
-  beauty, rum for the yarrtender, a cocktail for harry, etarp's cannon, tarq flies in, leaving the
-  island). A jump
+  jump to any story beat — the beginning, the orb, beauty is on, ten twigs, fifteen beauty, rum for
+  the yarrtender, a cocktail for harry, etarp's cannon, tarq flies in). A jump
   builds a fresh world and fast-forwards it with flags, bag, score and where he stands, so whatever
   cutscene was running goes with the world it ran in. Add a beat: one row in `STATES`.
 - Cast so far: the main character (he/him, unnamed, says almost nothing), his friend Mich (she/her,
@@ -179,14 +145,16 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   builds an L of four `bar` pieces (23,2 23,3 22,3 21,3) and stands behind it at 22,2 wanting rum,
   `assets/dialogue/pirate.json`; the rum from the cave across the counter gets `etarp.json`: he spins
   and stands the Otijom on `bar3`; once the sea horse's box shuts he shoves a cannon down the bridge
-  to the island's west side (A* down whatever bridge the player built, to the grass at 19,15 facing
-  left, so the cannon swings out in front of him at 18,15, opposite the sea horse across the island),
-  and after the sea horse recognises his autocannon 9000 and Walter steps two tiles clear
-  (and, if the player is stood in the line of fire, 14..17 on row 15, asks him
-  out of it and the scene waits until he is; Mich steps a tile south as the scene opens, so the
-  cannon does not come to rest on her), it fires at him across the island for 4 s and hits nothing, leaving only the
-  balls stuck in the ground behind it; the sea horse, missed, gives him that half of the island and the scene ends there,
-  `assets/dialogue/cannon.json`, `src/game/cannon.ts`, `blast` in `src/game/machine.ts`), golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
+  to the east shore (A* down whatever bridge the player built, to the sand at 19,13 facing down,
+  then a scripted `path` down the east side so the cannon ends where it should), stands at 20,17 on the sand opposite the chest with the cannon in front of him at 19,17, and after the sea horse recognises his autocannon 9000 and Walter runs for
+  the east bridge (and, if the player is stood in the line of fire, 15..18 by 16..19, asks him
+  out of it and the scene waits until he is), it fires at him across the island for 4 s and hits nothing, the island
+  untouched; the sea horse, missed, then walls off
+  the western crust with 13 cinder blocks down column 11 (rows 11..23, a tile of crust clear of the
+  wreck and the chest) at -10 each, walking down column 10, and stands at 8,17 with four more
+  desalinators on his side that never explode,
+  `assets/dialogue/cannon.json`, `src/game/cannon.ts`, `blast` and `wall` in
+  `src/game/machine.ts`), golfer's delight (an albatross on the big island who wants ten good twigs for a nest and
   pays with a golden egg, `assets/dialogue/albatross.json`), antoine le shrimp (he/him, a French
   shrimp who farms carrots on the big island's east side from a stool over the one gate in their
   fence; until he asks for a hand the field only reads out (`carrotfield.json`), handing him all
@@ -196,22 +164,14 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `assets/dialogue/shrimp.json`), suspicious harry (he/him, stood over three
   deck chairs on the big island's south shore at 41..43,26; a chair touched before he has had an
   Otijom gets `handsoff.json`, the cocktail sets `harry:ok`, `assets/dialogue/harry.json`), and the sea
-  horse (he/him, who swims in from the west at fifteen beauty onto the sand at 13,15, the
-  tile above the wreck where the orb lay, and puts his smoking desalinator 9000 down on
-  the sand above him at 13,14: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea
+  horse (he/him, who swims in from the west at fifteen beauty onto the sand at 14,18, a tile in
+  from the orb's chest, and puts his smoking desalinator 9000 down on the grass above him at 14,17: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea
   tile in a disc seven out from it and cuts the box straight to the node its `cut` names, wherever the conversation
   had got to, `src/game/machine.ts` and `assets/dialogue/seahorse.json`), and Lord Tarqualius
-  ("Tarq", whose orb it was, and the last scene in the game: 5 s after the cannon scene closes he flies in from the west edge on a
-  `flyingcarpet` he rides along row 17, crosses the whole island and turns back on them from the
-  east shore at 20,17; Mich comes down off her flower to 18,17 to face him two tiles away, he
-  closes to 19,17 as he asks, she backs off west across the crust to 12,17, and he presses on to
-  18,17. At her word the player picks a thing off the island and throws it at him. Only the golden egg does
-  anything: he is knocked two tiles to his left and lies face down there, the carpet wafts to the
-  ground for +200, and a second later he says his last line. Mich then takes the carpet off him:
-  Walter comes over to admire it and asks to come along (a yes/no that sulks its way through two
-  more close-ups before he gives up), and once he is either on Mich's head or left behind, she and
-  the player get aboard, Etarp and the sea horse open fire, and the carpet flies off east and sets
-  `flags['outro']`. `assets/dialogue/tarq.json`, `src/game/throw.ts`. `sprites/serious` is spare now that Walter no longer steps in). Do not invent further
+  ("Tarq", whose orb it was: 5 s after the cannon scene closes he flies in from the west edge on a
+  `flyingcarpet` he rides, wants the orb back off Mich, who steps back, and Walter steps in between
+  and the screen cuts to his close-up, `sprites/serious`, hat off and minigun out,
+  `assets/dialogue/tarq.json`). Do not invent further
   characters, names, or backstory.
 - No `Math.random` in `src/game`. `world.seed` is the rng: an lcg in `src/game/cannon.ts` the cannon
   draws its ball angles from, so a run of a scene is the same every time.
@@ -237,7 +197,7 @@ Advance time with `dispatch({ type: 'tick', dt: 3000 })` instead of waiting in t
   constant used once.
 - No barrel `index.ts`. No path aliases. No dependency injection. Mutate `world` in place; no immutability
   or reducer-of-reducers patterns.
-- Comments explain *why*, in one line. No doc-comment blocks restating a signature. No section banners.
+- Comments explain _why_, in one line. No doc-comment blocks restating a signature. No section banners.
 - Files ≤ 300 lines (lint-enforced). Split by feature (`fishing.ts`), not by layer (`FishingManager.ts`).
 - Prefer editing an existing file over creating a new one. Prettier owns formatting: `npm run format`.
 - Never run `git checkout`, `git restore`, `git stash`, `git clean`, or `git commit` unless the user asks.

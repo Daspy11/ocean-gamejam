@@ -11,17 +11,22 @@ import {
   bar,
   bird,
   bottle,
+  cannon,
   certificate,
   chair,
   character,
+  cinder,
   crab,
   dual,
   egg,
   flyingcarpet,
   gate,
+  heart,
   items,
   serious,
+  shadow,
   shrimp,
+  signpost,
 } from './shapes.mjs'
 
 // the sea horse, and the desalinator he is so proud of: a boiler with a chimney on top
@@ -30,22 +35,6 @@ const machine = (x, y) => ((y > 8 ? x > 1 && x < 14 : x > 9 && x < 12 && y > 2) 
 
 // a fence post: one rail the full width of the tile, so a run of them joins up
 const fence = (x, y) => ((y > 5 && y < 8) || (x > 5 && x < 10 && y > 3) ? '#7a5a3a' : null)
-
-// the cannon on the block it rolls on, and a cinder block of the sea horse's wall
-const cannon = [
-  [2, 4, 12, 5, '#3a3a44'],
-  [3, 9, 10, 6, '#7a5a3a'],
-]
-const cinder = [
-  [1, 2, 14, 13, '#8a8a90'],
-  [1, 11, 14, 4, '#5a5a60'],
-]
-
-// the sign's one frame, out here so the sheets list below stays inside the file's line budget
-const signpost = [
-  [7, 8, 2, 8, '#7a5a3a'], // post
-  [2, 2, 12, 7, '#a08050'], // board
-]
 
 // The dialogue and inventory frame: a flat panel behind a plain edge, drawn in game as a nine-slice
 // cut at 8px, so only the corners survive intact and the middle column and row get stretched.
@@ -233,8 +222,11 @@ const sheets = [
   { file: 'sprites/chair.png', w: 16, h: 16, cols: 1, frames: [chair] },
   { file: 'sprites/cannon.png', w: 16, h: 16, cols: 1, frames: [cannon] },
   { file: 'sprites/ball.png', w: 16, h: 16, cols: 1, frames: [[[5, 5, 6, 6, '#ffffff']]] },
+  { file: 'sprites/embedded.png', w: 16, h: 16, cols: 1, frames: [[[5, 6, 6, 5, '#3a3a44']]] },
   { file: 'sprites/cinder.png', w: 16, h: 16, cols: 1, frames: [cinder] },
-  { file: 'sprites/flyingcarpet.png', w: 16, h: 16, cols: 1, frames: [flyingcarpet] },
+  { file: 'sprites/flyingcarpet.png', w: 32, h: 32, cols: 1, frames: [flyingcarpet] },
+  { file: 'sprites/shadow.png', w: 32, h: 32, cols: 1, frames: [shadow] },
+  { file: 'sprites/heart.png', w: 16, h: 16, cols: 1, frames: [heart] },
   { file: 'sprites/items.png', w: 16, h: 16, cols: 4, frames: items },
   { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
   { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },

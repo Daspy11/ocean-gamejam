@@ -11,9 +11,7 @@ export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): vo
   const o = w.objects.find((x) => x.id === walk.id)
   if (!o) return
   if (o.kind === 'npc') delete o.ride // a walk of his own gets him off whatever he was riding
-  // whatever he shoves keeps the offset it starts with, so it rides rigidly ahead of him all the way
-  const shove = walk.push === undefined ? undefined : w.objects.find((x) => x.id === walk.push)
-  if (shove) o.push = { id: shove.id, dx: shove.x - o.x, dy: shove.y - o.y }
+  if (walk.push !== undefined && w.objects.some((x) => x.id === walk.push)) o.push = walk.push
   // `near` walks up to somebody or something: his tile is the destination, and a character on it
   // stops the walk short like any `to`; a solid thing is stepped onto, less the last step
   const near =
@@ -40,6 +38,52 @@ export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): vo
   }
   o.run = walk.run
   stepObj(w, o, 0)
+}
+
+// a `walk` act naming the player: the same A* as anyone else, but his path lives on him, and only
+// a cutscene ever puts one there.
+export function walkPlayer(w: World, walk: NonNullable<DialogueNode['walk']>): void {
+  const p = w.player
+  const me: Obj = { id: 'player', kind: 'npc', sprite: 'player', dialogue: '', ...p }
+  const near = walk.near === undefined ? undefined : w.objects.find((x) => x.id === walk.near)
+  const to = near ?? walk.to
+  const path = to ? findPath(w, me, to, !!near) : [...(walk.path ?? [])]
+  p.path = path ?? []
+  p.face = walk.facing ?? (near && p.path.length ? p.path.pop() : undefined)
+  delete p.ride // walking gets him off whatever he was standing on
+}
+
+// a node's `ride` act: he gets on what it names and is carried by it from there
+export function mount(w: World, ride: NonNullable<DialogueNode['ride']>): void {
+  if (ride.id === 'player') w.player.ride = ride.on
+  else {
+    const o = w.objects.find((x) => x.id === ride.id)
+    if (o?.kind === 'npc') o.ride = ride.on
+  }
+  w.rev++
+}
+
+// per tick: the player takes the next step of a scripted walk, or the tile of whatever carries him
+function tickPlayer(w: World): void {
+  const p = w.player
+  if (p.ride) {
+    const on = w.objects.find((o) => o.id === p.ride)
+    if (!on) delete p.ride
+    else [p.x, p.y, p.step] = [on.x, on.y, on.step ?? null]
+    return
+  }
+  if (p.step) return
+  const dir = p.path?.shift()
+  if (!dir) {
+    if (!p.face) return
+    p.facing = p.face // the walk is done: he turns the way it left him facing
+    delete p.face
+    w.rev++
+    return
+  }
+  p.facing = dir
+  p.step = { x: p.x + DIRS[dir][0], y: p.y + DIRS[dir][1], t: 0 }
+  w.rev++
 }
 
 // takes the next tile off a scripted walk. A cutscene walk passes through everything, player and
@@ -84,6 +128,7 @@ export function startSpin(w: World, id: string): void {
 
 // per tick: everything mid-step moves on, and then riders take the tile and step of what they ride
 export function tickWalks(w: World, dt: number): void {
+  tickPlayer(w)
   // a spinning npc turns a quarter every 50 ms; scenes draw facing every frame like step progress,
   // so the turns bump no rev, only the stop
   for (const o of w.objects) {
@@ -97,7 +142,7 @@ export function tickWalks(w: World, dt: number): void {
     delete o.spin
     w.rev++
   }
-  const shoved = new Set(w.objects.map((o) => o.push?.id))
+  const shoved = new Set(w.objects.map((o) => o.push))
   for (const o of w.objects) {
     // a rider is carried and a pushed thing is shoved: neither steps for itself
     if (!o.step || (o.kind === 'npc' && o.ride) || shoved.has(o.id)) continue
@@ -124,14 +169,20 @@ export function tickWalks(w: World, dt: number): void {
     o.y = under.y
     o.step = under.step // the very same step, so he and the deck can never drift apart
   }
-  // and the pushing, which is the same trick the other way round: it takes his tile plus the offset
+  // and the pushing: what he shoves is always the step ahead of his, so it leads him round every
+  // corner, and on his last step it swings out to wherever he will be facing when he stops
   for (const o of w.objects) {
-    if (!o.push) continue
-    const it = w.objects.find((x) => x.id === o.push!.id)
-    if (it) {
-      it.x = o.x + o.push.dx
-      it.y = o.y + o.push.dy
-      it.step = o.step ? { x: o.step.x + o.push.dx, y: o.step.y + o.push.dy, t: o.step.t } : null
+    if (!o.push || o.kind !== 'npc') continue
+    const it = w.objects.find((x) => x.id === o.push)
+    const [dx, dy] = DIRS[o.path?.[0] ?? o.face ?? o.facing]
+    if (it && o.step) {
+      it.x = o.step.x
+      it.y = o.step.y
+      it.step = { x: o.step.x + dx, y: o.step.y + dy, t: o.step.t }
+    } else if (it?.step) {
+      it.x = o.x + dx
+      it.y = o.y + dy
+      it.step = null
     }
     if (!o.step && !o.path?.length) delete o.push // the walk is over: it stays where he left it
   }

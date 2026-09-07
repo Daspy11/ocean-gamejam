@@ -72,8 +72,8 @@ describe('objectAt', () => {
   it('finds each object on its tile, and nothing on the free ones', () => {
     const w = createWorld()
     expect(objectAt(w, 16, 16)?.id).toBe('tree1') // the middle of the island
-    expect(objectAt(w, 13, 15)?.id).toBe('mich')
-    expect(objectAt(w, 13, 17)?.id).toBe('crate1')
+    expect(objectAt(w, 13, 15)?.id).toBe('orb1')
+    expect(objectAt(w, 13, 17)?.id).toBe('mich')
     expect(objectAt(w, 24, 17)?.id).toBe('crate2') // the far island, past the sign
     expect(objectAt(w, 25, 16)?.id).toBe('sign1') // on the second island's grass
     expect(objectAt(w, 14, 16)).toBeUndefined() // the player's tile
@@ -105,12 +105,11 @@ describe('the intro landing', () => {
     expect(mich?.kind === 'npc' && mich.dialogue).toBe('mich')
   })
 
-  it('washes the crate ashore beside the wreck, still shut, with nothing carried', () => {
+  it('throws the orb ashore beside the wreck, with nothing carried', () => {
     const w = createWorld()
-    const crate = w.objects.find((o) => o.id === 'crate1')
-    expect(crate?.kind === 'crate' && crate.open).toBe(false)
-    expect([crate?.x, crate?.y]).toEqual([13, 17])
-    expect(crate?.kind === 'crate' && crate.item).toBe('orb')
+    const orb = w.objects.find((o) => o.id === 'orb1')
+    expect(orb?.kind).toBe('orb')
+    expect([orb?.x, orb?.y]).toEqual([13, 15])
     // and the second one, shut too, over on the far island
     const other = w.objects.find((o) => o.id === 'crate2')
     expect(other?.kind === 'crate' && [other.x, other.y, other.open, other.item]).toEqual([
@@ -119,8 +118,7 @@ describe('the intro landing', () => {
       false,
       'electrolytes',
     ])
-    expect(w.inventory).toEqual({})
-    expect(w.objects.some((o) => o.kind === 'orb')).toBe(false) // the orb is still in the crate
+    expect(w.inventory).toEqual({}) // it is on the sand, not in the bag
     expect([w.dialogue, w.queue, w.flags]).toEqual([null, [], {}])
   })
 })
@@ -195,6 +193,7 @@ describe('the gallery map', () => {
       'g-cannon',
       'g-ball',
       'g-cinder',
+      'g-embedded',
       'g-tarq',
       'g-flyingcarpet',
     ])
