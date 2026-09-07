@@ -178,6 +178,8 @@ describe('the gallery map', () => {
       'g-sign',
       'g-fence',
       'g-fence2',
+      'g-fencev',
+      'g-fencev2',
       'g-machine',
       'g-seahorse',
       'g-wreck',

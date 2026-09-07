@@ -42,6 +42,7 @@ export const SHEETS = {
   'sprites/carrot': { frameWidth: 16, frameHeight: 16 }, // one frame: a carrot growing in the soil
   'sprites/machine': { frameWidth: 16, frameHeight: 16 }, // one frame: the desalinator 9000
   'sprites/fence': { frameWidth: 16, frameHeight: 16 }, // one frame: a post with a rail across it
+  'sprites/fencev': { frameWidth: 16, frameHeight: 16 }, // one frame: the same post, rail running north-south
   'sprites/floor': { frameWidth: 16, frameHeight: 16 }, // one frame: the carpet, lying flat on its tile
   'sprites/egg': { frameWidth: 16, frameHeight: 16 }, // one frame: the golden egg, stood on its tile
   'sprites/certificate': { frameWidth: 16, frameHeight: 16 }, // one frame: the award, propped on its tile

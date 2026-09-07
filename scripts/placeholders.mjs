@@ -30,6 +30,8 @@ const machine = (x, y) => ((y > 8 ? x > 1 && x < 14 : x > 9 && x < 12 && y > 2) 
 
 // a fence post: one rail the full width of the tile, so a run of them joins up
 const fence = (x, y) => ((y > 5 && y < 8) || (x > 5 && x < 10 && y > 3) ? '#7a5a3a' : null)
+// the same post and rail, turned 90 degrees for a run climbing north-south instead of east-west
+const fencev = (x, y) => fence(y, x)
 
 // the cannon on the block it rolls on, and a cinder block of the sea horse's wall
 const cannon = [
@@ -238,6 +240,7 @@ const sheets = [
   { file: 'sprites/items.png', w: 16, h: 16, cols: 4, frames: items },
   { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
   { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },
+  { file: 'sprites/fencev.png', w: 16, h: 16, cols: 1, frames: [fencev] },
   { file: 'sprites/floor.png', w: 16, h: 16, cols: 1, frames: [[[1, 5, 14, 10, '#8a4a5a']]] },
   { file: 'sprites/egg.png', w: 16, h: 16, cols: 1, frames: [egg] },
   { file: 'sprites/certificate.png', w: 16, h: 16, cols: 1, frames: [certificate] },

@@ -79,6 +79,7 @@ export type Obj = {
   | { kind: 'chair' } // one of the deck chairs: picked up whole once suspicious harry has allowed it
   | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
   | { kind: 'fence' } // a post and rail of the ring round his field: nothing to do with it, just solid
+  | { kind: 'fencev' } // the same post, drawn for a run of the ring climbing north-south instead
   // the desalinator 9000: it eats a beauty every 2 s from wherever it lands until a `boom` act
   // sets `boomAt`, which is when it goes up
   | { kind: 'machine'; nextAt?: number; boomAt?: number }
@@ -110,6 +111,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   chair: { w: 1, h: 1, solid: true },
   carrot: { w: 1, h: 1, solid: true },
   fence: { w: 1, h: 1, solid: true },
+  fencev: { w: 1, h: 1, solid: true },
   machine: { w: 1, h: 1, solid: true },
   floor: { w: 1, h: 1, solid: false },
   egg: { w: 1, h: 1, solid: true },
@@ -327,7 +329,14 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
     [...row].forEach((ch, x) => {
       if (ch === 'T') objects.push({ id: `tree${x}-${y}`, kind: 'tree', x, y, dialogue: 'bigtree' })
       if (ch === 'F') objects.push({ id: `carrot${x}-${y}`, kind: 'carrot', x, y })
-      if (ch === '=') objects.push({ id: `fence${x}-${y}`, kind: 'fence', x, y })
+      // a run with fence on neither side but one above or below is climbing north-south
+      if (ch === '=') {
+        const vertical =
+          (rows[y - 1]?.[x] === '=' || rows[y + 1]?.[x] === '=') &&
+          row[x - 1] !== '=' &&
+          row[x + 1] !== '='
+        objects.push({ id: `fence${x}-${y}`, kind: vertical ? 'fencev' : 'fence', x, y })
+      }
     }),
   )
   return {

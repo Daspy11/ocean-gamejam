@@ -19,6 +19,8 @@ export const gallery = (): Obj[] => [
   { id: 'g-sign', kind: 'sign', x: 3, y: 20, dialogue: 'sign' },
   { id: 'g-fence', kind: 'fence', x: 2, y: 19 }, // two in a row, so the rail line reads
   { id: 'g-fence2', kind: 'fence', x: 3, y: 19 },
+  { id: 'g-fencev', kind: 'fencev', x: 6, y: 17 }, // stacked, so the vertical rail line reads too
+  { id: 'g-fencev2', kind: 'fencev', x: 6, y: 18 },
   // a day of sim time away, so the prototype keeps smoking rather than blowing up in here
   { id: 'g-machine', kind: 'machine', x: 5, y: 19, nextAt: 86400000 },
   npc('g-seahorse', 'seahorse', 7, 19, 'down', 'seahorse'),

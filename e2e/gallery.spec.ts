@@ -78,6 +78,7 @@ test('?map=gallery draws every terrain template and every object with the game c
     'sprites/egg',
     'sprites/etarp',
     'sprites/fence',
+    'sprites/fencev',
     'sprites/flower',
     'sprites/flyingcarpet',
     'sprites/gate',
