@@ -195,13 +195,16 @@ const sheets = [
     file: 'sprites/cave.png',
     w: 16,
     h: 32,
-    cols: 1,
+    cols: 2,
     frames: [
       [
         [3, 8, 10, 24, '#3a3a44'], // the hump, standing a tile higher than the ground
         [1, 14, 14, 18, '#3a3a44'],
         [5, 20, 6, 12, '#101014'], // the way in, at its foot
         [4, 24, 8, 8, '#101014'],
+      ], // 0 the mouth out on the grass
+      [
+        [2, 8, 12, 24, '#101014'], // 1 the same hole, seen from inside the rock room: just the dark opening
       ],
     ],
   },

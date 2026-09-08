@@ -71,8 +71,9 @@ export type Obj = {
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
-  // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`
-  | { kind: 'cave'; to: { x: number; y: number } }
+  // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`.
+  // `inside` is the room-side mouth, drawn from the sheet's second frame
+  | { kind: 'cave'; to: { x: number; y: number }; inside?: boolean }
   | { kind: 'rum' } // the bottle in the cave: interact carries it off
   // a piece of Etarp's counter: talked across, and with a drink on it interact takes the drink
   | { kind: 'bar'; drink?: boolean }
@@ -277,7 +278,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           npc('albatross', 'albatross', 36, 20, 'down', 'albatross'),
           // the mouth walled in by the forest, and the sand tile at the far end of the room
           { id: 'cave1', kind: 'cave', x: 42, y: 17, to: { x: 10, y: 40 } },
-          { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 } },
+          { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 }, inside: true },
           { id: 'rum1', kind: 'rum', x: 10, y: 37 },
           // the locked gate at the south end of the corridor through the forest to the mouth
           { id: 'gate1', kind: 'gate', x: 42, y: 21 },

@@ -320,7 +320,7 @@ export default class Island extends Phaser.Scene {
       if (o.kind === 'crate') frame = o.open ? 1 : 0
       if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
-      if (o.kind === 'bar' && o.drink) frame = 1 // the cocktail stood on the counter
+      if ((o.kind === 'bar' && o.drink) || (o.kind === 'cave' && o.inside)) frame = 1 // cocktail up, or the room-side mouth
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
       // flags['sprite:<id>'] draws an npc off another sheet: the shrimp once he has his deck chair
       const skin = world.flags[`sprite:${o.id}`]

@@ -196,6 +196,8 @@ describe('the gallery map', () => {
       'g-ball',
       'g-cinder',
       'g-embedded',
+      'g-cave',
+      'g-cave-inside',
       'g-tarq',
       'g-flyingcarpet',
     ])

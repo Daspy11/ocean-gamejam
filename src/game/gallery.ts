@@ -45,6 +45,9 @@ export const gallery = (): Obj[] => [
   { id: 'g-ball', kind: 'ball', x: 6, y: 21, at: 86400000, dir: 0 },
   { id: 'g-cinder', kind: 'cinder', x: 8, y: 21 },
   { id: 'g-embedded', kind: 'embedded', x: 10, y: 21 },
+  // the mouth out on the grass, and the same hole seen from inside the room
+  { id: 'g-cave', kind: 'cave', x: 3, y: 18, to: { x: 5, y: 18 } },
+  { id: 'g-cave-inside', kind: 'cave', x: 5, y: 18, to: { x: 3, y: 18 }, inside: true },
   // the lord and the carpet he flies in on
   npc('g-tarq', 'tarq', 4, 19, 'down', 'tarq'),
   { id: 'g-flyingcarpet', kind: 'flyingcarpet', x: 6, y: 19 },

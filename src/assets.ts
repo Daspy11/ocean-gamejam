@@ -33,7 +33,8 @@ export const SHEETS = {
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
-  // one frame, bottom-anchored on its 1x1 tile: a rock hump standing higher than the ground
+  // bottom-anchored on its 1x1 tile, a rock hump standing higher than the ground: 0 the mouth out
+  // on the grass · 1 the same hole seen from inside the room
   'sprites/cave': { frameWidth: 16, frameHeight: 32 },
   'sprites/rum': { frameWidth: 16, frameHeight: 16 }, // one frame: the bottle, stood on its tile
   'sprites/bar': { frameWidth: 16, frameHeight: 16 }, // 0 a piece of counter · 1 with a cocktail stood on it
