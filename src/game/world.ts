@@ -42,6 +42,8 @@ export type Obj = {
   push?: string
   // the tile it left a hand on and when: the scene arcs it over from there for 300 ms
   thrown?: { x: number; y: number; at: number }
+  // drawn into somebody else's sheet instead, so this one draws nothing of its own
+  hidden?: boolean
 } & (
   | {
       kind: 'npc'
@@ -69,6 +71,8 @@ export type Obj = {
   | { kind: 'boat'; wrecked?: boolean; dialogue?: string }
   | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
+  // suspicious harry: he never walks, so interact just reads his dialogue, like a tree
+  | { kind: 'harry'; dialogue: string }
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
   // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`.
@@ -108,6 +112,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
   sign: { w: 1, h: 1, solid: true },
+  harry: { w: 1, h: 1, solid: true },
   flower: { w: 1, h: 1, solid: true },
   cave: { w: 1, h: 1, solid: false },
   rum: { w: 1, h: 1, solid: true },
@@ -286,11 +291,14 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           npc('shrimp', 'shrimp', 49, 13, 'down', 'shrimp'),
           // the chest on the north island's west tip, with the key to the gate in it
           { id: 'crate4', kind: 'crate', x: 19, y: 3, open: false, item: 'key' },
-          // suspicious harry, stood over his three deck chairs on the big island's south shore
-          npc('harry', 'harry', 42, 25, 'up', 'harry'),
-          { id: 'chair1', kind: 'chair', x: 41, y: 26 },
-          { id: 'chair2', kind: 'chair', x: 42, y: 26 },
-          { id: 'chair3', kind: 'chair', x: 43, y: 26 },
+          // suspicious harry, reclining over his three deck chairs on the big island's south shore:
+          // one picture of the whole scene, bottom-left anchored so it spans up and right from here
+          // over the chairs below, which stay as their own objects for the pick-up-a-chair mechanic
+          // but draw nothing themselves now that his sheet already shows them
+          { id: 'harry', kind: 'harry', x: 40, y: 26, dialogue: 'harry' },
+          { id: 'chair1', kind: 'chair', x: 41, y: 26, hidden: true },
+          { id: 'chair2', kind: 'chair', x: 42, y: 26, hidden: true },
+          { id: 'chair3', kind: 'chair', x: 43, y: 26, hidden: true },
         ]
   // the forest and the carrot field are drawn in the map rather than listed: one object per glyph
   rows.forEach((row, y) =>

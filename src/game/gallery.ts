@@ -33,7 +33,6 @@ export const gallery = (): Obj[] => [
   { id: 'g-certificate', kind: 'certificate', x: 10, y: 19 },
   // the pirate faces the way he is not looking, so this row draws his back
   npc('g-etarp', 'etarp', 4, 18, 'down', 'etarp'),
-  npc('g-harry', 'harry', 8, 19, 'down', 'harry'),
   // the bottom row: the bar bare and with a drink on it, the gate, a deck chair, the rum
   { id: 'g-bar', kind: 'bar', x: 2, y: 21 },
   { id: 'g-bar-drink', kind: 'bar', x: 3, y: 21, drink: true },
@@ -51,4 +50,9 @@ export const gallery = (): Obj[] => [
   // the lord and the carpet he flies in on
   npc('g-tarq', 'tarq', 4, 19, 'down', 'tarq'),
   { id: 'g-flyingcarpet', kind: 'flyingcarpet', x: 6, y: 19 },
+  // frame 1, the flutter mid-flight: t: 0 so it sits still, only the step forces the frame
+  { id: 'g-flyingcarpet-flying', kind: 'flyingcarpet', x: 7, y: 17, step: { x: 7, y: 17, t: 0 } },
+  // off to the side like the orbs, since his picture is 4x2, wider than the pad has room for: one
+  // piece of art, bottom-left anchored here, spanning up and right over the chairs it already draws
+  { id: 'g-harry', kind: 'harry', x: 13, y: 21, dialogue: 'harry' },
 ]

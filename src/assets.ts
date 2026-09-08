@@ -23,7 +23,6 @@ export const SHEETS = {
   // character sheet; the same seated pose on the deck chair he swaps the stool for
   'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },
   'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
-  'sprites/harry': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/tarq': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile
@@ -33,6 +32,10 @@ export const SHEETS = {
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
+  // on a 1x1 footprint at its bottom-left corner, drawn up and right from that corner: he never
+  // gets up, so there is no walk cycle, just how many of his three chairs are still there to
+  // recline across: 0 all three · 1 two left · 2 one left · 3 none, just him
+  'sprites/harry': { frameWidth: 64, frameHeight: 32 },
   // bottom-anchored on its 1x1 tile, a rock hump standing higher than the ground: 0 the mouth out
   // on the grass · 1 the same hole seen from inside the room
   'sprites/cave': { frameWidth: 16, frameHeight: 32 },
@@ -52,8 +55,9 @@ export const SHEETS = {
   // one frame: a ball half sunk in the ground where it fell, drawn flat so he walks over it
   'sprites/embedded': { frameWidth: 16, frameHeight: 16 },
   'sprites/cinder': { frameWidth: 16, frameHeight: 16 }, // one frame: a block of the sea horse's wall
-  // one frame each: Tarq's carpet, two tiles of art centred on the tile it flies over, and the
-  // disc of shade the scene draws on the ground under it
+  // Tarq's carpet, two tiles of art centred on the tile it flies over: 0 still · 1 the flutter
+  // while it is actually flying a step. The disc of shade the scene draws on the ground under it
+  // is one frame.
   'sprites/flyingcarpet': { frameWidth: 32, frameHeight: 32 },
   'sprites/shadow': { frameWidth: 32, frameHeight: 32 },
   'sprites/heart': { frameWidth: 16, frameHeight: 16 }, // one frame: the heart on the way out

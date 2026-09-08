@@ -77,7 +77,7 @@ const cocktail = (w: World) => {
     'had:carrot': true,
     'had:otijom': true,
   })
-  w.player = { ...w.player, x: 42, y: 24, facing: 'down' }
+  w.player = { ...w.player, x: 40, y: 25, facing: 'down' }
 }
 
 // everything the bag ever puts down, stood on the island: the carpet, the golden egg and the

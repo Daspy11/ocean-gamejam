@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, type Content, type World } from './world'
 
-// suspicious harry's deck chairs at 41..43,26 on the south shore, with him stood over them at 42,25
+// suspicious harry's deck chairs at 41..43,26 on the south shore, with his picture anchored at 40,26
 const content: Content = {
   dialogues: {
     got: {
@@ -59,7 +59,7 @@ describe('the deck chairs', () => {
 
   it('come away one per interact once he has had his cocktail', () => {
     const w = createWorld()
-    w.player = { ...w.player, x: 42, y: 24, facing: 'down' } // harry at 42,25
+    w.player = { ...w.player, x: 40, y: 25, facing: 'down' } // harry at 40,26
     w.flags['harry:asked'] = true
     w.inventory.otijom = 1
     apply(w, { type: 'interact' }, content)

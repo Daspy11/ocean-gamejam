@@ -135,7 +135,9 @@ export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
     const [swing, up] = float(o)
     const at = (n: number, to: number) => (o.step ? n + (to - n) * o.step.t : n) * 16
     sprite.setOrigin(0.25, 0.75)
-    sprite.setPosition(at(o.x, o.step?.x ?? o.x) + swing, at(o.y, o.step?.y ?? o.y) + 16 - up)
+    sprite
+      .setPosition(at(o.x, o.step?.x ?? o.x) + swing, at(o.y, o.step?.y ?? o.y) + 16 - up)
+      .setFrame(o.step ? 1 : 0) // the flutter while it is actually flying a step, still otherwise
     return
   }
   if (o.kind === 'npc' && o.flat) {
