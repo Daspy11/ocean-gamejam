@@ -24,34 +24,12 @@
     "4": {
       "walk": {
         "id": "flyingcarpet1",
-        "path": [
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right",
-          "right"
-        ],
+        "near": "mich",
+        "retreat": 4,
         "run": true
       },
-      "next": "4b"
+      "next": "5"
     },
-    "4b": { "face": { "id": "tarq", "dir": "left" }, "next": "4c" },
-    "4c": { "walk": { "id": "mich", "to": { "x": 18, "y": 17 }, "facing": "right" }, "next": "5" },
     "5": {
       "text": "i was just gonna watch but seriously how did you mess this up so badly",
       "next": "6"
@@ -67,11 +45,11 @@
     "11": { "who": "Mich", "text": "no", "next": "12" },
     "12": { "text": "...", "next": "13" },
     "13": { "who": "Mich", "text": "...", "next": "14" },
-    "14": { "walk": { "id": "flyingcarpet1", "path": ["left"] }, "next": "15" },
+    "14": { "walk": { "id": "flyingcarpet1", "near": "mich", "retreat": 0 }, "next": "15" },
     "15": { "text": "give it back", "next": "16" },
-    "16": { "walk": { "id": "mich", "to": { "x": 12, "y": 17 }, "facing": "right" }, "next": "17" },
+    "16": { "walk": { "id": "mich", "back": 4 }, "next": "17" },
     "17": { "who": "Mich", "text": "no", "next": "18" },
-    "18": { "walk": { "id": "flyingcarpet1", "path": ["left"] }, "next": "19" },
+    "18": { "walk": { "id": "flyingcarpet1", "near": "mich", "retreat": 0 }, "next": "19" },
     "19": { "text": "pls", "next": "20" },
     "20": {
       "who": "Mich",
@@ -83,19 +61,18 @@
     "pick": {
       "text": "[PLACEHOLDER what do you throw]",
       "choices": [
-        { "text": "[PLACEHOLDER the golden egg]", "next": "egg" },
-        { "text": "[PLACEHOLDER the certificate]", "next": "certificate" },
-        { "text": "[PLACEHOLDER the carpet]", "next": "carpet" },
-        { "text": "[PLACEHOLDER the flower]", "next": "flower" },
-        { "text": "[PLACEHOLDER the cannon]", "next": "cannon" },
-        { "text": "[PLACEHOLDER the wreck]", "next": "wreck" }
+        { "text": "deck chair", "next": "chair" },
+        { "text": "deck chair", "next": "chair" },
+        { "text": "egg", "next": "egg" },
+        { "text": "certificate", "next": "certificate" },
+        { "text": "carpet", "next": "carpet" },
+        { "text": "stuffed seal", "next": "seal" }
       ]
     },
-    "certificate": { "throw": { "kind": "certificate", "at": "tarq" }, "next": "missed" },
-    "carpet": { "throw": { "kind": "floor", "at": "tarq" }, "next": "missed" },
-    "flower": { "throw": { "kind": "flower", "at": "tarq" }, "next": "missed" },
-    "cannon": { "throw": { "kind": "cannon", "at": "tarq" }, "next": "missed" },
-    "wreck": { "throw": { "kind": "boat", "at": "tarq" }, "next": "missed" },
+    "certificate": { "throw": { "kind": "certificate", "at": "tarq" }, "next": "pick" },
+    "carpet": { "throw": { "kind": "floor", "at": "tarq" }, "next": "pick" },
+    "chair": { "throw": { "kind": "chair", "at": "tarq" }, "next": "pick" },
+    "seal": { "throw": { "kind": "seal", "at": "tarq" }, "next": "pick" },
     "missed": { "text": "[PLACEHOLDER it bounces off him]", "next": "pick" },
     "egg": { "throw": { "kind": "egg", "at": "tarq" }, "next": "down" },
     "down": { "wait": 1000, "next": "ow" },
@@ -167,19 +144,31 @@
     "board2": { "ride": { "id": "mich", "on": "flyingcarpet1" }, "next": "board3" },
     "board3": { "walk": { "id": "player", "near": "flyingcarpet1" }, "next": "board4" },
     "board4": { "ride": { "id": "player", "on": "flyingcarpet1" }, "next": "yarr" },
-    "yarr": { "who": "Etarp", "text": "YARR, WE SETTLE THIS NOW", "next": "sea" },
+    "yarr": { "who": "Etarp", "text": "YARR, WE SETTLE THIS NOW", "next": "sea0" },
+    "sea0": {
+      "who": "Sea horse",
+      "text": "OH YEAH? LUCKY I BROUGHT MY AUTOCANNON 9001",
+      "next": "sea"
+    },
     "sea": {
-      "put": { "by": "seahorse", "obj": { "id": "cannon2", "kind": "cannon", "x": 0, "y": 0 } },
+      "put": {
+        "by": "seahorse",
+        "obj": { "id": "cannon2", "kind": "cannon", "x": 0, "y": 0, "right": true }
+      },
+      "next": "off0"
+    },
+    "off0": {
+      "walk": { "id": "flyingcarpet1", "path": ["right", "right"], "run": true },
+      "fire": "cannon",
       "next": "off1"
     },
     "off1": {
-      "walk": { "id": "flyingcarpet1", "path": ["right", "right"], "run": true },
-      "fire": "cannon",
+      "walk": { "id": "flyingcarpet1", "path": ["right"], "run": true },
+      "fire": "cannon2",
       "next": "off2"
     },
     "off2": {
-      "walk": { "id": "flyingcarpet1", "path": ["right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right"], "run": true },
-      "fire": "cannon2",
+      "walk": { "id": "flyingcarpet1", "path": ["right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right"], "run": true },
       "next": "off3"
     },
     "off3": { "set": { "outro": true }, "next": null },

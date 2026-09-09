@@ -1,4 +1,4 @@
-import { mount, startSpin, startWalk, walkPlayer } from './boat'
+import { mount, rideDone, startSpin, startWalk, walkPlayer } from './boat'
 import { fireDone, startFire } from './cannon'
 import { armMachine, putBy } from './machine'
 import { startThrow, throwDone } from './throw'
@@ -39,7 +39,7 @@ export function startAct(w: World, d: NonNullable<World['dialogue']>, to: Dialog
     turn.facing = to.face!.dir
     w.rev++
   }
-  if (to.throw) startThrow(w, to.throw)
+  if (to.throw) startThrow(w, to.throw, d.object)
   if (to.ride) mount(w, to.ride)
   const bar = w.objects.find((o) => o.id === to.drink) // no such bar: no drink, and that is all
   if (bar?.kind === 'bar') {
@@ -85,6 +85,7 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
     const o = w.objects.find((x) => x.id === node.spin)
     return o?.kind !== 'npc' || o.spin === undefined
   }
+  if (node.ride) return rideDone(w, node.ride)
   if (node.throw) return throwDone(w)
   if (node.fly !== undefined || node.land !== undefined) return treeDone(w, node)
   if (node.wait !== undefined) return w.time >= (d.until ?? 0)

@@ -14,7 +14,8 @@ export const MODES: Record<string, 'fly' | 'swim'> = {
 
 // what each tile costs `mover` to step onto: 1 for open ground, Infinity for a wall
 function costs(w: World, mover: Obj): number[] {
-  const mode = mover.kind === 'npc' ? MODES[mover.sprite] : undefined
+  const mode =
+    mover.kind === 'flyingcarpet' ? 'fly' : mover.kind === 'npc' ? MODES[mover.sprite] : undefined
   const cost = w.tiles.map((t) => {
     if (mode === 'fly') return 1
     return t === 'rock' || (t === 'water' && mode !== 'swim') ? Infinity : 1

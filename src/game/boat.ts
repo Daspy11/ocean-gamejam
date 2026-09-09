@@ -1,16 +1,27 @@
 import { findPath } from './path'
-import { DIRS, KINDS, tileAt } from './world'
-import type { DialogueNode, Obj, World } from './world'
+import { DIRS, KINDS, objectAt, tileAt } from './world'
+import type { DialogueNode, Dir, Obj, World } from './world'
 
 // Scripted walking: an npc on foot, a boat under sail, and whoever is standing on the boat.
 
 // a node's `walk` act opens: a `to` or a `near` is found a way once, here, since the player is held
 // while the act runs and nothing else moves into the way. No way there at all and he stays put, and
 // the act is over. A missing object just ends the act at once.
+export const LIFT = 1000 // ms a landed carpet takes to climb back to height before it moves off
+
 export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): void {
   const o = w.objects.find((x) => x.id === walk.id)
   if (!o) return
   if (o.kind === 'npc') delete o.ride // a walk of his own gets him off whatever he was riding
+  // a carpet on the ground goes up before it goes anywhere: its steps wait on the climb
+  if (o.kind === 'flyingcarpet' && o.landAt !== undefined) {
+    delete o.landAt
+    const crew = [w.player, ...w.objects.filter((r) => r.kind === 'npc')]
+    o.liftAt = Math.max(
+      w.time,
+      ...crew.map((r) => (r.ride === o.id && r.hop ? r.hop.at + hopMs(r.hop, o) : w.time)),
+    )
+  }
   if (walk.push !== undefined && w.objects.some((x) => x.id === walk.push)) o.push = walk.push
   // `near` walks up to somebody or something: his tile is the destination, and a character on it
   // stops the walk short like any `to`; a solid thing is stepped onto, less the last step
@@ -20,8 +31,38 @@ export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): vo
       : walk.near === 'player'
         ? w.player
         : w.objects.find((x) => x.id === walk.near)
-  const to = near ?? walk.to
-  const path = to ? findPath(w, o, to, !!near) : [...(walk.path ?? [])]
+  let to = near ?? walk.to
+  const opposite = { left: 'right', right: 'left', up: 'down', down: 'up' } as const
+  if (walk.retreat !== undefined && near && 'kind' in near && near.kind === 'npc') {
+    const back =
+      walk.retreat === 0
+        ? opposite[near.facing]
+        : (['left', 'up', 'down', 'right'] as const).find((dir) => {
+            const [dx, dy] = DIRS[dir]
+            return Array.from({ length: walk.retreat! }, (_, i) => i + 1).every((n) => {
+              const [x, y] = [near.x + dx * n, near.y + dy * n]
+              return (
+                tileAt(w, x, y) === 'salt' &&
+                !objectAt(w, x, y) &&
+                !(w.player.x === x && w.player.y === y)
+              )
+            })
+          })
+    if (!back) return
+    near.facing = opposite[back]
+    for (const rider of w.objects)
+      if (rider.kind === 'npc' && rider.ride === o.id) rider.facing = back
+    const [dx, dy] = DIRS[near.facing]
+    const gap = walk.retreat ? 3 : 2
+    to = { x: near.x + dx * gap, y: near.y + dy * gap }
+  }
+  o.back = !!walk.back
+  const path =
+    walk.back && o.kind === 'npc'
+      ? Array<Dir>(walk.back).fill(opposite[o.facing])
+      : to
+        ? findPath(w, o, to, !!near)
+        : [...(walk.path ?? [])]
   o.path = path ?? [] // no way there: he stays put, and does not so much as turn
   if (o.kind === 'npc' && path) {
     if (walk.facing) o.face = walk.facing
@@ -53,25 +94,76 @@ export function walkPlayer(w: World, walk: NonNullable<DialogueNode['walk']>): v
   delete p.ride // walking gets him off whatever he was standing on
 }
 
-// a node's `ride` act: he gets on what it names and is carried by it from there
+// a node's `ride` act: he gets on what it names and is carried by it from there. Nobody teleports
+// aboard: he jumps from wherever he is standing, and the scene arcs him over from the tile he
+// sprang off (`hop`); whoever is up on his head is drawn on him, so he goes along with the arc.
+// Climbing onto somebody holds the scene until he is down; a jump onto a deck does not, so a
+// crew boards together rather than one politely after another.
+// how long a jump takes: a hop next door is quick, a leap across the deck takes longer
+export const hopMs = (
+  from: { x: number; y: number; duration?: number },
+  to: { x: number; y: number },
+) => from.duration ?? 260 + 90 * (Math.abs(to.x - from.x) + Math.abs(to.y - from.y))
+
 export function mount(w: World, ride: NonNullable<DialogueNode['ride']>): void {
-  if (ride.id === 'player') w.player.ride = ride.on
-  else {
-    const o = w.objects.find((x) => x.id === ride.id)
-    if (o?.kind === 'npc') o.ride = ride.on
-  }
+  const on = w.objects.find((x) => x.id === ride.on)
+  const npc = w.objects.find((x) => x.id === ride.id)
+  const o = ride.id === 'player' ? w.player : npc?.kind === 'npc' ? npc : undefined
+  if (!o || !on) return
+  o.ride = ride.on
+  delete o.path
+  delete o.face
+  // already stood on it (a spawn that rides, say): he is simply on, with nothing to jump
+  if (o.x !== on.x || o.y !== on.y || on.kind === 'npc')
+    o.hop = { x: o.x, y: o.y, at: w.time, duration: hopMs(o, on) }
+  for (const rider of [w.player, ...w.objects.filter((r) => r.kind === 'npc')]) carry(w, rider)
   w.rev++
+}
+
+// Resolve the whole stack so object order cannot leave a passenger one frame behind.
+function carry(w: World, o: { x: number; y: number; ride?: string; step?: Obj['step'] }): void {
+  if (!o.ride) return
+  let on = w.objects.find((r) => r.id === o.ride)
+  const seen = new Set<string>()
+  while (on?.kind === 'npc' && on.ride && !seen.has(on.id)) {
+    seen.add(on.id)
+    const id = on.ride
+    on = w.objects.find((r) => r.id === id)
+  }
+  if (!on || seen.has(on.id)) {
+    delete o.ride
+    o.step = null
+    return
+  }
+  ;[o.x, o.y, o.step] = [on.x, on.y, on.step ?? null]
+}
+
+// he is down: on a deck he turns side-on, since a deck faces the way it travels
+function tickHop(
+  w: World,
+  o: { x: number; y: number; hop?: Obj['thrown']; ride?: string; facing: Dir },
+): void {
+  if (!o.hop || w.time < o.hop.at + hopMs(o.hop, o)) return
+  delete o.hop
+  const on = w.objects.find((x) => x.id === o.ride)
+  if (on && on.kind !== 'npc') o.facing = o.facing === 'left' ? 'left' : 'right'
+  w.rev++
+}
+
+// climbing onto somebody is over once he is down. A jump onto a deck is over at the top of the
+// arc, so the next one aboard is off the ground before this one lands and a crew boards as one.
+export function rideDone(w: World, ride: NonNullable<DialogueNode['ride']>): boolean {
+  const npc = w.objects.find((x) => x.id === ride.id)
+  const o = ride.id === 'player' ? w.player : npc?.kind === 'npc' ? npc : undefined
+  if (!o?.hop) return true
+  const head = w.objects.find((x) => x.id === ride.on)?.kind === 'npc'
+  return w.time >= o.hop.at + hopMs(o.hop, o) / (head ? 1 : 2)
 }
 
 // per tick: the player takes the next step of a scripted walk, or the tile of whatever carries him
 function tickPlayer(w: World): void {
   const p = w.player
-  if (p.ride) {
-    const on = w.objects.find((o) => o.id === p.ride)
-    if (!on) delete p.ride
-    else [p.x, p.y, p.step] = [on.x, on.y, on.step ?? null]
-    return
-  }
+  if (p.ride) return
   if (p.step) return
   const dir = p.path?.shift()
   if (!dir) {
@@ -113,7 +205,7 @@ export function stepObj(w: World, o: Obj, t: number): void {
       return
     }
   }
-  if (o.kind === 'npc') o.facing = dir
+  if (o.kind === 'npc' && !o.back) o.facing = dir
   o.step = { x: o.x + dx, y: o.y + dy, t }
 }
 
@@ -146,29 +238,29 @@ export function tickWalks(w: World, dt: number): void {
   for (const o of w.objects) {
     // a rider is carried and a pushed thing is shoved: neither steps for itself
     if (!o.step || (o.kind === 'npc' && o.ride) || shoved.has(o.id)) continue
+    // a carpet just off the ground has its second of climbing before it takes its first step
+    const elapsed =
+      o.kind === 'flyingcarpet' && o.liftAt !== undefined
+        ? Math.max(0, Math.min(dt, w.time - o.liftAt - LIFT))
+        : dt
     const ms = o.run ? 125 : 250 // ms per tile: 250 walking, 125 running
-    o.step.t += dt / ms // progress alone is not a visible change, so no rev
-    if (o.step.t < 1) continue
-    const leftover = (o.step.t - 1) * ms
-    o.x = o.step.x
-    o.y = o.step.y
-    o.step = null
-    o.parity = !o.parity
-    w.rev++
-    stepObj(w, o, leftover / ms) // keeps the speed constant across the boundary
+    o.step.t += elapsed / ms // progress alone is not a visible change, so no rev
+    while (o.step && o.step.t >= 1) {
+      const leftover = o.step.t - 1
+      o.x = o.step.x
+      o.y = o.step.y
+      o.step = null
+      o.parity = !o.parity
+      w.rev++
+      stepObj(w, o, leftover) // consumes every crossed tile, even after a slow frame
+    }
   }
   // after the walking, so a rider is never a tick behind the deck he is standing on
-  for (const o of w.objects) {
-    if (o.kind !== 'npc' || !o.ride) continue
-    const under = w.objects.find((r) => r.id === o.ride)
-    if (!under) {
-      delete o.ride // whatever he was standing on has gone; he is on his own feet from here
-      continue
-    }
-    o.x = under.x
-    o.y = under.y
-    o.step = under.step // the very same step, so he and the deck can never drift apart
-  }
+  carry(w, w.player)
+  for (const o of w.objects) if (o.kind === 'npc') carry(w, o)
+  // and after that, since how long a jump takes is how far it was: a rider is on his deck's tile
+  tickHop(w, w.player)
+  for (const o of w.objects) if (o.kind === 'npc') tickHop(w, o)
   // and the pushing: what he shoves is always the step ahead of his, so it leads him round every
   // corner, and on his last step it swings out to wherever he will be facing when he stops
   for (const o of w.objects) {

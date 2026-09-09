@@ -43,6 +43,8 @@ export interface DialogueNode {
     run?: boolean
     facing?: Dir
     push?: string
+    retreat?: number // approach an npc with a clear salt strip behind them; zero keeps their facing
+    back?: number // back up this many tiles while keeping the current facing
   }
   wait?: number // ms
   rumble?: number // ms of screen shake, from now
@@ -69,7 +71,7 @@ export interface DialogueNode {
   face?: { id: string; dir: Dir } // turns an npc on the spot, for one riding something and unable to walk
   ride?: { id: string; on: string } // he gets on what it names, npc or player, and is carried by it
   // the player fetches the first object of that kind and hucks it at the npc `at`, `src/game/throw.ts`
-  throw?: { kind: Obj['kind']; at: string }
+  throw?: { kind: Obj['kind'] | 'seal'; at: string }
   drink?: string // id of a bar: a cocktail goes down on it, to be picked up with interact
   // spends items as the node opens, one of an Item or the counts in a record; no got box
   take?: Item | Partial<Record<Item, number>>

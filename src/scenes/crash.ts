@@ -1,5 +1,6 @@
-import Phaser from 'phaser'
-import { KINDS, type Obj } from '../game/world'
+import type Phaser from 'phaser'
+import { LIFT, hopMs } from '../game/boat'
+import { ITEMS, KINDS, type Obj } from '../game/world'
 import { world } from '../store'
 
 type Sprite = Phaser.GameObjects.Sprite
@@ -19,25 +20,77 @@ const HIGH = 24 // px of air the carpet flies above the ground, and falls throug
 const WAFT = 3000 // ms it takes to come down, the same trip `land` holds the act for
 
 // how the carpet sits over the tile it is on: how far it swings side to side, and how high off the
-// ground it is. It hangs at HIGH until it starts coming down, and swings itself the last of the way.
+// ground it is. It hangs at HIGH until it starts coming down, swings itself the last of the way,
+// and once walked off the ground again climbs smoothly back up over its second.
 function float(o?: Obj): [number, number] {
   if (o?.kind !== 'flyingcarpet') return [0, 0]
-  const p = o.landAt === undefined ? 0 : Math.min(1, (world.time - o.landAt) / WAFT)
-  return [Math.sin(p * Math.PI * 5) * 7 * (1 - p), (1 - p) * HIGH]
+  if (o.landAt !== undefined) {
+    const p = Math.min(1, (world.time - o.landAt) / WAFT)
+    return [Math.sin(p * Math.PI * 5) * 7 * (1 - p), (1 - p) * HIGH]
+  }
+  const p = o.liftAt === undefined ? 1 : Math.max(0, Math.min(1, (world.time - o.liftAt) / LIFT))
+  return [0, p * p * (3 - 2 * p) * HIGH] // smoothstep: it leaves the ground gently and settles
 }
+
+// how far through his jump aboard he is: 1 once he is down, or if he never jumped
+const hopT = (a: { x: number; y: number; hop?: Obj['thrown'] }) =>
+  a.hop === undefined ? 1 : Math.min(1, (world.time - a.hop.at) / hopMs(a.hop, a))
 
 // where whoever is riding `on` is drawn: he swings with a carpet, flies with it, and stands on the
 // weave rather than behind it; on somebody's shoulders he is drawn a head up.
 export function deck(on?: Obj, who = ''): [number, number] {
+  // up on somebody's head: he goes wherever that somebody is drawn, carpet, jump and all, and
+  // sits five pixels down and a pixel over from square on top of her
+  if (on?.kind === 'npc') {
+    const [swing, up] = deck(
+      world.objects.find((o) => o.id === on.ride),
+      on.sprite,
+    )
+    const [dx, dy] = hopOff(on, up, swing)
+    return [swing + dx + 1, up - dy + 15]
+  }
   const [swing, up] = float(on)
-  if (on?.kind !== 'flyingcarpet') return [swing, on?.kind === 'npc' ? 16 : 0]
-  // two of them on the one carpet stand shoulder to shoulder rather than in the same spot
-  const crew = world.objects.flatMap((o) =>
-    o.kind === 'npc' && o.ride === on.id ? [o.sprite] : [],
+  if (on?.kind !== 'flyingcarpet') return [swing, 0]
+  // two of them on the one carpet stand shoulder to shoulder rather than in the same spot: the
+  // first aboard lands in the middle and shuffles over as the second comes down beside her
+  const crew: { x: number; y: number; hop?: Obj['thrown']; who: string }[] = world.objects.flatMap(
+    (o) => (o.kind === 'npc' && o.ride === on.id ? [{ ...o, who: o.sprite }] : []),
   )
-  if (world.player.ride === on.id) crew.push('player')
-  const n = crew.indexOf(who)
-  return [swing + (crew.length > 1 && n >= 0 ? n * 10 - 5 : 0), up + 10]
+  if (world.player.ride === on.id) crew.push({ ...world.player, who: 'player' })
+  const n = crew.findIndex((c) => c.who === who)
+  const settle = Math.min(...crew.map(hopT)) // 0..1 through the newest jump aboard
+  return [swing + (crew.length > 1 && n >= 0 ? (n * 18 - 9) * settle : 0), up + 10]
+}
+
+// getting aboard: he is riding from the off, so he is thrown along a plain parabola from the tile
+// he jumped off, on the ground, to his place `rise` above the one he lands on, the way anything
+// jumping goes up and comes down. This is how far that has him from where he is drawn standing,
+// and the bounce on its own, so the camera can follow the jump without it.
+export function hopOff(
+  a: { x: number; y: number; hop?: Obj['thrown'] },
+  rise = 0,
+  shift = 0,
+): [number, number, number] {
+  const t = hopT(a)
+  if (a.hop === undefined || t >= 1) return [0, 0, 0]
+  const far = Math.abs(a.x - a.hop.x) + Math.abs(a.y - a.hop.y)
+  const up = 4 * (8 + 4 * far) * t * (1 - t) // a jump next door clears a little, a leap clears more
+  return [
+    ((a.hop.x - a.x) * 16 - shift) * (1 - t),
+    ((a.hop.y - a.y) * 16 + rise) * (1 - t) - up,
+    up,
+  ]
+}
+
+export function spring(
+  a: { x: number; y: number; hop?: Obj['thrown'] },
+  x: number,
+  y: number,
+  rise: number,
+  shift = 0,
+): [number, number] {
+  const [dx, dy] = hopOff(a, rise, shift)
+  return [x + dx, y + dy]
 }
 
 // the disc of shade on the ground under the carpet, marking the tile it is really on. It shrinks as
@@ -130,11 +183,20 @@ function flip(
 // walk, so Etarp lands like the two in the intro. Tarq, knocked off his carpet, lies where he fell,
 // and the carpet itself comes down out of the sky over its 3 s.
 export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
+  if (o.kind !== 'npc' && o.thrown !== undefined) {
+    const t = Math.min(1, (world.time - o.thrown.at) / 300)
+    sprite.setPosition(
+      (o.thrown.x + (o.x - o.thrown.x) * t) * 16,
+      (o.thrown.y + (o.y - o.thrown.y) * t + 1) * 16 - 4 * t * (1 - t) * 12,
+    )
+    return
+  }
   if (o.kind === 'flyingcarpet') {
     // two tiles of art, centred on the one tile it flies over, and drawn its height above it
     const [swing, up] = float(o)
     const at = (n: number, to: number) => (o.step ? n + (to - n) * o.step.t : n) * 16
-    sprite.setOrigin(0.25, 0.75)
+    // On the ground it lies under every actor, including those approaching from the far side.
+    sprite.setOrigin(0.25, 0.75).setDepth(up > 0 ? 9000 : 1)
     sprite.setPosition(at(o.x, o.step?.x ?? o.x) + swing, at(o.y, o.step?.y ?? o.y) + 16 - up)
     return
   }
@@ -142,10 +204,13 @@ export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
     // knocked off what he was riding: one somersault over to where he lands, and face down there
     const t = o.thrown ? Math.min(1, (world.time - o.thrown.at) / 600) : 1
     const from = o.thrown ?? o
-    sprite.setOrigin(0.5, 0.5).setRotation(t * Math.PI * 2.5)
+    sprite
+      .setOrigin(0.5, 0.5)
+      .setRotation(t * Math.PI * 2.5)
+      .setDepth(t < 1 ? 9001 : (o.y + 1) * 16)
     sprite.setPosition(
       (from.x + (o.x - from.x) * t) * 16 + 8,
-      (from.y + (o.y - from.y) * t) * 16 + 8 - Math.sin(t * Math.PI) * 20 - (1 - t) * HIGH,
+      (from.y + (o.y - from.y) * t) * 16 + 8 - Math.sin(t * Math.PI) * 20 - (1 - t) * (HIGH + 14),
     )
     return
   }
@@ -166,4 +231,21 @@ export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
   sprite.x += 8
   sprite.y += -12 - Math.sin(t * Math.PI) * 20
   sprite.rotation = t * Math.PI * 2
+}
+
+export function drawThrow(sprite: Sprite): void {
+  const t = world.throwing
+  const f = t?.flight
+  sprite.setVisible(!!f && world.time < f.until)
+  if (!t || !f) return
+  const elapsed = (world.time - f.at) / 1000
+  sprite.setTexture(
+    t.kind === 'seal' ? 'sprites/items' : `sprites/${t.kind}`,
+    t.kind === 'seal' ? ITEMS.indexOf('seal') : 0,
+  )
+  sprite
+    .setOrigin(0.5)
+    .setDepth(9100)
+    .setPosition((f.x + f.vx * elapsed) * 16, (f.y + f.vy * elapsed) * 16)
+    .setRotation(elapsed * 12)
 }

@@ -1,5 +1,5 @@
 import { beauty, makeSalt } from './salt'
-import { objectAt, tileAt } from './world'
+import { KINDS, objectAt, tileAt } from './world'
 import type { Obj, World } from './world'
 
 // The desalinator 9000. Put down beside its owner, it drains a beauty every 2 seconds, and a `boom`
@@ -26,13 +26,33 @@ const SPOTS = [
 export function putBy(w: World, put: { by: string; obj: Obj }): boolean {
   const by = w.objects.find((o) => o.id === put.by)
   if (!by || w.objects.some((o) => o.id === put.obj.id)) return false
-  for (const [dx, dy] of SPOTS) {
+  const cannon = put.obj.kind === 'cannon'
+  const right = put.obj.kind === 'cannon' && put.obj.right
+  // Cannons stay on the firing line instead of falling back above or behind their owner.
+  const spots = cannon
+    ? Array.from({ length: w.width }, (_, i) => [(right ? 1 : -1) * (i + 1), 0])
+    : SPOTS
+  for (const [dx, dy] of spots) {
     const x = by.x + dx
     const y = by.y + dy
     const tile = tileAt(w, x, y)
     const ground = tile !== undefined && tile !== 'water' && tile !== 'rock'
-    if (!ground || objectAt(w, x, y) || (w.player.x === x && w.player.y === y)) continue
-    w.objects.push({ ...structuredClone(put.obj), x, y })
+    const occupied = cannon
+      ? w.objects.some(
+          (o) =>
+            o.kind !== 'embedded' &&
+            o.kind !== 'floor' &&
+            x >= o.x &&
+            x < o.x + KINDS[o.kind].w &&
+            y >= o.y &&
+            y < o.y + KINDS[o.kind].h,
+        )
+      : !!objectAt(w, x, y)
+    if (!ground || occupied || (w.player.x === x && w.player.y === y)) continue
+    const placed = { ...structuredClone(put.obj), x, y }
+    if (cannon)
+      w.objects.unshift(placed) // collision checks must find the cannon before its floor
+    else w.objects.push(placed)
     w.rev++
     return true
   }

@@ -1,11 +1,13 @@
 import Phaser from 'phaser'
 import { ITEMS, type Item, type World } from '../game/world'
+import { choices } from '../game/throw'
 import { content, world } from '../store'
 
 const SLOT = 32 // inventory slot size; the 5x3 grid starts at 240,120 so the panel is centred on 640x360
 
 export default class UI extends Phaser.Scene {
   private rev = -1
+  private leavingAt: number | null = null
   private hud!: Phaser.GameObjects.BitmapText
   private box!: Phaser.GameObjects.NineSlice
   private who!: Phaser.GameObjects.BitmapText
@@ -23,6 +25,7 @@ export default class UI extends Phaser.Scene {
   }
 
   create() {
+    this.leavingAt = null
     // a close-up: the world goes black under a sheet drawn 7.5x, half the screen tall, over the box
     this.black = this.add.rectangle(0, 0, 640, 360, 0x000000).setOrigin(0).setVisible(false)
     this.sky = this.add.graphics()
@@ -46,6 +49,11 @@ export default class UI extends Phaser.Scene {
   }
 
   update() {
+    if (!world.flags.outro) this.leavingAt = null
+    else this.leavingAt ??= world.time
+    this.hud.setAlpha(
+      this.leavingAt === null ? 1 : Math.max(0, 1 - (world.time - this.leavingAt) / 4000),
+    )
     // the black fades up over 500 ms off sim time, and the sheet shows once it is all black; a
     // burst close-up has the Island scene zoom in on him for 1 s instead of the black, and the
     // sheet then sits over his own sprite: the camera centres his tile, and his feet are 4 px down
@@ -134,13 +142,19 @@ export default class UI extends Phaser.Scene {
       const who = node.who === '' ? 'You' : node.who === null ? '' : (node.who ?? dialogue.name)
       this.who.setText(who).setVisible(!!who)
       const lines = node.choices
-        ? node.choices.map((c, i) => `${i === open.choice ? '> ' : '  '}${c.text}`)
+        ? choices(world, node, dialogue).map(
+            (c, i) => `${i === open.choice ? '> ' : '  '}${c.text}`,
+          )
         : ['[E] continue']
       const filled = (open.item ? text.replaceAll('{item}', name(open.item)) : text).replaceAll(
         '{score}',
         `${world.score}`,
       )
       this.body.setText([filled, '', ...lines].join('\n'))
+      const height = Math.max(112, this.body.height + 40)
+      this.box.setSize(624, height).setY(352 - height)
+      this.who.setY(360 - height)
+      this.body.setY(376 - height)
     }
 
     const menu = world.menu

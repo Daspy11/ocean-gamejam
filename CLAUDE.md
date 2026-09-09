@@ -47,14 +47,16 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   on a bare piece of counter reaches the npc on its far side, and with a drink on it takes the drink
   (`otijom`). A `cannon` is solid and, once a `fire` act lights it, spits a `ball` every 20 ms for
   4 s, each flying straight out to the left of the muzzle in a 30 degree cone and off the map over
-  1500 ms; it breaks nothing, but every third ball drops short and sticks in the ground as an
+  1500 ms (a `right` cannon is that mirrored, firing east: the sea horse's answer to Etarp's); it breaks nothing, but every third ball drops short and sticks in the ground as an
   `embedded` — a random bare tile down the cone, walked over rather than into, and -3 beauty each. A `cinder` is a solid block;
   nothing stands one any more, so the sheet is spare. A `flyingcarpet` is the one thing
   drawn bigger than its tile, and the one thing drawn off the ground: 32x32 of art centred on the
   1x1 it flies over, so it hangs half a tile over its neighbours, and it and its rider are drawn
   24 px up while it flies. `sprites/shadow` is the faded disc on the ground under it, marking the
   tile it is really on, shrinking as it comes down and gone once it is landed (`landAt` is when it
-  started down, and it stays set, so a carpet on the ground has no height and no shadow). A `boat` reads out on interact: `boat.json`, or the `dialogue` it
+  started down, and it stays set, so a carpet on the ground has no height and no shadow, until a
+  `walk` act takes it off again: that clears `landAt`, sets `liftAt`, and it climbs its 24 px over
+  1 s before it takes its first step, `LIFT` in `src/game/boat.ts`). A `boat` reads out on interact: `boat.json`, or the `dialogue` it
   names (Etarp's ship reads `ship.json`). Sprites come from `sprites/<kind>`, are bottom-anchored, and are depth-sorted by their feet Y,
   so tall things overlap what's behind them (top-down oblique). To add an object kind: one
   union member, one `KINDS` row, one manifest entry, one placeholder entry.
@@ -119,8 +121,12 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   corner and through anything, swings out on his last step to where he will be facing, and is
   left there in front of him. A walk
   with `path` is the exact steps, through everything: a boat sails that way, and stops `wrecked`
-  when its next tile is not water (`src/game/boat.ts`). An npc with `ride` sits on the object it
-  names. A walk with `near` walks up to something — an object id, or `player` — using its tile as
+  when its next tile is not water (`src/game/boat.ts`). An npc with `ride` jumps onto the object it
+  names from wherever he stands — nobody walks up to a carpet — and the scene throws him along a
+  parabola from the tile he sprang off (`hop`, `mount` and `hopMs` in `src/game/boat.ts`, drawn by
+  `spring` in `crash.ts`), landing side-on, since a deck faces the way it travels. Whoever is riding
+  him jumps with him. Climbing onto somebody holds the scene until he is down; a jump onto a deck is
+  over at the top of the arc, so a crew boards as one rather than one politely after another. A walk with `near` walks up to something — an object id, or `player` — using its tile as
   the `to`, so a character is faced from beside him as above, and a solid thing like a boat is
   stopped at on the tile before it. See `assets/dialogue/flower.json` and `pirate.json`.
 - The island grows by the orb, which starts as `orb1` lying in the sand at 13,15 where the crash threw
@@ -143,18 +149,18 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `world.main` is flood-filled from the spawn when the world is made and grows through salt laid next
   to it, and the desalinator's blast joins its whole crust (`blast` in `src/game/machine.ts`). Anything put down anywhere else counts for nothing and fires `salt:away` (Walter's reminder in
   `assets/dialogue/away.json`) instead of `salt:place`. `world.pops` are the floating +N/-N.
-- The Outro (`src/scenes/Outro.ts`) is the last scene, and the island hands over to it without a cut:
-  Island sees `flags['outro']` and runs `flyOut` (`src/scenes/leave.ts`), which stops the camera
-  following, drops a sea tilesprite past the map's east edge and slides the carpet, its riders and
-  the camera 34 tiles east over 3.2 s, accelerating; then it stops UI and starts the Outro. The Outro
-  opens at the island's 2x on the same sea running at the same speed and eases to 3x over 1.8 s, so
-  the join is one continuous shot. Then the two of them fly on (with Walter on Mich's head if
-  `flags['walter:aboard']`), the player looks over at her and leans in, one small heart drifts up
-  between them, and a spotlight closes on the party into the credits. The names fade up a
-  pair at a time, then two cards ("thanks for playing", "our first game") each hold 4 s or until
-  Enter, the black holds 4 s on its own, and "Play again?" comes up with a chevron: Enter there
-  loads a fresh `createWorld()` and starts the Intro again. Otherwise it reads `world` and changes
-  nothing.
+- The ending is one unbroken shot, played in the Island scene: it sees `flags['outro']` and hands the
+  crew and the camera to `flyOut` (`src/scenes/leave.ts`), which runs after the scene has drawn, so
+  the sim keeps ticking underneath and the shelling behind them plays itself out. The carpet picks up
+  the speed the last act left it at, already at its 24 px of air (shadow and all, drawn over the
+  trees), and gathers pace east off the map over a sea tilesprite laid past the shore; the camera holds it
+  and eases from the island's 2x to 3x over 1.8 s, the sea running by at one pace throughout. Then
+  four seconds of riding as the swell dies away, he turns to look at her for two, hops two pixels
+  closer and lets out a small heart, three seconds, she hops closer and lets out one of her own, two
+  more, he turns back to the front, and three seconds later `Outro.ts` is launched *over* the flight:
+  a spotlight closes on the two of them, the names fade up a pair at a time, two cards see them off,
+  and "Play again?" comes up with a chevron — Enter there loads a fresh `createWorld()`, stops the
+  island and starts the Intro again.
 - Scene flow: Boot → Intro (the rowboat cutscene, data in `assets/text/intro.json`; it opens on the
   sea and waits for a press before the first line) → Island,
   which launches UI. Intro starts it with `{ crash: true }`, and the crash itself plays there

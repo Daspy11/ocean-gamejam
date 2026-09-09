@@ -1,24 +1,19 @@
 import Phaser from 'phaser'
 import { KINDS, tileAt, type Dir, type Obj } from '../game/world'
 import { dispatch, world } from '../store'
-import { crashIn, deck, inTheAir, shade } from './crash'
+import { crashIn, deck, drawThrow, hopOff, inTheAir, shade, spring } from './crash'
 import { makeGround, syncGround } from './ground'
 import { flyOut } from './leave'
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
 // anything drawn walking on the grid: the player, and npcs a cutscene is walking
-type Actor = {
-  x: number
-  y: number
-  facing: Dir
-  step?: null | { x: number; y: number; t: number }
-  parity?: boolean
-}
+type Actor = Pick<Obj & { kind: 'npc' }, 'x' | 'y' | 'facing' | 'step' | 'parity' | 'hop'>
 
 export default class Island extends Phaser.Scene {
   private rev = -1
   private layers: Phaser.Tilemaps.TilemapLayer[] = []
   private player!: Phaser.GameObjects.Sprite
+  private projectile!: Phaser.GameObjects.Sprite
   private shadow!: Phaser.GameObjects.Sprite // the shade under Tarq's carpet, the one thing that flies
   private objects: Phaser.GameObjects.Sprite[] = []
   // one per orb still boiling its tile, with the bottom of that tile to rise from and the time the
@@ -58,6 +53,7 @@ export default class Island extends Phaser.Scene {
     this.layers = makeGround(this)
 
     this.player = this.add.sprite(0, 0, 'sprites/player', 1).setOrigin(0, 1)
+    this.projectile = this.add.sprite(0, 0, 'sprites/items').setVisible(false)
     this.shadow = this.add.sprite(0, 0, 'sprites/shadow').setOrigin(0.5, 0.5).setAlpha(0.35)
 
     this.cameras.main.setZoom(2)
@@ -81,10 +77,12 @@ export default class Island extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
-    // the ending: the carpet flies east out over the sea and the Outro scene takes the shot on
+    // the ending: the carpet flies east out over the sea, drawn on top of the world it leaves. The
+    // sim keeps running under it, so the shelling behind them plays itself out.
     if (world.flags.outro && !this.leaving)
-      this.leaving = flyOut(this, this.objects, this.player, this.shadow)
-    if (this.arriving || this.leaving) return // the cutscene tweens own the sprites and the camera
+      this.leaving = flyOut(this, () => this.objects, this.player, this.shadow)
+    if (this.arriving) return // the crash tweens own the sprites until they are on their feet
+    if (this.leaving) return this.frame(delta) // no input, and the flight owns crew and camera
     const dirs: [Dir, Phaser.Input.Keyboard.Key[]][] = [
       ['up', [this.keys.UP, this.keys.W]],
       ['down', [this.keys.DOWN, this.keys.S]],
@@ -107,8 +105,13 @@ export default class Island extends Phaser.Scene {
     if (down([this.keys.E, this.keys.SPACE, this.keys.ENTER])) dispatch({ type: 'interact' })
     if (down([this.keys.I, this.keys.TAB, this.keys.ESC])) dispatch({ type: 'menu' })
 
-    dispatch({ type: 'tick', dt: delta })
+    this.frame(delta)
+  }
 
+  // the world, drawn: one tick of the sim and everything that moves off it. The camera goes with
+  // the player, except during the ending, when the flight has taken it.
+  private frame(delta: number) {
+    dispatch({ type: 'tick', dt: delta })
     if (world.rev !== this.rev) {
       this.rev = world.rev
       this.sync()
@@ -124,7 +127,9 @@ export default class Island extends Phaser.Scene {
     const cam = this.cameras.main
     const star = this.closeupOf()
     const c = world.closeup
-    if (star && c) {
+    if (this.leaving) {
+      // the flight has the camera: it is out over the sea, and nothing here is following anybody
+    } else if (star && c) {
       // in over the first second, and back out over the second after it is taken down
       const p =
         c.down === undefined
@@ -139,7 +144,8 @@ export default class Island extends Phaser.Scene {
     } else {
       cam.setZoom(2)
       cam.roundPixels = true
-      cam.followOffset.set(-8 + jitter(30), 8 + jitter(50))
+      // a jump aboard takes him up over an arc: the camera goes along with him, not with the bounce
+      cam.followOffset.set(-8 + jitter(30), 8 + jitter(50) - hopOff(world.player)[2])
     }
 
     // clouds off the boiling sea: a 900 ms rise, driven from sim time so there is nothing to tween
@@ -151,15 +157,7 @@ export default class Island extends Phaser.Scene {
         .setAlpha(1 - rise)
         .setVisible(thrownAt === undefined || world.time - thrownAt >= 300) // it boils once it lands
 
-    // anything thrown flies over from the tile it left on, on a 300 ms arc 12 px high
-    world.objects.forEach((o, i) => {
-      if (o.kind === 'npc' || o.thrown === undefined || !this.objects[i]) return
-      const t = Math.min(1, (world.time - o.thrown.at) / 300)
-      this.objects[i].setPosition(
-        (o.thrown.x + (o.x - o.thrown.x) * t) * 16,
-        (o.thrown.y + (o.y - o.thrown.y) * t + 1) * 16 - 4 * t * (1 - t) * 12,
-      )
-    })
+    drawThrow(this.projectile)
 
     // the shelling: a ball flies straight out of the muzzle at 24 tiles a second along its own
     // angle, glowing red to white as it goes, and the cannon rocks where it stands while it fires
@@ -168,13 +166,14 @@ export default class Island extends Phaser.Scene {
       const sprite = this.objects[i]
       if (!sprite) return
       const shudder = Math.floor(world.time / 40) % 2 ? 1 : -1
-      if (o.kind === 'cannon' && o.firing) sprite.setX(o.x * 16 + shudder)
+      if (o.kind === 'cannon') sprite.setFlipX(!!o.right) // the sea horse's points back the other way
+      if (o.kind === 'cannon' && o.firing?.shot) sprite.setX(o.x * 16 + shudder)
       if (o.kind !== 'ball') return
       const flown = Math.max(0, world.time - o.at) * 0.384
       const rad = (o.dir * Math.PI) / 180
       sprite
         .setPosition(o.x * 16 - flown * Math.cos(rad), (o.y + 1) * 16 + flown * Math.sin(rad))
-        .setDepth(9000) // in the air, so it flies over everything
+        .setDepth(8998) // below the carpet and everyone riding it
         .setTint(0xff0000 | (heat << 8) | heat)
     })
 
@@ -262,23 +261,24 @@ export default class Island extends Phaser.Scene {
   private draw(sprite: Phaser.GameObjects.Sprite, a: Actor, who = '', on?: Obj) {
     const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
     const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
-    const col = a.step ? (a.step.t < 0.5 ? (a.parity ? 0 : 2) : 1) : 1 // 1 is standing
+    const walking = a.step && !on // a rider shares his deck's step, but stands still on it
+    const col = walking ? (a.step!.t < 0.5 ? (a.parity ? 0 : 2) : 1) : 1 // 1 is standing
     // the crab scuttles sideways whichever way he is going and turns to face you when he stops;
     // the pirate is blind, so he is always drawn looking the opposite way to the one he faces
-    const facing =
-      who === 'walter'
-        ? !a.step
-          ? 'down'
-          : a.facing === 'left'
-            ? 'left'
-            : 'right'
-        : who === 'etarp'
-          ? OPP[a.facing]
-          : a.facing
+    const crab: Dir = !walking ? 'down' : a.facing === 'left' ? 'left' : 'right'
+    const facing = who === 'walter' ? crab : who === 'etarp' ? OPP[a.facing] : a.facing
     const [swing, up] = deck(on, who) // riding: he goes with it, and stands on top of it
+    const shift = (on ? KINDS[on.kind].w * 8 - 8 : 0) + swing
+    const flying =
+      on?.kind === 'flyingcarpet' ||
+      (on?.kind === 'npc' &&
+        world.objects.some((o) => o.id === on.ride && o.kind === 'flyingcarpet'))
+    // centred on what he rides, and arcing over from where he sprang if he is still on his way up
     return sprite
-      .setPosition(x + (on ? KINDS[on.kind].w * 8 - 8 : 0) + swing, y + 16 - up) // centred on it
-      .setDepth(y + 16 + (on ? (on.kind === 'boat' ? -1 : 1) : 0)) // a boat's hull draws over him
+      .setPosition(...spring(a, x + shift, y + 16 - up, up, shift))
+      .setDepth(
+        (flying ? 9000 : y + 16) + (on ? (on.kind === 'boat' ? -1 : on.kind === 'npc' ? 2 : 1) : 0),
+      )
       .setFrame(ROW[facing] * 3 + col)
   }
 

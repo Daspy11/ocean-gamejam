@@ -2,7 +2,7 @@ import { nodeDone, pickBranch, startAct, tickCloseup } from './act'
 import { tickWalks } from './boat'
 import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
-import { tickThrow } from './throw'
+import { choices, tickThrow } from './throw'
 import { shakeTree, tickTrees } from './tree'
 import { beauty, tickOrbs, useItem } from './salt'
 import { DIRS, KINDS, objectAt, tileAt } from './world'
@@ -29,13 +29,13 @@ export function apply(w: World, a: Action, c: Content): void {
     w.rev++
   }
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
-  const open = (key: string, node?: string, item?: Item) => {
+  const open = (key: string, node?: string, item?: Item, object?: string) => {
     const dlg = c.dialogues[key]
     const at = node ?? pickBranch(w, dlg?.start)
     const to = at === undefined ? undefined : dlg?.nodes[at]
     if (at === undefined || !to) return false
     Object.assign(w.flags, to.set)
-    w.dialogue = { key, node: at, choice: 0, item }
+    w.dialogue = { key, node: at, choice: 0, item, object }
     w.rev++
     // spend and hand over as the node opens; the box is already up, so a give's got box queues
     const spend = typeof to.take === 'string' ? { [to.take]: 1 } : (to.take ?? {})
@@ -54,7 +54,7 @@ export function apply(w: World, a: Action, c: Content): void {
   // leaving the open node: follow `next`, or close and let the queue in. Shared by an interact on
   // a text node and by an act finishing on its own.
   const advance = (d: NonNullable<World['dialogue']>, node: DialogueNode | undefined) => {
-    const chosen = node?.choices?.[d.choice]
+    const chosen = choices(w, node, c.dialogues[d.key])[d.choice]
     if (chosen) Object.assign(w.flags, chosen.set)
     // a missing node is broken content: close rather than throw, a human fixes the json
     const next = node ? (chosen ? chosen.next : node.next) : null
@@ -66,7 +66,7 @@ export function apply(w: World, a: Action, c: Content): void {
       w.dialogue!.back = { key: d.key, node: to, item: d.item }
       return
     }
-    if (to !== null && open(d.key, to, d.item)) return
+    if (to !== null && open(d.key, to, d.item, chosen?.object)) return
     if (d.back && open(d.back.key, d.back.node, d.back.item)) return
     w.dialogue = null
     w.closeup = null // a close-up only ever lasts the box it went up under
@@ -205,7 +205,7 @@ export function apply(w: World, a: Action, c: Content): void {
     const node = c.dialogues[d.key]?.nodes[d.node]
     if (node && node.text === undefined) return // an act runs to its end; input cannot skip it
     if (node && a.type === 'move') {
-      const count = node.choices?.length ?? 0
+      const count = choices(w, node, c.dialogues[d.key]).length
       const by = a.dir === 'up' ? -1 : a.dir === 'down' ? 1 : 0
       const at = Math.max(0, Math.min(count - 1, d.choice + by))
       if (count > 0 && at !== d.choice) {

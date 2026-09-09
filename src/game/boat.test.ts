@@ -171,3 +171,121 @@ describe('a boat under sail', () => {
     expect(etarp(w).ride).toBeUndefined()
   })
 })
+
+// the tail of tarq.json: the crab springs onto Mich's head, and the two of them walk onto the carpet
+const boardContent: Content = {
+  dialogues: {
+    board: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: 'up' }],
+      nodes: {
+        up: { ride: { id: 'walter', on: 'mich' }, next: 'her' },
+        her: { ride: { id: 'mich', on: 'rug' }, next: 'him' },
+        him: { ride: { id: 'player', on: 'rug' }, next: null },
+      },
+    },
+  },
+  items: {},
+}
+
+// mich at 14,17 with the crab beside her, the carpet a tile east of her, and the player south of it
+function boarding(): World {
+  const w = createWorld()
+  w.objects.push({ id: 'rug', kind: 'flyingcarpet', x: 15, y: 17, landAt: 0 })
+  w.objects.push({
+    id: 'walter',
+    kind: 'npc',
+    sprite: 'walter',
+    x: 14,
+    y: 18,
+    facing: 'up',
+    dialogue: 'walter',
+  })
+  const her = obj(w, 'mich')
+  if (her?.kind === 'npc') Object.assign(her, { x: 14, y: 17, facing: 'right' })
+  w.player = { ...w.player, x: 15, y: 18, facing: 'up' }
+  apply(w, { type: 'talk', key: 'board' }, boardContent)
+  return w
+}
+
+const npcAt = (w: World, id: string) => {
+  const o = obj(w, id)
+  if (o?.kind !== 'npc') throw new Error(`${id} is not an npc`)
+  return o
+}
+
+describe('getting aboard', () => {
+  it('springs the crab onto her head and holds the act until he lands', () => {
+    const w = boarding()
+    const him = npcAt(w, 'walter')
+    expect(him.ride).toBe('mich') // he is up there at once; the hop is what the scene draws
+    expect(him.hop).toEqual({ x: 14, y: 18, at: 0, duration: 350 })
+    apply(w, { type: 'tick', dt: 300 }, boardContent) // a hop next door takes 350 ms
+    expect(w.dialogue?.node).toBe('up') // still in the air
+
+    apply(w, { type: 'tick', dt: 100 }, boardContent)
+    expect(w.dialogue?.node).toBe('her') // down on her head, and the scene moves on
+  })
+
+  it('jumps her onto the carpet from where she stands, without waiting for her to land', () => {
+    const w = boarding()
+    apply(w, { type: 'tick', dt: 400 }, boardContent) // the crab's hop, which the scene does wait on
+    const her = npcAt(w, 'mich')
+    expect(her.ride).toBe('rug') // aboard from the off, and in the air over the way there
+    expect(her.hop).toEqual({ x: 14, y: 17, at: 400, duration: 350 })
+    expect(her.path).toBeUndefined() // a jump has no walking path left over
+    expect(npcAt(w, 'walter').hop).toBeUndefined() // the crab rides her head, arc and all
+    expect(w.dialogue?.node).toBe('her') // the scene is not waiting on her landing
+
+    apply(w, { type: 'tick', dt: 400 }, boardContent)
+    expect(npcAt(w, 'mich')).toMatchObject({ x: 15, y: 17, facing: 'right' })
+    expect(npcAt(w, 'mich').hop).toBeUndefined()
+    expect(npcAt(w, 'walter')).toMatchObject({ x: 15, y: 17, ride: 'mich' })
+  })
+
+  it('jumps him aboard from below at the same time and turns him side-on', () => {
+    const w = boarding()
+    apply(w, { type: 'tick', dt: 400 }, boardContent) // she goes
+    apply(w, { type: 'tick', dt: 180 }, boardContent) // and he is off the ground at the top of hers
+    expect(w.player.ride).toBe('rug')
+    expect(w.player.hop!.at - npcAt(w, 'mich').hop!.at).toBe(180)
+
+    for (let i = 0; i < 8; i++) apply(w, { type: 'tick', dt: 100 }, boardContent)
+    // he jumped it from the south, so his own step would have left him facing up at the camera
+    expect(w.player).toMatchObject({ x: 15, y: 17, ride: 'rug', facing: 'right' })
+    expect(w.dialogue).toBe(null)
+  })
+})
+
+// the carpet, landed for its 200, walked off again: the shape of the last acts in tarq.json
+const liftContent: Content = {
+  dialogues: {
+    off: {
+      name: '[PLACEHOLDER NPC NAME]',
+      start: [{ node: 'go' }],
+      nodes: { go: { walk: { id: 'rug', path: ['right', 'right'], run: true }, next: null } },
+    },
+  },
+  items: {},
+}
+
+describe('a landed carpet taking off', () => {
+  it('climbs for a second before its first step, and flies from there', () => {
+    const w = createWorld()
+    w.objects.push({ id: 'rug', kind: 'flyingcarpet', x: 15, y: 17, landAt: -3000 })
+    apply(w, { type: 'talk', key: 'off' }, liftContent)
+    const rug = () => obj(w, 'rug') as Obj & { kind: 'flyingcarpet' }
+    expect([rug().landAt, rug().liftAt]).toEqual([undefined, 0]) // up it goes, from now
+
+    for (let i = 0; i < 7; i++) apply(w, { type: 'tick', dt: 125 }, liftContent)
+    expect(rug()).toMatchObject({ x: 15, step: { x: 16, y: 17, t: 0 } }) // held, still climbing
+    expect(w.dialogue?.node).toBe('go')
+
+    apply(w, { type: 'tick', dt: 125 }, liftContent) // exactly one second: still over the launch tile
+    expect(rug()).toMatchObject({ x: 15, step: { t: 0 } })
+    apply(w, { type: 'tick', dt: 125 }, liftContent)
+    apply(w, { type: 'tick', dt: 125 }, liftContent)
+    expect(rug()).toMatchObject({ x: 17, step: null, path: [] })
+    expect(w.dialogue).toBe(null)
+  })
+})

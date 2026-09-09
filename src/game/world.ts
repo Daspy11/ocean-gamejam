@@ -23,7 +23,7 @@ export const ITEMS = [
 export type Item = (typeof ITEMS)[number]
 
 // a cannon mid-act: when it stops, when the next ball leaves, and balls so far
-type Firing = { until: number; ballAt: number; shot: number }
+type Firing = { until: number; ballAt: number; shot: number; duel?: boolean }
 
 // Things standing on the ground. x,y is the top-left tile of the footprint (see KINDS). Sprites come
 // from sheet `sprites/<kind>` (npcs: `sprites/<sprite>`) and are drawn bottom-anchored, so tall
@@ -37,6 +37,7 @@ export type Obj = {
   step?: null | { x: number; y: number; t: number }
   path?: Dir[]
   run?: boolean
+  back?: boolean // scripted walking backwards keeps the actor facing the person in front
   parity?: boolean
   // id of what he is shoving along: it goes the step ahead of him for the whole walk and is left behind
   push?: string
@@ -49,6 +50,7 @@ export type Obj = {
       facing: Dir
       dialogue: string
       ride?: string // id of the object he stands on: he takes its tile and its step
+      hop?: { x: number; y: number; at: number; duration?: number } // fixed duration, even if his deck moves
       face?: Dir // where he turns once the walk or the spin runs out: a walk up to somebody ends looking at him
       spin?: number // the sim time a spin act ends; until then he turns a quarter every 50 ms
       flat?: boolean // knocked off what he was riding: he lies face down, a quarter turn over
@@ -87,16 +89,18 @@ export type Obj = {
   | { kind: 'egg' } // the golden egg, stood on the ground out of the bag: solid, and worth 5 at home
   | { kind: 'certificate' } // the shrimp welfare award, the same
   // Etarp's cannon: `firing` for its 4 s of noise, `shot` counting the balls, which names them
-  | { kind: 'cannon'; firing?: Firing }
+  // `right` points it east instead of west: the sea horse's, aimed back up the island at Etarp
+  | { kind: 'cannon'; firing?: Firing; right?: boolean }
   // a cannonball, for show only: it left the muzzle at x,y at `at` and flies straight off the map,
   // `dir` degrees off straight left
-  | { kind: 'ball'; at: number; dir: number }
+  | { kind: 'ball'; at: number; dir: number; life?: number }
   // a ball that stuck where it fell instead of flying on: walked over, and an eyesore at -3 beauty
   | { kind: 'embedded' }
   | { kind: 'cinder' } // a solid block: nothing stands one any more, so the sheet is spare
   // what Tarq rides in on: walked by `path` like a boat, through anything. landAt is when it
-  // started wafting down out of the sky, 3 s before it settles
-  | { kind: 'flyingcarpet'; landAt?: number }
+  // started wafting down out of the sky, 3 s before it settles; liftAt when it took off again,
+  // and it climbs for a second before it moves
+  | { kind: 'flyingcarpet'; landAt?: number; liftAt?: number }
 )
 
 export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }> = {
@@ -146,6 +150,7 @@ export interface World {
     path?: Dir[] // the steps a cutscene is walking him, and the way it leaves him facing
     face?: Dir
     ride?: string // id of what he is standing on: he takes its tile and its step, like any npc
+    hop?: { x: number; y: number; at: number; duration?: number } // fixed duration, even if his deck moves
   }
   inventory: Partial<Record<Item, number>>
   score: number // beauty: -1 per salt block placed, +10 a bloomed flower; hidden until flags['score:on']
@@ -159,12 +164,28 @@ export interface World {
     node: string
     choice: number
     item?: Item
+    object?: string // the specific object or inventory copy chosen for a throw
     until?: number
     back?: { key: string; node: string; item?: Item } // where a got box that cut in returns to
   }
   queue: { key: string; item?: Item }[] // dialogues waiting for the open one to close, in order
   // the `throw` act in flight: what he is fetching, who it is for, and when it left his hand
-  throwing: null | { kind: Obj['kind']; at: string; flew?: number }
+  throwing: null | {
+    kind: Obj['kind'] | 'seal'
+    at: string
+    object: string
+    launchAt?: number // 300 ms to wind up after the fetch path finishes
+    hit?: boolean
+    flight?: {
+      x: number
+      y: number
+      vx: number
+      vy: number
+      at: number
+      hitAt: number
+      until: number
+    }
+  }
   menu: null | { screen: 'inventory'; cursor: number }
   // a close-up over the world: `sheet` drawn big on black, its frames from `frame` every 400 ms
   // from `at`, and the black has been up since `since`. Down when the box closes. With `burst`

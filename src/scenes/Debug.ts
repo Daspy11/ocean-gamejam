@@ -118,6 +118,28 @@ const afterSeahorse = (w: World) => {
   w.player = { ...w.player, x: 16, y: 15, facing: 'left' } // in the line of fire, so Walter waves him out
 }
 
+// what the cannon scene leaves behind: Etarp with it on the island's west side, Walter two tiles
+// south of his tree, and Mich where the flower scene put her
+const afterCannon = (w: World) => {
+  afterSeahorse(w)
+  move(w, 'etarp', 19, 15)
+  move(w, 'walter', 17, 18)
+  move(w, 'mich', 13, 14)
+  w.objects.push({ id: 'cannon', kind: 'cannon', x: 18, y: 15 })
+  w.flags['fired:cannon'] = true
+}
+
+const move = (
+  w: World,
+  id: string,
+  x: number,
+  y: number,
+  facing?: 'left' | 'right' | 'up' | 'down',
+) => {
+  const o = w.objects.find((o) => o.id === id)
+  if (o) Object.assign(o, facing ? { x, y, facing } : { x, y })
+}
+
 // the beats, in the order the story reaches them. `at` is the world by the time that one plays.
 const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
   { label: 'the beginning' }, // a fresh world is exactly where the intro leaves him
@@ -157,30 +179,33 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
   },
   // straight into the scene the sea horse leaves behind: talk opens it once the world is loaded
   { label: "etarp's cannon", at: afterSeahorse, talk: 'cannon' },
+  { label: 'tarq flies in', at: afterCannon, talk: 'tarq' },
   {
-    // and the one the cannon leaves: Etarp with it on the island's west side, Walter two tiles
-    // south of his tree, and Mich where the flower scene put her
-    label: 'tarq flies in',
-    at: (w) => {
-      afterSeahorse(w)
-      const move = (id: string, x: number, y: number) => {
-        const o = w.objects.find((x) => x.id === id)
-        if (o) Object.assign(o, { x, y })
-      }
-      move('etarp', 19, 15)
-      move('walter', 17, 18)
-      move('mich', 18, 15)
-      w.objects.push({ id: 'cannon', kind: 'cannon', x: 18, y: 15 })
-      w.flags['fired:cannon'] = true
-    },
-    talk: 'tarq',
-  },
-  {
-    // the flight out: the UI scene sees the flag and hands over to the Outro, Walter aboard
+    // the tail of tarq.json, from Walter's question on: the egg has knocked Tarq off his carpet and
+    // it has settled for its 200, Mich has come over to him and Walter is admiring the rug. The box
+    // opens on the ask itself, so saying yes plays the climb onto her head, the boarding and the
+    // flight out.
     label: 'leaving the island',
     at: (w) => {
-      afterSeahorse(w)
-      Object.assign(w.flags, { 'fired:tarq': true, 'walter:aboard': true, outro: true })
+      afterCannon(w)
+      w.objects = w.objects.filter((o) => o.id !== 'egg15-17') // thrown, and gone with it
+      w.objects.push({
+        id: 'tarq',
+        kind: 'npc',
+        sprite: 'tarq',
+        x: 16,
+        y: 17,
+        facing: 'left',
+        dialogue: 'tarq',
+        flat: true, // face down where the egg put him, two tiles off the carpet
+      })
+      w.objects.push({ id: 'flyingcarpet1', kind: 'flyingcarpet', x: 18, y: 17, landAt: -3000 })
+      move(w, 'mich', 15, 17, 'right') // stood over him, as `near` leaves her
+      move(w, 'walter', 18, 18, 'up') // under the carpet he has walked over to admire
+      w.score += 200 // the carpet, once it is down
+      w.player = { ...w.player, x: 17, y: 16, facing: 'down' } // stood where he threw it from
+      Object.assign(w.flags, { 'tarq:here': true, 'fired:tarq': true })
+      w.dialogue = { key: 'tarq', node: 'ask', choice: 0 }
     },
   },
   { label: 'rum for the yarrtender', at: yarrtender },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { createWorld, npc, type Content, type Obj, type World } from './world'
+import { KINDS, createWorld, npc, tileAt, type Content, type Obj, type World } from './world'
 
 // the shape of the end of assets/dialogue/tarq.json: pick a thing, fetch it, throw it at him
 const content: Content = {
@@ -53,6 +53,21 @@ const run = (w: World, ms: number) => {
 }
 
 describe('the throw act', () => {
+  it('waits 300 ms after arriving beside the item before launching it', () => {
+    const w = scene({ id: 'floor16-17', kind: 'floor', x: 16, y: 17 })
+    apply(w, { type: 'talk', key: 'rug' }, content)
+    for (let n = 0; n < 100 && (w.player.step || w.player.path?.length); n++)
+      apply(w, { type: 'tick', dt: 25 }, content)
+    const arrived = w.time
+    expect(w.throwing?.flight).toBeUndefined()
+    apply(w, { type: 'tick', dt: 299 }, content)
+    expect(w.throwing?.flight).toBeUndefined()
+    expect(at(w, 'floor16-17')).toBeDefined()
+    apply(w, { type: 'tick', dt: 1 }, content)
+    expect(w.throwing?.flight?.at).toBe(arrived + 300)
+    expect(at(w, 'floor16-17')).toBeUndefined()
+  })
+
   it('walks him to the thing, throws it, and knocks Tarq off his carpet', () => {
     const w = scene({ id: 'egg16-17', kind: 'egg', x: 16, y: 17 })
     apply(w, { type: 'talk', key: 'egg' }, content)
@@ -62,8 +77,8 @@ describe('the throw act', () => {
     expect(at(w, 'egg16-17')).toBeUndefined()
     const him = at(w, 'tarq')
     expect(him?.kind === 'npc' && [him.ride, him.flat]).toEqual([undefined, true])
-    // two tiles left of the carpet, from the tile he was hit on, which is the arc the scene draws
-    expect([him?.x, him?.y, him?.thrown]).toEqual([18, 15, { x: 20, y: 15, at: him?.thrown?.at }])
+    expect(him?.thrown).toMatchObject({ x: 20, y: 15 })
+    expect(tileAt(w, him!.x, him!.y)).not.toBe('water')
     expect(w.dialogue?.node).toBe('throw') // the act holds while the carpet comes down
 
     for (let n = 0; n < 100 && w.dialogue?.node === 'throw'; n++)
@@ -75,10 +90,38 @@ describe('the throw act', () => {
     expect(w.dialogue?.node).toBe('end')
   })
 
+  it.each([
+    [18, 15],
+    [20, 13],
+    [22, 15],
+    [20, 17],
+  ])('lands clear of Mich at %i,%i, other people, the carpet, and ground objects', (x, y) => {
+    const w = scene({ id: 'egg16-17', kind: 'egg', x: 16, y: 17 })
+    w.tiles.fill('salt')
+    const mich = at(w, 'mich')!
+    Object.assign(mich, { x, y })
+    w.objects.push({ id: 'chair', kind: 'chair', x: 22, y: 13 })
+    apply(w, { type: 'talk', key: 'egg' }, content)
+    run(w, 3000)
+    const tarq = at(w, 'tarq')!
+    expect(tarq).toMatchObject({ kind: 'npc', flat: true })
+    expect([mich.x, mich.y]).toEqual([x, y])
+    for (const o of w.objects) {
+      if (o === tarq || o.kind === 'ball' || o.kind === 'embedded') continue
+      const k = KINDS[o.kind]
+      expect(
+        tarq.x < o.x - 1 || tarq.x >= o.x + k.w + 1 || tarq.y < o.y - 1 || tarq.y >= o.y + k.h + 1,
+      ).toBe(true)
+    }
+    expect(Math.max(Math.abs(tarq.x - w.player.x), Math.abs(tarq.y - w.player.y))).toBeGreaterThan(
+      1,
+    )
+  })
+
   it('leaves him on his carpet for anything that is not the egg', () => {
     const w = scene({ id: 'floor16-17', kind: 'floor', x: 16, y: 17 })
     apply(w, { type: 'talk', key: 'rug' }, content)
-    run(w, 3000)
+    run(w, 4000) // the wind-up and slower flight finish before the next choice opens
     expect(at(w, 'floor16-17')).toBeUndefined()
     const him = at(w, 'tarq')
     expect(him?.kind === 'npc' && [him.ride, him.flat]).toEqual(['flyingcarpet1', undefined])
@@ -97,7 +140,8 @@ describe('the throw act', () => {
     const w = scene({ id: 'sign9', kind: 'sign', x: 16, y: 17, dialogue: 'sign' })
     apply(w, { type: 'talk', key: 'board' }, content)
     run(w, 1050)
-    expect([w.player.x, w.player.y]).toEqual([16, 14]) // he walked himself there, no key held
+    expect(w.player.hop).toMatchObject({ x: 16, y: 14 }) // he walked there before jumping
+    expect([w.player.x, w.player.y]).toEqual([20, 15]) // the landing tile is set as the jump starts
 
     run(w, 1300)
     expect([w.player.x, w.player.y, w.player.ride]).toEqual([21, 15, 'flyingcarpet1'])

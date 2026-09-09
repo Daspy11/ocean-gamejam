@@ -142,12 +142,12 @@ describe('the cannon', () => {
     apply(w, { type: 'tick', dt: 250 }, content)
     const flying = w.objects.filter((o) => o.kind === 'ball')
     expect(flying.length).toBe(13) // 0, 20 .. 240
-    expect(flying[0]).toMatchObject({ id: 'ball0', x: 5, y: 0, at: 0 }) // every one from the muzzle
+    expect(flying[0]).toMatchObject({ id: 'ball:cannon:0', x: 5, y: 0, at: 0 }) // from the muzzle
     for (const b of flying) if (b.kind === 'ball') expect(Math.abs(b.dir)).toBeLessThanOrEqual(15)
     expect(new Set(flying.map((b) => b.kind === 'ball' && b.dir)).size).toBeGreaterThan(1) // sprayed
 
     apply(w, { type: 'tick', dt: 1250 }, content)
-    expect(w.objects.some((o) => o.id === 'ball0')).toBe(false) // 1500 ms: off the map and gone
+    expect(w.objects.some((o) => o.id === 'ball:cannon:0')).toBe(false) // 1500 ms: gone
     expect(w.objects.filter((o) => o.kind === 'ball').length).toBe(75) // 20 .. 1500 still up
   })
 
