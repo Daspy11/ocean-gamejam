@@ -176,7 +176,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
 - No `Math.random` in `src/game`. `world.seed` is the rng: an lcg in `src/game/cannon.ts` the cannon
   draws its ball angles from, so a run of a scene is the same every time.
 - Art is 16x16 tiles on a 640x360 canvas; the world camera is zoomed 2x, UI is 1x. Characters are 16x24
-  in the RPG Maker layout: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up).
+  in the RPG Maker layout: 4 columns (left foot, passing, right foot, passing) x 4 rows (down, left,
+  right, up). The two passing columns are the same stand pose, alternating with the feet as he walks.
 
 ## Feature workflow (what "done" means)
 

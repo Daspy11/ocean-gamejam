@@ -16,6 +16,7 @@ function sprite(x = 0, y = 0) {
     depth: 0,
     height: 0,
     rotation: 0,
+    frame: 0,
     visible: true,
     text: '' as string | string[],
     setPosition(x: number, y: number) {
@@ -51,7 +52,8 @@ function sprite(x = 0, y = 0) {
     setTexture() {
       return this
     },
-    setFrame() {
+    setFrame(frame: number) {
+      this.frame = frame
       return this
     },
     setScale() {
@@ -166,6 +168,7 @@ describe('the flight out', () => {
     w.time = 3000
     inTheAir(drawn as unknown as Phaser.GameObjects.Sprite, rug)
     expect(drawn.depth).toBeGreaterThan(0) // above the terrain
+    expect(drawn.frame).toBe(0)
     for (const feet of [17 * 16, 17.5 * 16, 18 * 16, 18.5 * 16, 19 * 16])
       expect(drawn.depth).toBeLessThan(feet) // Walter stays visible from above, beside or below
     delete rug.landAt
@@ -175,6 +178,9 @@ describe('the flight out', () => {
     w.time++
     inTheAir(drawn as unknown as Phaser.GameObjects.Sprite, rug)
     expect(drawn.depth).toBe(9000)
+    rug.step = { x: 19, y: 17, t: 0.5 }
+    inTheAir(drawn as unknown as Phaser.GameObjects.Sprite, rug)
+    expect(drawn.frame).toBe(1)
   })
 
   it('keeps the crew together as they accelerate past the camera before the iris closes', () => {
@@ -227,6 +233,7 @@ describe('the flight out', () => {
       walter.setPosition(504, 239)
       player.setPosition(521, 254)
       tick(time, 100)
+      expect(player.frame).toBe(time <= 7200 || time > 15000 ? 9 : 5)
       expect([walter.x - mich.x, walter.y - mich.y]).toEqual([1, -15])
       if (time >= 15600) positions.push((rug.x - camera.midPoint.x) * camera.zoom)
       if (time < 18000) expect(scene.scene.launch).not.toHaveBeenCalled()

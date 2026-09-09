@@ -11,7 +11,7 @@ const RUN = 128 // px/s the last act was already flying them east at: 8 tiles a 
 const CRUISE = 540 // screen px/s the sea runs by at, held through the zoom so the pan never slows
 const IN = 1800 // ms the shot takes to ease in from the island's 2x to 3x
 const RIDE = 4000 // ms of quiet flying, once the shot is in, before he plucks up the courage
-const [SIDE, LOOK] = [7, 4] // his standing frames: facing the way they are going, and facing her
+const [SIDE, LOOK] = [9, 5] // his standing frames: facing the way they are going, and facing her
 
 export function flyOut(
   scene: Phaser.Scene,
