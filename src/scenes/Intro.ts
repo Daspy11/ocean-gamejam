@@ -42,9 +42,10 @@ export default class Intro extends Phaser.Scene {
       .setScale(ZOOM)
     this.seat = boat.y - SEAT * ZOOM
     this.actors = {
-      mich: this.add.image(boat.x, this.seat, 'sprites/mich', 7).setOrigin(0, 1).setScale(ZOOM),
+      // frame 9: standing, facing right, the way the boat is rowing
+      mich: this.add.image(boat.x, this.seat, 'sprites/mich', 9).setOrigin(0, 1).setScale(ZOOM),
       player: this.add
-        .image(boat.x + 15 * ZOOM, this.seat, 'sprites/player', 7)
+        .image(boat.x + 15 * ZOOM, this.seat, 'sprites/player', 9)
         .setOrigin(0, 1)
         .setScale(ZOOM),
     }

@@ -262,7 +262,9 @@ export default class Island extends Phaser.Scene {
   private draw(sprite: Phaser.GameObjects.Sprite, a: Actor, who = '', on?: Obj) {
     const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
     const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
-    const col = a.step ? (a.step.t < 0.5 ? (a.parity ? 0 : 2) : 1) : 1 // 1 is standing
+    // foot contact for the first half of a step, then the passing frame that matches that foot;
+    // 1 is the default passing pose, standing still or otherwise
+    const col = a.step ? (a.step.t < 0.5 ? (a.parity ? 0 : 2) : a.parity ? 1 : 3) : 1
     // the crab scuttles sideways whichever way he is going and turns to face you when he stops;
     // the pirate is blind, so he is always drawn looking the opposite way to the one he faces
     const facing =
@@ -279,7 +281,7 @@ export default class Island extends Phaser.Scene {
     return sprite
       .setPosition(x + (on ? KINDS[on.kind].w * 8 - 8 : 0) + swing, y + 16 - up) // centred on it
       .setDepth(y + 16 + (on ? (on.kind === 'boat' ? -1 : 1) : 0)) // a boat's hull draws over him
-      .setFrame(ROW[facing] * 3 + col)
+      .setFrame(ROW[facing] * 4 + col)
   }
 
   private sync() {
@@ -322,7 +324,7 @@ export default class Island extends Phaser.Scene {
       if (o.kind === 'flower' && o.white) frame = 1
       if ((o.kind === 'bar' && o.drink) || (o.kind === 'cave' && o.inside)) frame = 1 // cocktail up, or the room-side mouth
       if (o.kind === 'harry') frame = 3 - world.objects.filter((c) => c.hidden).length
-      if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
+      if (o.kind === 'npc') frame = ROW[o.facing] * 4 + 1 // standing; draw() takes it from here
       // flags['sprite:<id>'] draws an npc off another sheet: the shrimp once he has his deck chair
       const skin = world.flags[`sprite:${o.id}`]
       const sheet = o.kind !== 'npc' ? o.kind : typeof skin === 'string' ? skin : o.sprite

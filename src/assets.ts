@@ -10,7 +10,8 @@ export const SHEETS = {
   'tiles/farm': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   'tiles/rock': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
   // One sheet per object kind, named `sprites/<kind>`: footprint comes from KINDS, art is bottom-anchored.
-  'sprites/player': { frameWidth: 16, frameHeight: 24 }, // rows down/left/right/up · cols left foot/stand/right foot
+  // rows down/left/right/up · cols left foot/passing/right foot/passing
+  'sprites/player': { frameWidth: 16, frameHeight: 24 },
   'sprites/mich': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // character sheet layout; the crab only ever walks sideways, so the left/right rows are the walk
   // and the down row is how he stands
@@ -18,7 +19,7 @@ export const SHEETS = {
   // character sheet; the blind pirate is drawn on the row opposite the way he is facing
   'sprites/etarp': { frameWidth: 16, frameHeight: 24 },
   'sprites/albatross': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
-  // character sheet; he never gets off his stool, so all twelve frames are the same seated pose
+  // character sheet; he never gets off his stool, so all sixteen frames are the same seated pose
   'sprites/shrimp': { frameWidth: 16, frameHeight: 24 },
   // character sheet; the same seated pose on the deck chair he swaps the stool for
   'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },

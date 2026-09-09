@@ -57,8 +57,8 @@ export default class Outro extends Phaser.Scene {
     // the crew are laid out in art pixels and the container carries the zoom, so the whole shot
     // eases in as one thing. 16x24 characters, feet on the weave: she rides on the near side.
     const carpet = this.add.image(0, 0, 'sprites/flyingcarpet')
-    const mich = this.add.image(-9, 0, 'sprites/mich', 7).setOrigin(0.5, 1)
-    this.player = this.add.image(9, 0, 'sprites/player', 7).setOrigin(0.5, 1)
+    const mich = this.add.image(-9, 0, 'sprites/mich', 9).setOrigin(0.5, 1) // standing, facing right
+    this.player = this.add.image(9, 0, 'sprites/player', 9).setOrigin(0.5, 1)
     const aboard = world.flags['walter:aboard'] // he asked, and he is riding on her head
     const walter = this.add
       .image(mich.x, -24, 'sprites/walter', 1)
@@ -79,12 +79,12 @@ export default class Outro extends Phaser.Scene {
     // he takes his time about it: once the shot has settled he looks over at her, leans in, and one
     // heart goes up between them before he faces the way they are going again
     this.time.delayedCall(2600, () => {
-      this.player.setFrame(4) // the standing frame, facing her
+      this.player.setFrame(5) // the standing frame, facing her
       this.tweens.add({ targets: this.player, x: 5, duration: 700, ease: 'Sine.easeInOut' })
     })
     this.time.delayedCall(3300, () => this.heart())
     this.time.delayedCall(6200, () => {
-      this.player.setFrame(7)
+      this.player.setFrame(9) // standing, facing right again
       this.tweens.add({ targets: this.player, x: 9, duration: 800, ease: 'Sine.easeInOut' })
     })
 

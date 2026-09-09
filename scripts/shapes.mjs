@@ -36,8 +36,9 @@ export const dual = (colour) =>
     }
   })
 
-// Character sheet: 3 columns (left foot, stand, right foot) x 4 rows (down, left, right, up). Facing
-// reads from where the hair sits; the two walk columns only shorten one leg by a pixel.
+// Character sheet: 4 columns (left foot, passing, right foot, passing) x 4 rows (down, left, right,
+// up). Facing reads from where the hair sits; the two foot columns only shorten one leg by a pixel,
+// and the two passing columns are the same stand pose, alternating with the feet as he walks.
 export const character = ({ hair, skin, shirt }) =>
   [
     {
@@ -80,14 +81,15 @@ export const character = ({ hair, skin, shirt }) =>
   ].flatMap(({ body, legs }) =>
     [
       [5, 6], // left foot forward
-      [6, 6], // stand
+      [6, 6], // passing
       [6, 5], // right foot forward
+      [6, 6], // passing
     ].map(([a, b]) => [...body, [legs[0], 18, 3, a, skin], [legs[1], 18, 3, b, skin]]),
   )
 
-// Walter's sheet, in the same 3x4 character layout. A crab looks much the same from every side, so
+// Walter's sheet, in the same 4x4 character layout. A crab looks much the same from every side, so
 // all four rows share one picture; the walk columns lift alternate legs a pixel so the walk reads.
-// The shrimp farmer, in the same 3x4 character layout. He never gets off his seat, so every frame
+// The shrimp farmer, in the same 4x4 character layout. He never gets off his seat, so every frame
 // is the same seated pose: a pink curl on a brown stool, feet clear of the ground, or on the red
 // deck chair once he has one, the chair sheet's picture sat in the lower 16 rows of the frame
 export const shrimp = (deckchair = false) => {
@@ -105,7 +107,7 @@ export const shrimp = (deckchair = false) => {
     [4, 5, 8, 11, pink], // body, curled forward over it
     [3, 12, 3, 4, pink], // tail
   ]
-  return Array.from({ length: 12 }, () => sat)
+  return Array.from({ length: 16 }, () => sat)
 }
 
 // Walter's close-up, four frames of 16x24 drawn big: as he stands, the hat lifted off, the hat gone
@@ -167,15 +169,19 @@ export const crab = () => {
     [2, 12, 12, 6, red], // body
   ]
   const legs = [2, 5, 9, 12]
+  // cols 0 and 2 are the walk contacts, lifting alternate legs; 1 and 3 are both the flat stand
   return [0, 1, 2, 3].flatMap(() =>
-    [0, 1, 2].map((col) => [
+    [0, 1, 2, 3].map((col) => [
       ...body,
-      ...legs.map((x, i) => [x, col !== 1 && i % 2 === (col ? 1 : 0) ? 17 : 18, 2, 3, red]),
+      ...legs.map((x, i) => {
+        const walking = col === 0 || col === 2
+        return [x, walking && i % 2 === (col ? 1 : 0) ? 17 : 18, 2, 3, red]
+      }),
     ]),
   )
 }
 
-// The albatross, in the same 3x4 character layout: a white body with one dark folded wing. The beak
+// The albatross, in the same 4x4 character layout: a white body with one dark folded wing. The beak
 // is what says which way he is looking, so the up row has none at all.
 export const bird = () => {
   const white = '#f0f0f0'
@@ -195,8 +201,9 @@ export const bird = () => {
   return beaks.flatMap((point) =>
     [
       [5, 6], // left foot forward
-      [6, 6], // stand
+      [6, 6], // passing
       [6, 5], // right foot forward
+      [6, 6], // passing
     ].map(([a, b]) => [
       ...body,
       ...(point ? [[...point, beak]] : []),
