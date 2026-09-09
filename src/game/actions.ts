@@ -264,8 +264,8 @@ export function apply(w: World, a: Action, c: Content): void {
     obj.facing = OPP[p.facing] // the npc looks back at the player
     return
   }
-  if (obj?.kind === 'sign') {
-    open(obj.dialogue) // a sign just reads out; nothing turns and no one is talked to
+  if (obj?.kind === 'sign' || obj?.kind === 'harry') {
+    open(obj.dialogue) // a sign just reads out, and so does harry: he never gets up either
     return
   }
   if (obj?.kind === 'boat') {

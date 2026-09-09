@@ -197,7 +197,9 @@ export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
     const at = (n: number, to: number) => (o.step ? n + (to - n) * o.step.t : n) * 16
     // On the ground it lies under every actor, including those approaching from the far side.
     sprite.setOrigin(0.25, 0.75).setDepth(up > 0 ? 9000 : 1)
-    sprite.setPosition(at(o.x, o.step?.x ?? o.x) + swing, at(o.y, o.step?.y ?? o.y) + 16 - up)
+    sprite
+      .setPosition(at(o.x, o.step?.x ?? o.x) + swing, at(o.y, o.step?.y ?? o.y) + 16 - up)
+      .setFrame(o.step ? 1 : 0) // the flutter while it is actually flying a step, still otherwise
     return
   }
   if (o.kind === 'npc' && o.flat) {

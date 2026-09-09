@@ -146,6 +146,12 @@ export const flyingcarpet = [
   [0, 14, 2, 4, '#e0c040'], // a tassel each end
   [30, 14, 2, 4, '#e0c040'],
 ]
+// the flutter while it is actually flying a step: the same carpet, tassels trailing unevenly
+export const carpetFlying = [
+  [2, 9, 28, 12, '#8a3a8a'],
+  [0, 12, 2, 4, '#e0c040'], // one tassel trails up
+  [30, 16, 2, 4, '#e0c040'], // the other trails down
+]
 
 // the shade under anything in the air: one flat disc, faded down by the scene that draws it
 export const shadow = (x, y) => ((x - 15.5) ** 2 + (y - 15.5) ** 2 < 196 ? '#101820' : null)
@@ -295,6 +301,21 @@ export const cinder = [
 export const signpost = [
   [7, 8, 2, 8, '#7a5a3a'],
   [2, 2, 12, 7, '#a08050'],
+]
+
+// suspicious harry, reclining across however many of his three deck chairs are still there: not a
+// walk cycle, one 64x32 picture per chair count. 0 all three · 1 two left · 2 one left · 3 none
+const harryBody = [10, 8, 44, 16, '#c8c0b8']
+const harryChairs = [
+  [6, 22, 12, 8, '#7a5a3a'],
+  [26, 22, 12, 8, '#7a5a3a'],
+  [46, 22, 12, 8, '#7a5a3a'],
+]
+export const harry = [
+  [...harryChairs, harryBody],
+  [harryChairs[0], harryChairs[1], harryBody],
+  [harryChairs[0], harryBody],
+  [harryBody],
 ]
 
 // the little heart the two of them share on the way out, in the same pink the score pops use

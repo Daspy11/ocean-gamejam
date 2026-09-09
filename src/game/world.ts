@@ -43,6 +43,8 @@ export type Obj = {
   push?: string
   // the tile it left a hand on and when: the scene arcs it over from there for 300 ms
   thrown?: { x: number; y: number; at: number }
+  // drawn into somebody else's sheet instead, so this one draws nothing of its own
+  hidden?: boolean
 } & (
   | {
       kind: 'npc'
@@ -71,10 +73,13 @@ export type Obj = {
   | { kind: 'boat'; wrecked?: boolean; dialogue?: string }
   | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
+  // suspicious harry: he never walks, so interact just reads his dialogue, like a tree
+  | { kind: 'harry'; dialogue: string }
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
-  // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`
-  | { kind: 'cave'; to: { x: number; y: number } }
+  // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`.
+  // `inside` is the room-side mouth, drawn from the sheet's second frame
+  | { kind: 'cave'; to: { x: number; y: number }; inside?: boolean }
   | { kind: 'rum' } // the bottle in the cave: interact carries it off
   // a piece of Etarp's counter: talked across, and with a drink on it interact takes the drink
   | { kind: 'bar'; drink?: boolean }
@@ -82,6 +87,7 @@ export type Obj = {
   | { kind: 'chair' } // one of the deck chairs: picked up whole once suspicious harry has allowed it
   | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
   | { kind: 'fence' } // a post and rail of the ring round his field: nothing to do with it, just solid
+  | { kind: 'fencev' } // the same post, drawn for a run of the ring climbing north-south instead
   // the desalinator 9000: it eats a beauty every 2 s from wherever it lands until a `boom` act
   // sets `boomAt`, which is when it goes up
   | { kind: 'machine'; nextAt?: number; boomAt?: number }
@@ -110,6 +116,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
   sign: { w: 1, h: 1, solid: true },
+  harry: { w: 1, h: 1, solid: true },
   flower: { w: 1, h: 1, solid: true },
   cave: { w: 1, h: 1, solid: false },
   rum: { w: 1, h: 1, solid: true },
@@ -118,6 +125,7 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   chair: { w: 1, h: 1, solid: true },
   carrot: { w: 1, h: 1, solid: true },
   fence: { w: 1, h: 1, solid: true },
+  fencev: { w: 1, h: 1, solid: true },
   machine: { w: 1, h: 1, solid: true },
   floor: { w: 1, h: 1, solid: false },
   egg: { w: 1, h: 1, solid: true },
@@ -296,7 +304,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           npc('albatross', 'albatross', 36, 20, 'down', 'albatross'),
           // the mouth walled in by the forest, and the sand tile at the far end of the room
           { id: 'cave1', kind: 'cave', x: 42, y: 17, to: { x: 10, y: 40 } },
-          { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 } },
+          { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 }, inside: true },
           { id: 'rum1', kind: 'rum', x: 10, y: 37 },
           // the locked gate at the south end of the corridor through the forest to the mouth
           { id: 'gate1', kind: 'gate', x: 42, y: 21 },
@@ -304,18 +312,28 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
           npc('shrimp', 'shrimp', 49, 13, 'down', 'shrimp'),
           // the chest on the north island's west tip, with the key to the gate in it
           { id: 'crate4', kind: 'crate', x: 19, y: 3, open: false, item: 'key' },
-          // suspicious harry, stood over his three deck chairs on the big island's south shore
-          npc('harry', 'harry', 42, 25, 'up', 'harry'),
-          { id: 'chair1', kind: 'chair', x: 41, y: 26 },
-          { id: 'chair2', kind: 'chair', x: 42, y: 26 },
-          { id: 'chair3', kind: 'chair', x: 43, y: 26 },
+          // suspicious harry, reclining over his three deck chairs on the big island's south shore:
+          // one picture of the whole scene, bottom-left anchored so it spans up and right from here
+          // over the chairs below, which stay as their own objects for the pick-up-a-chair mechanic
+          // but draw nothing themselves now that his sheet already shows them
+          { id: 'harry', kind: 'harry', x: 40, y: 26, dialogue: 'harry' },
+          { id: 'chair1', kind: 'chair', x: 41, y: 26, hidden: true },
+          { id: 'chair2', kind: 'chair', x: 42, y: 26, hidden: true },
+          { id: 'chair3', kind: 'chair', x: 43, y: 26, hidden: true },
         ]
   // the forest and the carrot field are drawn in the map rather than listed: one object per glyph
   rows.forEach((row, y) =>
     [...row].forEach((ch, x) => {
       if (ch === 'T') objects.push({ id: `tree${x}-${y}`, kind: 'tree', x, y, dialogue: 'bigtree' })
       if (ch === 'F') objects.push({ id: `carrot${x}-${y}`, kind: 'carrot', x, y })
-      if (ch === '=') objects.push({ id: `fence${x}-${y}`, kind: 'fence', x, y })
+      // a run with fence on neither side but one above or below is climbing north-south
+      if (ch === '=') {
+        const vertical =
+          (rows[y - 1]?.[x] === '=' || rows[y + 1]?.[x] === '=') &&
+          row[x - 1] !== '=' &&
+          row[x + 1] !== '='
+        objects.push({ id: `fence${x}-${y}`, kind: vertical ? 'fencev' : 'fence', x, y })
+      }
     }),
   )
   return {

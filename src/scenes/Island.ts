@@ -320,18 +320,17 @@ export default class Island extends Phaser.Scene {
       if (o.kind === 'crate') frame = o.open ? 1 : 0
       if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
-      if (o.kind === 'bar' && o.drink) frame = 1 // the cocktail stood on the counter
+      if ((o.kind === 'bar' && o.drink) || (o.kind === 'cave' && o.inside)) frame = 1 // cocktail up, or the room-side mouth
+      if (o.kind === 'harry') frame = 3 - world.objects.filter((c) => c.hidden).length
       if (o.kind === 'npc') frame = ROW[o.facing] * 3 + 1 // standing; draw() takes it from here
       // flags['sprite:<id>'] draws an npc off another sheet: the shrimp once he has his deck chair
       const skin = world.flags[`sprite:${o.id}`]
       const sheet = o.kind !== 'npc' ? o.kind : typeof skin === 'string' ? skin : o.sprite
-      return (
-        this.add
-          .sprite(o.x * 16, feet, `sprites/${sheet}`, frame)
-          .setOrigin(0, 1)
-          // a floor, and a ball sunk in the dirt, lie flat: he walks over them rather than behind
-          .setDepth(o.kind === 'floor' || o.kind === 'embedded' ? feet - 1 : feet)
-      )
+      return this.add
+        .sprite(o.x * 16, feet, `sprites/${sheet}`, frame)
+        .setOrigin(0, 1)
+        .setVisible(!o.hidden) // drawn into somebody else's sheet instead: harry's three chairs
+        .setDepth(o.kind === 'floor' || o.kind === 'embedded' ? feet - 1 : feet) // flat things lie behind
     })
     this.trees = []
     world.objects.forEach((o, i) => {

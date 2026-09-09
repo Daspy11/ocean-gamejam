@@ -19,6 +19,8 @@ export const gallery = (): Obj[] => [
   { id: 'g-sign', kind: 'sign', x: 3, y: 20, dialogue: 'sign' },
   { id: 'g-fence', kind: 'fence', x: 2, y: 19 }, // two in a row, so the rail line reads
   { id: 'g-fence2', kind: 'fence', x: 3, y: 19 },
+  { id: 'g-fencev', kind: 'fencev', x: 6, y: 17 }, // stacked, so the vertical rail line reads too
+  { id: 'g-fencev2', kind: 'fencev', x: 6, y: 18 },
   // a day of sim time away, so the prototype keeps smoking rather than blowing up in here
   { id: 'g-machine', kind: 'machine', x: 5, y: 19, nextAt: 86400000 },
   npc('g-seahorse', 'seahorse', 7, 19, 'down', 'seahorse'),
@@ -31,7 +33,6 @@ export const gallery = (): Obj[] => [
   { id: 'g-certificate', kind: 'certificate', x: 10, y: 19 },
   // the pirate faces the way he is not looking, so this row draws his back
   npc('g-etarp', 'etarp', 4, 18, 'down', 'etarp'),
-  npc('g-harry', 'harry', 8, 19, 'down', 'harry'),
   // the bottom row: the bar bare and with a drink on it, the gate, a deck chair, the rum
   { id: 'g-bar', kind: 'bar', x: 2, y: 21 },
   { id: 'g-bar-drink', kind: 'bar', x: 3, y: 21, drink: true },
@@ -43,7 +44,15 @@ export const gallery = (): Obj[] => [
   { id: 'g-ball', kind: 'ball', x: 6, y: 21, at: 86400000, dir: 0 },
   { id: 'g-cinder', kind: 'cinder', x: 8, y: 21 },
   { id: 'g-embedded', kind: 'embedded', x: 10, y: 21 },
+  // the mouth out on the grass, and the same hole seen from inside the room
+  { id: 'g-cave', kind: 'cave', x: 3, y: 18, to: { x: 5, y: 18 } },
+  { id: 'g-cave-inside', kind: 'cave', x: 5, y: 18, to: { x: 3, y: 18 }, inside: true },
   // the lord and the carpet he flies in on
   npc('g-tarq', 'tarq', 4, 19, 'down', 'tarq'),
   { id: 'g-flyingcarpet', kind: 'flyingcarpet', x: 6, y: 19 },
+  // frame 1, the flutter mid-flight: t: 0 so it sits still, only the step forces the frame
+  { id: 'g-flyingcarpet-flying', kind: 'flyingcarpet', x: 7, y: 17, step: { x: 7, y: 17, t: 0 } },
+  // off to the side like the orbs, since his picture is 4x2, wider than the pad has room for: one
+  // piece of art, bottom-left anchored here, spanning up and right over the chairs it already draws
+  { id: 'g-harry', kind: 'harry', x: 13, y: 21, dialogue: 'harry' },
 ]

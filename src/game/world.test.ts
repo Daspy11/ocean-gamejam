@@ -84,7 +84,7 @@ describe('objectAt', () => {
     expect(objectAt(w, 10, 37)?.id).toBe('rum1') // and the rum in the room it leads to
     expect(objectAt(w, 42, 21)?.id).toBe('gate1') // the gate at the foot of the corridor to it
     expect(objectAt(w, 19, 3)?.id).toBe('crate4') // the chest with the key, on the north island
-    expect(objectAt(w, 42, 25)?.id).toBe('harry') // over his chairs on the south shore
+    expect(objectAt(w, 40, 26)?.id).toBe('harry') // his picture, bottom-left anchored beside his chairs
     expect(objectAt(w, 43, 26)?.id).toBe('chair3')
   })
 
@@ -176,6 +176,8 @@ describe('the gallery map', () => {
       'g-sign',
       'g-fence',
       'g-fence2',
+      'g-fencev',
+      'g-fencev2',
       'g-machine',
       'g-seahorse',
       'g-wreck',
@@ -184,7 +186,6 @@ describe('the gallery map', () => {
       'g-egg',
       'g-certificate',
       'g-etarp',
-      'g-harry',
       'g-bar',
       'g-bar-drink',
       'g-gate',
@@ -194,12 +195,17 @@ describe('the gallery map', () => {
       'g-ball',
       'g-cinder',
       'g-embedded',
+      'g-cave',
+      'g-cave-inside',
       'g-tarq',
       'g-flyingcarpet',
+      'g-flyingcarpet-flying',
+      'g-harry',
     ])
-    // one orb still boiling its water tile, one already sat on the salt it made
+    // one orb still boiling its water tile, one already sat on the salt it made; harry sits out on
+    // the water too, just because the pad has no room left for his 4x2 picture
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)
-    expect(wet).toEqual(['g-orb'])
+    expect(wet).toEqual(['g-orb', 'g-harry'])
     expect(tileAt(w, 12, 20)).toBe('salt')
     expect([w.player.x, w.player.y, w.player.facing]).toEqual([8, 20, 'down'])
     expect(objectAt(w, 8, 20)).toBeUndefined() // nothing standing where the player spawns

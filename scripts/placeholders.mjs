@@ -12,6 +12,7 @@ import {
   bird,
   bottle,
   cannon,
+  carpetFlying,
   certificate,
   chair,
   character,
@@ -21,6 +22,7 @@ import {
   egg,
   flyingcarpet,
   gate,
+  harry,
   heart,
   items,
   serious,
@@ -35,6 +37,8 @@ const machine = (x, y) => ((y > 8 ? x > 1 && x < 14 : x > 9 && x < 12 && y > 2) 
 
 // a fence post: one rail the full width of the tile, so a run of them joins up
 const fence = (x, y) => ((y > 5 && y < 8) || (x > 5 && x < 10 && y > 3) ? '#7a5a3a' : null)
+// the same post and rail, turned 90 degrees for a run climbing north-south instead of east-west
+const fencev = (x, y) => fence(y, x)
 
 // The dialogue and inventory frame: a flat panel behind a plain edge, drawn in game as a nine-slice
 // cut at 8px, so only the corners survive intact and the middle column and row get stretched.
@@ -72,13 +76,6 @@ const sheets = [
     frames: character({ hair: '#101010', skin: '#c8c0b8', shirt: '#b03030' }),
   },
   { file: 'sprites/albatross.png', w: 16, h: 24, cols: 3, frames: bird() },
-  {
-    file: 'sprites/harry.png',
-    w: 16,
-    h: 24,
-    cols: 3,
-    frames: character({ hair: '#806040', skin: '#c8c0b8', shirt: '#404860' }),
-  },
   { file: 'sprites/shrimp.png', w: 16, h: 24, cols: 3, frames: shrimp() },
   {
     file: 'sprites/tarq.png',
@@ -189,17 +186,21 @@ const sheets = [
     ],
   },
   { file: 'sprites/sign.png', w: 16, h: 16, cols: 1, frames: [signpost] },
+  { file: 'sprites/harry.png', w: 64, h: 32, cols: 4, frames: harry },
   {
     file: 'sprites/cave.png',
     w: 16,
     h: 32,
-    cols: 1,
+    cols: 2,
     frames: [
       [
         [3, 8, 10, 24, '#3a3a44'], // the hump, standing a tile higher than the ground
         [1, 14, 14, 18, '#3a3a44'],
         [5, 20, 6, 12, '#101014'], // the way in, at its foot
         [4, 24, 8, 8, '#101014'],
+      ], // 0 the mouth out on the grass
+      [
+        [2, 8, 12, 24, '#101014'], // 1 the same hole, seen from inside the rock room: just the dark opening
       ],
     ],
   },
@@ -224,12 +225,13 @@ const sheets = [
   { file: 'sprites/ball.png', w: 16, h: 16, cols: 1, frames: [[[5, 5, 6, 6, '#ffffff']]] },
   { file: 'sprites/embedded.png', w: 16, h: 16, cols: 1, frames: [[[5, 6, 6, 5, '#3a3a44']]] },
   { file: 'sprites/cinder.png', w: 16, h: 16, cols: 1, frames: [cinder] },
-  { file: 'sprites/flyingcarpet.png', w: 32, h: 32, cols: 1, frames: [flyingcarpet] },
+  { file: 'sprites/flyingcarpet.png', w: 32, h: 32, cols: 2, frames: [flyingcarpet, carpetFlying] },
   { file: 'sprites/shadow.png', w: 32, h: 32, cols: 1, frames: [shadow] },
   { file: 'sprites/heart.png', w: 16, h: 16, cols: 1, frames: [heart] },
   { file: 'sprites/items.png', w: 16, h: 16, cols: 4, frames: items },
   { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
   { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },
+  { file: 'sprites/fencev.png', w: 16, h: 16, cols: 1, frames: [fencev] },
   { file: 'sprites/floor.png', w: 16, h: 16, cols: 1, frames: [[[1, 5, 14, 10, '#8a4a5a']]] },
   { file: 'sprites/egg.png', w: 16, h: 16, cols: 1, frames: [egg] },
   { file: 'sprites/certificate.png', w: 16, h: 16, cols: 1, frames: [certificate] },
