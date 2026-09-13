@@ -40,14 +40,23 @@
     "17": { "who": "", "text": "also why are you walking backwards", "next": "18" },
     "18": { "who": "Mich", "text": "yeah i was going to ask that too", "next": "20" },
     "20": { "text": "I WAS CURSED", "next": "21" },
-    "21": { "text": "AN EVIL SEA HORSE STOLE ME I'S AND MADE ME BACKWARDS", "next": "22" },
+    "21": {
+      "text": "AN EVIL SEA HORSE STOLE ME I'S AND MADE ME BACKWARDS",
+      "choices": [
+        { "text": "that sucks", "next": "22" },
+        { "text": "i actually found an i you could have", "has": { "glassi": 1 }, "next": "iSpin" }
+      ]
+    },
+    "iSpin": { "take": "glassi", "spin": "etarp", "next": "iYarr" },
+    "iYarr": { "text": "YARR", "next": "iMine" },
+    "iMine": { "text": "ME I!", "next": "iName" },
+    "iName": { "set": { "name:Etarp": "etarip", "etarp:i": true }, "next": "22" },
     "22": { "text": "NOW I CAN ONLY PLUNDER", "next": "23" },
     "23": { "who": "Mich", "text": "did your parents literally name you pirate", "next": "24" },
     "24": { "text": "yes", "next": "25" },
-    "25": { "who": "Mich", "text": "nice", "next": "28" },
-    "28": { "text": "BUT AFTER ME CURSE, THEY FIRED ME", "next": "29" },
+    "25": { "who": "Mich", "text": "nice", "next": "29" },
     "29": {
-      "text": "AND THEN I THOUGHT I COULD FINALLY BE A PIRATE WITHOUT PEOPLE MAKING FUN OF ME FOR BEING A PIRATE NAMED PIRATE",
+      "text": "AFTER ME CURSE I THOUGHT I COULD FINALLY BE A PIRATE WITHOUT PEOPLE MAKING FUN OF ME FOR BEING A PIRATE NAMED PIRATE",
       "next": "30"
     },
     "30": { "text": "NOW LET ME PLUNDER THAT ORB", "next": "30a" },

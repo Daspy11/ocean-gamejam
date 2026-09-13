@@ -17,7 +17,8 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "check": "npm run typecheck && npm run lint && npm run test",
-    "placeholders": "node scripts/placeholders.mjs"
+    "placeholders": "node scripts/placeholders.mjs",
+    "sfx": "node scripts/sfx.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"
@@ -26,6 +27,7 @@
     "@types/node": "^22.20.1",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
+    "jsfxr": "1.4.1",
     "pngjs": "^7.0.0",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",

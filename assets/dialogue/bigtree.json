@@ -1,0 +1,14 @@
+{
+  "name": "",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "it's a tree on the big island", "next": null },
+    "5": {
+      "text": "did you seriously think one of these trees had a secret dialogue option",
+      "next": null
+    },
+    "10": { "text": "yeah but no seriously there isn't any content here", "next": null },
+    "15": { "text": "like i know this is content but really come on", "next": null },
+    "20": { "text": "ok that's enough content now i need to actually finish the game", "next": null }
+  }
+}

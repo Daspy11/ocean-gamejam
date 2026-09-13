@@ -44,7 +44,7 @@
       ]
     },
     "yes": {
-      "text": "thank you",
+      "text": "thanks, i might invite a friend over a bit later",
       "set": {
         "tree:promised": true
       },

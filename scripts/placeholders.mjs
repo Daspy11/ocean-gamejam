@@ -45,6 +45,7 @@ const fencev = (x, y) => fence(y, x)
 const boxframe = (x, y) => (x < 2 || y < 2 || x > 21 || y > 21 ? '#e0e0e0' : '#101820')
 
 const sheets = [
+  { file: 'sprites/logo.png', w: 343, h: 112, cols: 1, frames: [[[0, 0, 343, 112, '#b0d8e0']]] },
   { file: 'tiles/water.png', w: 16, h: 16, cols: 1, frames: [[[0, 0, 16, 16, '#3b6fb6']]] },
   { file: 'tiles/salt.png', w: 16, h: 16, cols: 5, frames: dual('#c4ccd6') },
   { file: 'tiles/sand.png', w: 16, h: 16, cols: 5, frames: dual('#d8c58e') },
@@ -229,6 +230,7 @@ const sheets = [
   { file: 'sprites/shadow.png', w: 32, h: 32, cols: 1, frames: [shadow] },
   { file: 'sprites/heart.png', w: 16, h: 16, cols: 1, frames: [heart] },
   { file: 'sprites/items.png', w: 16, h: 16, cols: 4, frames: items },
+  { file: 'sprites/glassi.png', w: 16, h: 16, cols: 1, frames: [[[6, 3, 4, 11, '#b0d8e0']]] },
   { file: 'sprites/machine.png', w: 16, h: 16, cols: 1, frames: [machine] },
   { file: 'sprites/fence.png', w: 16, h: 16, cols: 1, frames: [fence] },
   { file: 'sprites/fencev.png', w: 16, h: 16, cols: 1, frames: [fencev] },
@@ -312,6 +314,11 @@ const bigtree = {
   nodes: { 1: { text: '[PLACEHOLDER a tree on the big island]', next: null } },
 }
 
-if (!only.length)
+if (!only.length) {
+  write(
+    'text/title.json',
+    `${JSON.stringify({ start: '[PLACEHOLDER start]', soundOn: '[PLACEHOLDER sound on]', soundOff: '[PLACEHOLDER sound off]' }, null, 2)}\n`,
+  )
   for (const [key, data] of Object.entries({ mich, away, bigtree }))
     write(`dialogue/${key}.json`, `${JSON.stringify(data, null, 2)}\n`)
+}

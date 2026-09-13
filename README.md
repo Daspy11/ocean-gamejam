@@ -10,7 +10,21 @@ npm run check                     # typecheck + lint + unit tests
 
 Scene flow: rowboat intro → island. `http://localhost:5173/?scene=island` skips straight to gameplay.
 
-Keys: arrows / WASD move (tap to turn, hold to walk), Shift run, E / Space / Enter interact, I / Tab / Esc inventory.
+The title's **settings** entry contains independent music/SFX switches and a read-only keybind reference. Preferences survive a refresh. SFX includes dialogue voices.
+
+| Action                                | Keyboard / mouse                                     | Standard gamepad                                         |
+| ------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| Move / select                         | Arrows or WASD                                       | D-pad or left stick                                      |
+| Confirm / interact / advance dialogue | Enter (including numpad), Space, E, Z, or left click | Bottom face button: A / Cross                            |
+| Open / dismiss settings               | Escape, X, or right click                            | Right face button: B / Circle, or Start / Menu / Options |
+| Open / close inventory                | I or Tab                                             | Top face button: Y / Triangle                            |
+| Run (hold while moving)               | Shift                                                | Right trigger: RT / R2                                   |
+
+Tap a direction to turn; hold it to walk. Confirm finishes typing before advancing a line, selects the current choice, or uses the selected inventory item. Click a menu option to select it directly. Movement uses the keyboard or controller; mouse-only navigation through the world is not implemented.
+
+Settings pauses gameplay, dialogue, timers, camera effects and cutscenes, then resumes where you left off. The title's boat and water keep animating while settings is open. Escape no longer skips the intro or opens inventory. Close settings with the same shortcut or its **close** button.
+
+Gamepads can connect or disconnect during play; press a button to let the browser detect one. Bindings use the standard browser mapping and physical button positions (Nintendo labels may differ). In an embedded player, click the game first to focus it. Press P three times quickly to toggle the development debug menu; Z is always confirm.
 
 Nix, for someone who just wants to play it:
 

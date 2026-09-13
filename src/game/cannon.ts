@@ -1,16 +1,10 @@
 import { beauty } from './salt'
-import { objectAt, tileAt, type Obj, type World } from './world'
+import { objectAt, rnd, tileAt, type Obj, type World } from './world'
 
 // Etarp's cannon. The `fire` act is 4 seconds of noise: a ball leaves the muzzle every 20 ms and
 // flies straight off the map in a 30 degree cone to the left, where the sea horse is, and hits
 // nothing. A `right` cannon is the mirror of that, firing east: the sea horse's answer to it. Nothing on the island is broken, but every third ball drops short and buries itself
 // in the ground somewhere down the cone, and a cannonball stuck in your island is an eyesore.
-
-// the sim's one source of randomness: a plain lcg off world.seed, so a run is the same every time
-function rnd(w: World): number {
-  w.seed = (Math.imul(w.seed, 1664525) + 1013904223) >>> 0
-  return w.seed / 4294967296
-}
 
 // a node's `fire` act. No such cannon, and the act is over at once.
 export function startFire(w: World, id: string): void {
@@ -39,7 +33,8 @@ export function fireDone(w: World, id: string): boolean {
 // Only bare ground takes one, so the sea, and anything already standing there, is left alone.
 function embed(w: World, c: Obj, dir: number): void {
   const back = c.kind === 'cannon' && c.right
-  const d = 1 + Math.floor(rnd(w) * (back ? w.width - c.x : c.x)) // out down the cone, still on the map
+  const reach = back ? (w.left ?? 0) + w.width - c.x : c.x - (w.left ?? 0)
+  const d = 1 + Math.floor(rnd(w) * reach) // out down the cone, still on the map
   const [x, y] = [c.x + (back ? d : -d), c.y + Math.round(d * Math.tan((dir * Math.PI) / 180))]
   const t = tileAt(w, x, y)
   if (!t || t === 'water' || objectAt(w, x, y)) return

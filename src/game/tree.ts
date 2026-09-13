@@ -1,4 +1,4 @@
-import type { DialogueNode, Obj, World } from './world'
+import { cueInteract, tileIndex, type DialogueNode, type Obj, type World } from './world'
 
 // The tree beats: shaking it for twigs, and a tree flying off or coming down during a cutscene.
 function tree(w: World, id: string | undefined): Extract<Obj, { kind: 'tree' }> | undefined {
@@ -51,4 +51,17 @@ export function tickTrees(w: World): boolean {
       near = true
   }
   return near
+}
+
+export function tickFlowers(w: World): void {
+  for (const o of w.objects)
+    if (o.kind === 'flower' && o.bloomAt !== undefined && !o.white && w.time >= o.bloomAt + 1500) {
+      o.white = true
+      cueInteract(w)
+      if (w.main[tileIndex(w, o.x, o.y)]) {
+        w.score += 10
+        w.pops.push({ x: o.x, y: o.y, text: '+10', at: w.time })
+      }
+      w.rev++
+    }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { createWorld, tileAt, type Content, type Obj, type World } from './world'
+import { tileIndex, createWorld, tileAt, type Content, type Obj, type World } from './world'
 
 // only the boxes the generator opens; the real lines live in assets/dialogue
 const content: Content = {
@@ -229,7 +229,7 @@ describe('beauty counts salt on the main island', () => {
 
     apply(w, { type: 'interact' }, content)
     expect([w.score, w.pops.length]).toEqual([9, 1]) // still just the -1 for boiling it
-    expect(w.main[16 * w.width + 21]).toBe(true) // and the island keeps the tile
+    expect(w.main[tileIndex(w, 21, 16)]).toBe(true) // and the island keeps the tile
   })
 
   it('charges nothing for a tile boiled out of reach of the island', () => {
@@ -244,7 +244,7 @@ describe('beauty counts salt on the main island', () => {
 
   it('leaves a crust out at sea alone too, salt in hand and all', () => {
     const w = away()
-    w.tiles[16 * w.width + 31] = 'salt'
+    w.tiles[tileIndex(w, 31, 16)] = 'salt'
     apply(w, { type: 'interact' }, content)
     expect([w.score, w.pops.length]).toEqual([10, 0])
     expect(w.inventory.salt).toBe(1) // the one carried out here, and nowhere to put it
@@ -252,7 +252,7 @@ describe('beauty counts salt on the main island', () => {
 })
 
 describe('the main island', () => {
-  const main = (w: World, x: number, y: number) => w.main[y * w.width + x]
+  const main = (w: World, x: number, y: number) => w.main[tileIndex(w, x, y)]
 
   it('is the island the player washed up on, and no other', () => {
     const w = createWorld()

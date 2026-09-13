@@ -7,11 +7,11 @@
     { "node": "1" }
   ],
   "nodes": {
-    "1": { "text": "[PLACEHOLDER etarp greeting]", "next": null },
+    "1": { "text": "i must fulfill my masculine urge to build a bar", "next": null },
     "bar": { "text": "IF YA CAN FIND ME SOME RUM, I'LL MAKE YARR A DELICIOUS COCKTAIL", "next": null },
     "rum": { "text": "FINE, HERE YE GO.", "take": "rum", "next": "spin" },
     "spin": { "spin": "etarp", "next": "here" },
     "here": { "text": "here", "drink": "bar3", "set": { "etarp:served": true }, "next": null },
-    "after": { "text": "[PLACEHOLDER Etarp, after the cocktail]", "next": null }
+    "after": { "text": "YARR, BEHOLD ME FINEST YGOLOXIM MASTERPIECE", "next": null }
   }
 }

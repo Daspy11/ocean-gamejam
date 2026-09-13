@@ -131,7 +131,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
 - Scene flow: Boot → Intro (the rowboat cutscene, data in `assets/text/intro.json`; it opens on the
   sea and waits for a press before the first line) → Island,
   which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
-  Z three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
+  P three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
   jump to any story beat — the beginning, the orb, beauty is on, ten twigs, fifteen beauty, rum for
   the yarrtender, a cocktail for harry, etarp's cannon, tarq flies in). A jump
   builds a fresh world and fast-forwards it with flags, bag, score and where he stands, so whatever

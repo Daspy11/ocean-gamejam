@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { createWorld } from '../game/world'
-import { load } from '../store'
+import { load, settings } from '../store'
+import { bindControls, openSettings } from './Settings'
 
 // The names, drawn over the flight rather than in place of it: the island scene launches this once
 // the ride is done and keeps flying underneath, so the spotlight closes on a shot that is still
@@ -24,7 +25,7 @@ const CARDS = ['thanks for playing :)', 'this was our first game, and we hope yo
 export default class Outro extends Phaser.Scene {
   private hole!: Phaser.GameObjects.Graphics
   private iris = -1 // when the spotlight started closing; the clock has not ticked yet in create
-  private enter!: Phaser.Input.Keyboard.Key
+  private controls!: ReturnType<typeof bindControls>
   private card = -1 // which of CARDS is up; -1 while the names are still the whole screen
   private text: Phaser.GameObjects.GameObject[] = [] // whatever is on the black right now
   private ready = -1 // when what is up finished fading in, so it can move on 4 s later; -1 waiting
@@ -39,7 +40,13 @@ export default class Outro extends Phaser.Scene {
     this.text = []
     this.ready = -1
     this.again = false
-    this.enter = this.input.keyboard!.addKey('ENTER')
+    this.controls = bindControls(this)
+    const resume = (elapsed: number) => {
+      if (this.iris >= 0) this.iris += elapsed
+      if (this.ready >= 0) this.ready += elapsed
+    }
+    this.events.on('settings-resume', resume)
+    this.events.once('shutdown', () => this.events.off('settings-resume', resume))
 
     // the spotlight closes on the party, and the names come up on the black it leaves behind
     this.hole = this.make.graphics({ x: 0, y: 0 })
@@ -52,15 +59,21 @@ export default class Outro extends Phaser.Scene {
   }
 
   update() {
+    if (settings.open) return
+    const input = this.controls()
+    if (input.settings) {
+      openSettings(this)
+      return
+    }
     if (this.iris < 0) this.iris = this.time.now // the clock only starts once the scene is up
     const r = Math.max(0, 480 - ((this.time.now - this.iris) / SHUT) * 480)
     this.hole.clear().fillStyle(0xffffff).fillCircle(MID, EYE, r)
 
-    const press = Phaser.Input.Keyboard.JustDown(this.enter)
+    const press = input.confirm
     if (this.again && press) {
       load(createWorld()) // a clean island, and the rowboat comes in again
       this.scene.stop('island') // the flight is still going on under all this
-      this.scene.start('intro')
+      this.scene.start('intro', { title: false })
       return
     }
     // the offer to go round again is the end of the line: it waits for Enter and nothing else

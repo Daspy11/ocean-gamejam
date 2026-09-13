@@ -1,0 +1,13 @@
+{
+  "name": "etarip",
+  "trigger": { "event": "etarip:alongside" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "YARR, MY CURSE IS HALVED AND MY HAPPINESS IS DOUBLED.", "next": "2" },
+    "2": { "text": "BLESSINS BE UPON YE", "next": "leave" },
+    "leave": { "set": { "etarip:depart": true }, "wait": 1600, "next": "mich" },
+    "mich": { "who": "Mich", "text": "what a cutie", "next": "player" },
+    "player": { "who": "", "text": "...", "next": "done" },
+    "done": { "set": { "etarip:farewell-done": true }, "next": null }
+  }
+}

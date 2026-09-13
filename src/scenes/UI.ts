@@ -1,7 +1,9 @@
 import Phaser from 'phaser'
 import { ITEMS, type Item, type World } from '../game/world'
 import { choices } from '../game/throw'
-import { content, world } from '../store'
+import { revealed } from '../game/script'
+import { content, settings, world } from '../store'
+import { speak, stopSpeech, type Speech } from './speech'
 
 const SLOT = 32 // inventory slot size; the 5x3 grid starts at 240,120 so the panel is centred on 640x360
 
@@ -12,6 +14,10 @@ export default class UI extends Phaser.Scene {
   private box!: Phaser.GameObjects.NineSlice
   private who!: Phaser.GameObjects.BitmapText
   private body!: Phaser.GameObjects.BitmapText
+  private wrapped = ''
+  private voiceLine: World['typing']
+  private voiceCount = 0
+  private speech: Speech = { until: 0 }
   private panel!: Phaser.GameObjects.NineSlice
   private label!: Phaser.GameObjects.BitmapText
   private slots: Phaser.GameObjects.GameObject[] = []
@@ -26,6 +32,15 @@ export default class UI extends Phaser.Scene {
 
   create() {
     this.leavingAt = null
+    this.voiceLine = undefined
+    this.voiceCount = 0
+    stopSpeech(this.speech)
+    const silence = () => stopSpeech(this.speech)
+    this.events.on('pause', silence)
+    this.events.once('shutdown', () => {
+      silence()
+      this.events.off('pause', silence)
+    })
     // a close-up: the world goes black under a sheet drawn 7.5x, half the screen tall, over the box
     this.black = this.add.rectangle(0, 0, 640, 360, 0x000000).setOrigin(0).setVisible(false)
     this.sky = this.add.graphics()
@@ -73,9 +88,21 @@ export default class UI extends Phaser.Scene {
     }
     this.sky.clear()
     if (c && burst) this.drawBurst(c, up)
-    if (world.rev === this.rev) return
-    this.rev = world.rev
-    this.sync()
+    if (world.rev !== this.rev) {
+      this.rev = world.rev
+      this.sync()
+    }
+    const t = world.typing
+    const count = t && !t.done ? revealed(t.text, world.time - t.at) : Infinity
+    if (this.voiceLine !== t) {
+      stopSpeech(this.speech)
+      this.voiceLine = t
+      this.voiceCount = 0
+    }
+    if (t && !t.done && t.who) speak(this, t.who, t.text, this.voiceCount, count, this.speech)
+    else stopSpeech(this.speech)
+    this.voiceCount = count
+    this.body.setText(t && count < t.text.length ? this.wrapped.slice(0, count) : this.wrapped)
   }
 
   // the dramatic entry: pixels streak left to right, coming in with the zoom; from `burst` he
@@ -140,21 +167,23 @@ export default class UI extends Phaser.Scene {
       // a node's own who of '' is the lead speaking, and he goes by 'You'; a dialogue with no name
       // at all is narration ('you got {item}'), which gets no name line and the body stays put
       const who = node.who === '' ? 'You' : node.who === null ? '' : (node.who ?? dialogue.name)
-      this.who.setText(who).setVisible(!!who)
+      this.who.setText(`${world.flags[`name:${who}`] ?? who}`).setVisible(!!who)
       const lines = node.choices
         ? choices(world, node, dialogue).map(
             (c, i) => `${i === open.choice ? '> ' : '  '}${c.text}`,
           )
-        : ['[E] continue']
+        : [`[${settings.confirmLabel}] continue`]
       const filled = (open.item ? text.replaceAll('{item}', name(open.item)) : text).replaceAll(
         '{score}',
         `${world.score}`,
       )
-      this.body.setText([filled, '', ...lines].join('\n'))
+      this.body.setText([world.typing?.text ?? filled, '', ...lines].join('\n'))
+      this.wrapped = this.body.getTextBounds().wrappedText
       const height = Math.max(112, this.body.height + 40)
       this.box.setSize(624, height).setY(352 - height)
       this.who.setY(360 - height)
       this.body.setY(376 - height)
+      if (world.typing && !world.typing.done) this.body.setText('')
     }
 
     const menu = world.menu
@@ -172,7 +201,15 @@ export default class UI extends Phaser.Scene {
       const x = 240 + (i % 5) * SLOT
       const y = 120 + Math.floor(i / 5) * SLOT
       this.slots.push(
-        this.add.image(x, y, 'sprites/items', ITEMS.indexOf(id)).setOrigin(0).setScale(2),
+        this.add
+          .image(
+            x,
+            y,
+            id === 'glassi' ? 'sprites/glassi' : 'sprites/items',
+            id === 'glassi' ? 0 : ITEMS.indexOf(id),
+          )
+          .setOrigin(0)
+          .setScale(2),
         this.add.bitmapText(x + SLOT - 1, y + SLOT - 1, 'basis33', `${n}`).setOrigin(1),
       )
     })
@@ -187,6 +224,6 @@ export default class UI extends Phaser.Scene {
     this.slots.push(cursor)
 
     const id = entries[menu.cursor]?.[0]
-    this.label.setText(id ? name(id) : '[PLACEHOLDER empty]') // long names spill out of the panel
+    this.label.setText(id ? name(id) : '') // long names spill out of the panel
   }
 }

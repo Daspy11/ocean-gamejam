@@ -1,4 +1,4 @@
-import { objectAt, tileAt } from './world'
+import { cueInteract, objectAt, tileAt, tileIndex } from './world'
 import type { Item, World } from './world'
 
 // what stands on the ground out of the bag, and the kind of object it stands there as
@@ -9,9 +9,18 @@ const STANDS: Partial<Record<Item, 'floor' | 'egg' | 'certificate' | 'chair'>> =
   chair: 'chair',
 }
 
+// Handing over the last copy removes its inventory slot.
+export function takeItem(w: World, item: Item, n: number): void {
+  if (n > 0 && (w.inventory[item] ?? 0) > 0) cueInteract(w)
+  const left = (w.inventory[item] ?? 0) - n
+  if (left > 0) w.inventory[item] = left
+  else delete w.inventory[item]
+  w.rev++
+}
+
 // beauty only counts on the main island, from the start; the floating pop waits for score:on
 export function beauty(w: World, n: number, x: number, y: number): void {
-  if (!w.main[y * w.width + x]) return
+  if (!w.main[tileIndex(w, x, y)]) return
   w.score += n
   if (w.flags['score:on']) w.pops.push({ x, y, text: n > 0 ? `+${n}` : `${n}`, at: w.time })
 }
@@ -22,10 +31,10 @@ export function beauty(w: World, n: number, x: number, y: number): void {
 // a new salt tile, from the orb or from the player's hand: it joins the main island if it touches
 // it, and is only then worth a beauty. True if it did join.
 export function makeSalt(w: World, x: number, y: number): boolean {
-  const at = y * w.width + x
+  const at = tileIndex(w, x, y)
   w.tiles[at] = 'salt'
   const near = (dx: number, dy: number) =>
-    x + dx >= 0 && x + dx < w.width && !!w.main[(y + dy) * w.width + x + dx]
+    tileAt(w, x + dx, y + dy) !== undefined && !!w.main[tileIndex(w, x + dx, y + dy)]
   w.main[at] = near(-1, 0) || near(1, 0) || near(0, -1) || near(0, 1)
   beauty(w, -1, x, y)
   w.rev++
@@ -39,6 +48,7 @@ export function tickOrbs(w: World): boolean {
   for (const o of w.objects)
     if (o.kind === 'orb' && tileAt(w, o.x, o.y) === 'water' && w.time >= o.doneAt) {
       makeSalt(w, o.x, o.y) // the orb stays put, now sitting on the crust it boiled
+      cueInteract(w, !!w.main[tileIndex(w, o.x, o.y)])
       laid = true
     }
   return laid
@@ -57,12 +67,14 @@ export function useItem(
   if (item === 'salt') {
     if (tile !== 'water') return null
     const joined = makeSalt(w, x, y) // paving the sea over costs beauty, but only near home
+    cueInteract(w, joined)
     w.inventory.salt = (w.inventory.salt ?? 0) - 1
     return joined ? 'place' : 'away'
   }
   if (item === 'orb') {
     if (tile !== 'water') return null
     w.inventory.orb = (w.inventory.orb ?? 0) - 1
+    cueInteract(w)
     // 2 s to boil, and where it was thrown from so the scene can arc it over
     w.objects.push({
       id: `orb${x}-${y}`,
@@ -80,6 +92,7 @@ export function useItem(
   const ground = tile !== undefined && tile !== 'water' && tile !== 'rock'
   if (!ground || objectAt(w, x, y)) return null
   w.objects.push({ id: `${kind}${x}-${y}`, kind, x, y })
+  cueInteract(w, !!w.main[tileIndex(w, x, y)])
   w.inventory[item] = (w.inventory[item] ?? 0) - 1
   // 5 each, but the last of the carpet, the egg and the certificate to go down is worth whatever
   // brings beauty up to 15 in fives: that is everything there is, and 15 brings the sea horse
@@ -93,5 +106,5 @@ export function useItem(
   beauty(w, worth, x, y) // beauty only ever counts at home
   w.rev++
   // laid out at sea it is worth nothing, and Walter says so
-  return w.main[y * w.width + x] ? 'used' : 'away'
+  return w.main[tileIndex(w, x, y)] ? 'used' : 'away'
 }

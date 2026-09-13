@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { blast } from './machine'
 import { findPath } from './path'
-import { createWorld, npc, type Content, type Obj, type World } from './world'
+import { tileIndex, createWorld, npc, type Content, type Obj, type World } from './world'
 
 // a tiny world drawn by hand: `#` grass · `.` sand · `s` salt · `~` water. Beauty is showing, and
 // the player stands in the far corner
 function room(rows: string[], objects: Obj[] = []): World {
   const w = createWorld()
+  w.left = 0
   w.width = rows[0].length
   w.height = rows.length
   const glyph = { '#': 'grass', '.': 'sand', s: 'salt', '~': 'water' } as const
@@ -214,7 +215,7 @@ describe('cannonballs stuck in the island', () => {
       const d = 19 - o.x
       expect(d).toBeGreaterThan(0) // all of them out to the left of the muzzle
       expect(Math.abs(o.y - 2)).toBeLessThanOrEqual(Math.round(d * Math.tan((15 * Math.PI) / 180)))
-      expect(w.tiles[o.y * w.width + o.x]).not.toBe('water') // nothing sticks in the sea
+      expect(w.tiles[tileIndex(w, o.x, o.y)]).not.toBe('water') // nothing sticks in the sea
     }
     expect(w.score).toBe(stuck.length * -3)
     expect(at(w, 'tree1').kind).toBe('tree') // 17,2 is dead ahead, and still the tree's tile
@@ -272,8 +273,8 @@ describe('the blast', () => {
       [9, 18],
       [7, 18],
     ])
-      expect([w.tiles[y * w.width + x], w.main[y * w.width + x]]).toEqual(['salt', true])
-    expect(w.tiles[18 * w.width + 6]).toBe('water') // eight out is outside the circle
+      expect([w.tiles[tileIndex(w, x, y)], w.main[tileIndex(w, x, y)]]).toEqual(['salt', true])
+    expect(w.tiles[tileIndex(w, 6, 18)]).toBe('water') // eight out is outside the circle
   })
 })
 

@@ -15,7 +15,7 @@
   ],
   "nodes": {
     "hi": {
-      "text": "[PLACEHOLDER tree 2 greeting]",
+      "text": "hi i am tree 2, not to be confused with tree",
       "next": null
     },
     "1": {

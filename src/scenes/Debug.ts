@@ -1,9 +1,9 @@
 import Phaser from 'phaser'
 import { blast } from '../game/machine'
-import { createWorld, npc, type World } from '../game/world'
+import { createWorld, npc, tileIndex, type World } from '../game/world'
 import { dispatch, load, world } from '../store'
 
-// The secret dev menu behind the Z-Z-Z shortcut in main.ts: it jumps the game to a story beat, so
+// The secret dev menu behind the P-P-P shortcut in main.ts: it jumps the game to a story beat, so
 // you can play any of them without walking the whole way there again. Every jump builds a fresh
 // world and fast-forwards it, which drops whatever cutscene was running with the world it ran in.
 // Never opened in the itch build, so the labels are plain English.
@@ -48,7 +48,7 @@ const beautyOn = (w: World) => {
 // the end of pirate.json: a salt bridge up the 20 column, the ship aground on it, and Etarp behind
 // the bar he built on the north island, waiting on rum
 const north = (w: World) => {
-  for (let y = 6; y <= 13; y++) w.tiles[y * w.width + 20] = 'salt' // 20,13 is the tile that lands it
+  for (let y = 6; y <= 13; y++) w.tiles[tileIndex(w, 20, y)] = 'salt' // 20,13 is the tile that lands it
   w.objects.push({ id: 'ship', kind: 'boat', x: 21, y: 8, wrecked: true, dialogue: 'ship' })
   w.objects.push(npc('etarp', 'etarp', 22, 2, 'down', 'etarp'))
   w.objects.push({ id: 'bar1', kind: 'bar', x: 23, y: 2 }, { id: 'bar2', kind: 'bar', x: 23, y: 3 })
@@ -144,6 +144,14 @@ const move = (
 const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
   { label: 'the beginning' }, // a fresh world is exactly where the intro leaves him
   { label: 'the orb', at: orb },
+  {
+    label: 'glass i: west island',
+    at: (w) => {
+      orb(w)
+      for (let x = -1; x < 13; x++) w.tiles[tileIndex(w, x, 17)] = 'salt'
+      w.player = { ...w.player, x: 10, y: 17, facing: 'left' }
+    },
+  },
   { label: 'beauty is on', at: beautyOn },
   {
     label: 'ten twigs for the albatross',
@@ -161,7 +169,7 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
     label: "etarp's arrival",
     at: (w) => {
       beautyOn(w)
-      for (let y = 6; y <= 13; y++) w.tiles[y * w.width + 20] = 'salt'
+      for (let y = 6; y <= 13; y++) w.tiles[tileIndex(w, 20, y)] = 'salt'
       w.flags['fired:pirate'] = true
       w.player = { ...w.player, x: 20, y: 5, facing: 'up' }
     },
@@ -210,6 +218,25 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
   },
   { label: 'rum for the yarrtender', at: yarrtender },
   { label: 'a cocktail for harry', at: cocktail },
+  {
+    label: 'glass i for etarp',
+    at: (w) => {
+      beautyOn(w)
+      north(w)
+      w.inventory.glassi = 1
+      w.flags['had:glassi'] = true
+      w.player = { ...w.player, x: 21, y: 5, facing: 'right' }
+      move(w, 'etarp', 22, 5, 'left')
+      w.dialogue = { key: 'pirate', node: '21', choice: 0 }
+    },
+  },
+  {
+    label: 'leaving with etarip',
+    at: (w) => {
+      STATES.find((s) => s.label === 'leaving the island')!.at!(w)
+      Object.assign(w.flags, { 'etarp:i': true, 'name:Etarp': 'etarip' })
+    },
+  },
 ]
 
 export default class Debug extends Phaser.Scene {
@@ -223,9 +250,16 @@ export default class Debug extends Phaser.Scene {
   }
 
   create() {
-    this.scene.pause('island') // or an arrow key would walk the player about behind the panel
-    // on shutdown rather than in close(), so main.ts stopping the scene on Z resumes it too
-    this.events.once('shutdown', () => this.scene.resume('island'))
+    const scenes = this.scene.manager.getScenes(false).filter((scene) => scene !== this)
+    const active = scenes
+      .filter((scene) => scene.sys.isActive())
+      .map((scene) => scene.sys.settings.key)
+    for (const key of active) this.scene.pause(key)
+    let jumped = false
+    // Cancelling resumes the scene stack we paused; a jump must never resurrect it.
+    this.events.once('shutdown', () => {
+      if (!jumped) for (const key of active) this.scene.resume(key)
+    })
     this.cursor = 0
     this.options = [
       {
@@ -235,10 +269,13 @@ export default class Debug extends Phaser.Scene {
       ...STATES.map(({ label, at, talk }) => ({
         label,
         run: () => {
+          jumped = true
+          for (const scene of scenes) this.scene.stop(scene.sys.settings.key)
           const w = createWorld()
           at?.(w)
           load(w)
           if (talk) dispatch({ type: 'talk', key: talk }) // a beat that opens straight into a scene
+          this.scene.launch('island', {})
         },
       })),
       {

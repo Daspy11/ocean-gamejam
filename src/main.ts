@@ -5,6 +5,8 @@ import Intro from './scenes/Intro'
 import Island from './scenes/Island'
 import Outro from './scenes/Outro'
 import UI from './scenes/UI'
+import Settings from './scenes/Settings'
+import { speak, VOICES } from './scenes/speech'
 import { content, dispatch, load, world } from './store'
 
 const game = new Phaser.Game({
@@ -16,7 +18,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   roundPixels: true,
   scale: { mode: Phaser.Scale.NONE, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [Boot, Intro, Island, UI, Debug, Outro],
+  scene: [Boot, Intro, Island, new Island('cave'), UI, Debug, Outro, Settings],
 })
 
 // A game pixel has to be a whole number of screen pixels or the browser draws some of them two wide
@@ -35,23 +37,29 @@ window.island = {
   load,
   content: () => content,
   game,
+  voices: VOICES,
+  voice: (who) => speak(game.scene.getScene('ui'), who, 'abc', 0, 3),
 }
 
-// Dev shortcut: Z three times within a second opens the secret debug menu (scenes/Debug.ts), which
-// is where the gallery flip lives now. Left out of the itch.io build.
-let zs: number[] = []
-if (import.meta.env.DEV)
+// Three P presses keep the development menu out of the game's confirm/cancel bindings.
+if (import.meta.env.DEV) {
+  let presses = 0
+  let lastPress = 0
   addEventListener('keydown', (e) => {
-    if (e.code !== 'KeyZ' || e.repeat) return
-    // one Z shuts the menu again: counting presses only makes sense while it is closed, and the
-    // scene reading the key for itself would race this listener
+    if (e.repeat) return
+    if (e.code !== 'KeyP' || game.scene.isActive('settings')) {
+      presses = 0
+      return
+    }
+    presses = e.timeStamp - lastPress > 1000 ? 1 : presses + 1
+    lastPress = e.timeStamp
+    if (presses < 3) return
+    presses = 0
+    e.preventDefault()
     if (game.scene.isActive('debug')) {
-      zs = []
       game.scene.stop('debug')
       return
     }
-    zs = [...zs.filter((t) => e.timeStamp - t < 1000), e.timeStamp]
-    if (zs.length < 3) return
-    zs = [] // three fresh presses to open it again
     game.scene.start('debug')
   })
+}

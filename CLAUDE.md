@@ -170,7 +170,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   knows nothing about it. `flipOff` in the same file draws any npc stepping off a boat that has
   just been wrecked as that same somersault, so Etarp comes off his ship the way they come off theirs.
   `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
-  Z three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
+  P three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
   jump to any story beat — the beginning, the orb, beauty is on, ten twigs, etarp's arrival, fifteen
   beauty, rum for the yarrtender, a cocktail for harry, etarp's cannon, tarq flies in, leaving the
   island). A jump

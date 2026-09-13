@@ -1,13 +1,50 @@
 import { describe, expect, it } from 'vitest'
 import { MAPS } from './map'
-import { KINDS, createWorld, objectAt, tileAt } from './world'
+import { apply } from './actions'
+import { findPath } from './path'
+import { walkPlayer } from './boat'
+import { DIRS, KINDS, createWorld, npc, objectAt, tileAt } from './world'
 
 describe('createWorld', () => {
+  it('requires a salt route around the trees to reach the stuffed seal chest', () => {
+    const w = createWorld()
+    const c = { dialogues: {}, items: {} }
+    Object.assign(w.player, { x: 46, y: 22 })
+    const walker = npc('player', 'player', 46, 22, 'right', '')
+    const chest = w.objects.find((o) => o.id === 'crate3')!
+    for (const [dx, dy] of Object.values(DIRS))
+      expect(findPath(w, walker, { x: chest.x + dx, y: chest.y + dy })).toBeNull()
+    expect(findPath(w, walker, { x: 49, y: 24 })).not.toBeNull()
+    Object.assign(w.player, { x: 49, y: 24 })
+    w.inventory.orb = 1
+    for (const dir of ['right', 'right', 'right', 'right', 'up'] as const) {
+      w.player.facing = dir
+      const x = w.player.x + DIRS[dir][0]
+      const y = w.player.y + DIRS[dir][1]
+      expect(tileAt(w, x, y)).toBe('water')
+      apply(w, { type: 'interact' }, c)
+      apply(w, { type: 'tick', dt: 2000 }, c)
+      expect(tileAt(w, x, y)).toBe('salt')
+      apply(w, { type: 'interact' }, c)
+      expect(w.inventory.orb).toBe(1)
+      walkPlayer(w, { id: 'player', to: { x, y } })
+      for (let i = 0; i < 5 && (w.player.step || w.player.path?.length); i++)
+        apply(w, { type: 'tick', dt: 100 }, c)
+      expect(w.player).toMatchObject({ x, y })
+    }
+    walkPlayer(w, { id: 'player', to: { x: chest.x + 1, y: chest.y }, facing: 'left' })
+    for (let i = 0; i < 100 && (w.player.step || w.player.path?.length); i++)
+      apply(w, { type: 'tick', dt: 100 }, c)
+    expect(w.player).toMatchObject({ x: chest.x + 1, y: chest.y, facing: 'left' })
+    apply(w, { type: 'interact' }, c)
+    expect(w.inventory.seal).toBe(1)
+  })
+
   it('takes the grid size from the rows of the map it is given', () => {
     const w = createWorld()
-    expect([w.width, w.height, w.tiles.length]).toEqual([64, 44, 64 * 44])
+    expect([w.width, w.height, w.tiles.length]).toEqual([80, 44, 80 * 44])
     expect(tileAt(w, 16, 16)).toBe('grass') // the middle of the main island
-    expect(tileAt(w, 7, 38)).toBe('rock') // the wall of the room the cave leads to
+    expect(tileAt(w, 7, 38)).toBe('water') // the cave no longer occupies the ocean
     expect(tileAt(w, 42, 17)).toBe('grass') // the tile the cave mouth stands on
     const g = createWorld('gallery')
     expect([g.width, g.height, g.tiles.length]).toEqual([32, 32, 32 * 32])
@@ -81,7 +118,7 @@ describe('objectAt', () => {
     expect(objectAt(w, 36, 20)?.id).toBe('albatross') // out on the big island
     expect(objectAt(w, 48, 22)?.id).toBe('crate3') // and the crate on the grass east of the forest
     expect(objectAt(w, 42, 17)?.id).toBe('cave1') // the mouth, walled in by the forest
-    expect(objectAt(w, 10, 37)?.id).toBe('rum1') // and the rum in the room it leads to
+    expect(objectAt(createWorld('cave'), 10, 5)?.id).toBe('rum1')
     expect(objectAt(w, 42, 21)?.id).toBe('gate1') // the gate at the foot of the corridor to it
     expect(objectAt(w, 19, 3)?.id).toBe('crate4') // the chest with the key, on the north island
     expect(objectAt(w, 40, 26)?.id).toBe('harry') // his picture, bottom-left anchored beside his chairs
@@ -126,9 +163,9 @@ describe('the intro landing', () => {
 describe('tileAt', () => {
   it('is undefined outside the map', () => {
     const w = createWorld()
-    expect(tileAt(w, -1, 16)).toBeUndefined()
+    expect(tileAt(w, (w.left ?? 0) - 1, 16)).toBeUndefined()
     expect(tileAt(w, 16, -1)).toBeUndefined()
-    expect(tileAt(w, w.width, 16)).toBeUndefined()
+    expect(tileAt(w, (w.left ?? 0) + w.width, 16)).toBeUndefined()
     expect(tileAt(w, 16, w.height)).toBeUndefined()
   })
 })

@@ -1,5 +1,4 @@
-import { gallery } from './gallery'
-import { MAPS } from './map'
+export { createWorld } from './map'
 
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
 export type Tile = 'water' | 'salt' | 'sand' | 'grass' | 'charred' | 'farm' | 'rock' // charred: burnt grass, laid by nothing yet
@@ -19,6 +18,7 @@ export const ITEMS = [
   'rum',
   'otijom',
   'chair',
+  'glassi',
 ] as const
 export type Item = (typeof ITEMS)[number]
 
@@ -41,7 +41,7 @@ export type Obj = {
   parity?: boolean
   // id of what he is shoving along: it goes the step ahead of him for the whole walk and is left behind
   push?: string
-  // the tile it left a hand on and when: the scene arcs it over from there for 300 ms
+  // the tile it left and when: objects arc for 300 ms; an npc somersaults for 600 ms
   thrown?: { x: number; y: number; at: number }
   // drawn into somebody else's sheet instead, so this one draws nothing of its own
   hidden?: boolean
@@ -51,6 +51,7 @@ export type Obj = {
       sprite: string
       facing: Dir
       dialogue: string
+      wander?: { x: number; y: number; wait?: number } // fixed 4x4 patch and remaining idle milliseconds
       ride?: string // id of the object he stands on: he takes its tile and its step
       hop?: { x: number; y: number; at: number; duration?: number } // fixed duration, even if his deck moves
       face?: Dir // where he turns once the walk or the spin runs out: a walk up to somebody ends looking at him
@@ -79,7 +80,7 @@ export type Obj = {
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
   // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`.
   // `inside` is the room-side mouth, drawn from the sheet's second frame
-  | { kind: 'cave'; to: { x: number; y: number }; inside?: boolean }
+  | { kind: 'cave'; to: { x: number; y: number; area?: 'island' | 'cave' }; inside?: boolean }
   | { kind: 'rum' } // the bottle in the cave: interact carries it off
   // a piece of Etarp's counter: talked across, and with a drink on it interact takes the drink
   | { kind: 'bar'; drink?: boolean }
@@ -138,13 +139,19 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
 }
 
 export interface World {
+  controls?: { confirm: string; inventory: string } // button labels selected at the title
+  area?: 'island' | 'cave'
+  away?: Pick<World, 'width' | 'height' | 'left' | 'tiles' | 'main' | 'objects' | 'pops'>
   rev: number // bumped by apply() on every visible change; scenes resync when it moves
   time: number // sim milliseconds
+  interactCue?: number // monotonic cue count; the scene coalesces simultaneous interactions
+  chimeCue?: number // menu choices and successful placement on the home island
   rumble: number // the sim time the screen shake ends; the scene jitters the camera until then
   seed: number // the sim's only randomness, an lcg the cannon draws its ball angles from
   width: number
+  left?: number // western map edge; absent in older snapshots, which start at zero
   height: number
-  tiles: Tile[] // row-major, index = y * width + x
+  tiles: Tile[] // row-major, index = y * width + x - (left ?? 0)
   main: boolean[] // same indexing: the island the player washed up on, the only one beauty counts on
   player: {
     x: number
@@ -177,6 +184,7 @@ export interface World {
     back?: { key: string; node: string; item?: Item } // where a got box that cut in returns to
   }
   queue: { key: string; item?: Item }[] // dialogues waiting for the open one to close, in order
+  typing?: { text: string; at: number; done?: boolean; who?: string } // resolved line, speaker and reveal start
   // the `throw` act in flight: what he is fetching, who it is for, and when it left his hand
   throwing: null | {
     kind: Obj['kind'] | 'seal'
@@ -195,6 +203,7 @@ export interface World {
     }
   }
   menu: null | { screen: 'inventory'; cursor: number }
+  farewell?: { phase: 'waiting' | 'approach' | 'alongside' | 'leave' | 'gone' | 'done'; at: number }
   // a close-up over the world: `sheet` drawn big on black, its frames from `frame` every 400 ms
   // from `at`, and the black has been up since `since`. Down when the box closes. With `burst`
   // the camera zooms in on the npc instead, under shooting stars: null until the burst act, then
@@ -215,6 +224,7 @@ export type Action =
   | { type: 'tick'; dt: number }
   | { type: 'move'; dir: Dir | null; run?: boolean } // the held direction changed; null = released
   | { type: 'interact' }
+  | { type: 'confirm' } // player press: finish revealing the line before advancing; interact stays immediate
   | { type: 'talk'; key: string } // open a dialogue by key (scripted scenes; npcs go through interact)
   | { type: 'menu' } // toggle the inventory screen
 
@@ -232,9 +242,23 @@ export const DIRS: Record<Dir, [number, number]> = {
   right: [1, 0],
 }
 
+export function rnd(w: World): number {
+  w.seed = (Math.imul(w.seed, 1664525) + 1013904223) >>> 0
+  return w.seed / 4294967296
+}
+
+export const tileIndex = (w: World, x: number, y: number) => y * w.width + x - (w.left ?? 0)
+
+export function cueInteract(w: World, chime = false): void {
+  const cue = chime ? 'chimeCue' : 'interactCue'
+  w[cue] = (w[cue] ?? 0) + 1
+  w.rev++
+}
+
 export function tileAt(w: World, x: number, y: number): Tile | undefined {
-  if (x < 0 || y < 0 || x >= w.width || y >= w.height) return undefined
-  return w.tiles[y * w.width + x]
+  const column = x - (w.left ?? 0)
+  if (column < 0 || y < 0 || column >= w.width || y >= w.height) return undefined
+  return w.tiles[tileIndex(w, x, y)]
 }
 
 export function objectAt(w: World, x: number, y: number): Obj | undefined {
@@ -254,107 +278,3 @@ export const npc = (
   facing: Dir,
   dialogue: string,
 ): Obj => ({ id, kind: 'npc', sprite, x, y, facing, dialogue })
-
-export function createWorld(map: keyof typeof MAPS = 'island'): World {
-  const rows = MAPS[map]
-  const [width, height] = [rows[0].length, rows.length]
-  if (rows.some((row) => row.length !== width))
-    throw new Error(`map.ts ${map} must be rows of ${width} characters`)
-  const glyph: Record<string, Tile> = {
-    '~': 'water',
-    s: 'salt',
-    '.': 'sand',
-    '#': 'grass',
-    '^': 'rock',
-    T: 'grass', // a tree stands on it: the tile itself is ordinary grass
-    F: 'farm', // tilled soil with a carrot growing on it
-    '=': 'grass', // grass with a fence post standing on it
-  }
-  const tiles = rows.flatMap((row) => [...row].map((ch) => glyph[ch]))
-  // island: the intro ends with the boat crashing into the west shore, so that is where everyone
-  // starts. gallery: the middle of the object pad, facing the camera.
-  const spawn: { x: number; y: number; facing: Dir } =
-    map === 'gallery' ? { x: 8, y: 20, facing: 'down' } : { x: 14, y: 16, facing: 'right' }
-  // the main island is whatever land you can walk to from the spawn: every other island is out at
-  // sea as far as beauty is concerned
-  const main = tiles.map(() => false)
-  const edge = [spawn.y * width + spawn.x]
-  while (edge.length) {
-    const at = edge.pop()!
-    if (main[at] || tiles[at] === 'water') continue
-    main[at] = true
-    // the four neighbours, minus any that fell off an end of the map or wrapped onto another row
-    for (const to of [at - 1, at + 1, at - width, at + width])
-      if (to >= 0 && to < tiles.length && Math.abs((to % width) - (at % width)) <= 1) edge.push(to)
-  }
-  const objects: Obj[] =
-    map === 'gallery'
-      ? gallery()
-      : [
-          { id: 'boat1', kind: 'boat', x: 12, y: 16 },
-          // thrown clear of the boat in the crash and left lying in the sand: picked up, not opened
-          { id: 'orb1', kind: 'orb', x: 13, y: 15, doneAt: 0 },
-          // the second crate, over on the far island: the reason to bridge the gap
-          { id: 'crate2', kind: 'crate', x: 24, y: 17, open: false, item: 'electrolytes' },
-          npc('mich', 'mich', 13, 17, 'right', 'mich'),
-          { id: 'tree1', kind: 'tree', x: 16, y: 16 },
-          { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
-          // out on the big island, on the grass the forest leaves clear
-          { id: 'crate3', kind: 'crate', x: 48, y: 22, open: false, item: 'seal' },
-          npc('albatross', 'albatross', 36, 20, 'down', 'albatross'),
-          // the mouth walled in by the forest, and the sand tile at the far end of the room
-          { id: 'cave1', kind: 'cave', x: 42, y: 17, to: { x: 10, y: 40 } },
-          { id: 'caveout', kind: 'cave', x: 10, y: 41, to: { x: 42, y: 18 }, inside: true },
-          { id: 'rum1', kind: 'rum', x: 10, y: 37 },
-          // the locked gate at the south end of the corridor through the forest to the mouth
-          { id: 'gate1', kind: 'gate', x: 42, y: 21 },
-          // the farmer, sat on his stool right above the gate in his fence
-          npc('shrimp', 'shrimp', 49, 13, 'down', 'shrimp'),
-          // the chest on the north island's west tip, with the key to the gate in it
-          { id: 'crate4', kind: 'crate', x: 19, y: 3, open: false, item: 'key' },
-          // suspicious harry, reclining over his three deck chairs on the big island's south shore:
-          // one picture of the whole scene, bottom-left anchored so it spans up and right from here
-          // over the chairs below, which stay as their own objects for the pick-up-a-chair mechanic
-          // but draw nothing themselves now that his sheet already shows them
-          { id: 'harry', kind: 'harry', x: 40, y: 26, dialogue: 'harry' },
-          { id: 'chair1', kind: 'chair', x: 41, y: 26, hidden: true },
-          { id: 'chair2', kind: 'chair', x: 42, y: 26, hidden: true },
-          { id: 'chair3', kind: 'chair', x: 43, y: 26, hidden: true },
-        ]
-  // the forest and the carrot field are drawn in the map rather than listed: one object per glyph
-  rows.forEach((row, y) =>
-    [...row].forEach((ch, x) => {
-      if (ch === 'T') objects.push({ id: `tree${x}-${y}`, kind: 'tree', x, y, dialogue: 'bigtree' })
-      if (ch === 'F') objects.push({ id: `carrot${x}-${y}`, kind: 'carrot', x, y })
-      // a run with fence on neither side but one above or below is climbing north-south
-      if (ch === '=') {
-        const vertical =
-          (rows[y - 1]?.[x] === '=' || rows[y + 1]?.[x] === '=') &&
-          row[x - 1] !== '=' &&
-          row[x + 1] !== '='
-        objects.push({ id: `fence${x}-${y}`, kind: vertical ? 'fencev' : 'fence', x, y })
-      }
-    }),
-  )
-  return {
-    rev: 0,
-    time: 0,
-    rumble: 0,
-    seed: 1,
-    width,
-    height,
-    tiles,
-    main,
-    player: { ...spawn, step: null, held: null, run: false, turnedAt: 0, parity: false },
-    inventory: {},
-    score: 0,
-    pops: [],
-    objects,
-    flags: {},
-    dialogue: null,
-    queue: [],
-    menu: null,
-    throwing: null,
-    closeup: null,
-  }
-}

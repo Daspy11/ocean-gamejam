@@ -1,0 +1,11 @@
+{
+  "name": "",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "who": null,
+      "text": "etarp's VERY SECRET rum stash DO NOT TOUCH",
+      "next": null
+    }
+  }
+}

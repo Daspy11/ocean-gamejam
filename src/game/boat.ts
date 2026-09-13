@@ -1,5 +1,5 @@
-import { findPath } from './path'
-import { DIRS, KINDS, objectAt, tileAt } from './world'
+import { findPath, tickWander } from './path'
+import { cueInteract, DIRS, KINDS, objectAt, tileAt } from './world'
 import type { DialogueNode, Dir, Obj, World } from './world'
 
 // Scripted walking: an npc on foot, a boat under sail, and whoever is standing on the boat.
@@ -12,7 +12,10 @@ export const LIFT = 1000 // ms a landed carpet takes to climb back to height bef
 export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): void {
   const o = w.objects.find((x) => x.id === walk.id)
   if (!o) return
-  if (o.kind === 'npc') delete o.ride // a walk of his own gets him off whatever he was riding
+  if (o.kind === 'npc') {
+    delete o.ride // a walk of his own gets him off whatever he was riding
+    delete o.wander // an explicit story walk takes control from idle wandering
+  }
   // a carpet on the ground goes up before it goes anywhere: its steps wait on the climb
   if (o.kind === 'flyingcarpet' && o.landAt !== undefined) {
     delete o.landAt
@@ -114,8 +117,10 @@ export function mount(w: World, ride: NonNullable<DialogueNode['ride']>): void {
   delete o.path
   delete o.face
   // already stood on it (a spawn that rides, say): he is simply on, with nothing to jump
-  if (o.x !== on.x || o.y !== on.y || on.kind === 'npc')
+  if (o.x !== on.x || o.y !== on.y || on.kind === 'npc') {
     o.hop = { x: o.x, y: o.y, at: w.time, duration: hopMs(o, on) }
+    cueInteract(w)
+  }
   for (const rider of [w.player, ...w.objects.filter((r) => r.kind === 'npc')]) carry(w, rider)
   w.rev++
 }
@@ -145,6 +150,7 @@ function tickHop(
 ): void {
   if (!o.hop || w.time < o.hop.at + hopMs(o.hop, o)) return
   delete o.hop
+  cueInteract(w)
   const on = w.objects.find((x) => x.id === o.ride)
   if (on && on.kind !== 'npc') o.facing = o.facing === 'left' ? 'left' : 'right'
   w.rev++
@@ -218,6 +224,22 @@ export function startSpin(w: World, id: string): void {
   o.spin = w.time + 2000
 }
 
+export function tickFarewell(w: World): boolean {
+  if (!w.flags.outro || !w.flags['etarp:i']) return false
+  const visit = (w.farewell ??= { phase: 'waiting', at: w.time })
+  const age = w.time - visit.at
+  const before = visit.phase
+  if (visit.phase === 'waiting' && age >= 5000) visit.phase = 'approach'
+  else if (visit.phase === 'approach' && age >= 1600) visit.phase = 'alongside'
+  else if (visit.phase === 'alongside' && w.flags['etarip:depart']) visit.phase = 'leave'
+  else if (visit.phase === 'leave' && age >= 1600) visit.phase = 'gone'
+  else if (visit.phase === 'gone' && w.flags['etarip:farewell-done']) visit.phase = 'done'
+  if (visit.phase === before) return false
+  visit.at = w.time
+  w.rev++
+  return visit.phase === 'alongside'
+}
+
 // per tick: everything mid-step moves on, and then riders take the tile and step of what they ride
 export function tickWalks(w: World, dt: number): void {
   tickPlayer(w)
@@ -236,6 +258,7 @@ export function tickWalks(w: World, dt: number): void {
   }
   const shoved = new Set(w.objects.map((o) => o.push))
   for (const o of w.objects) {
+    if (o.kind === 'npc' && o.wander) continue
     // a rider is carried and a pushed thing is shoved: neither steps for itself
     if (!o.step || (o.kind === 'npc' && o.ride) || shoved.has(o.id)) continue
     // a carpet just off the ground has its second of climbing before it takes its first step
@@ -243,13 +266,15 @@ export function tickWalks(w: World, dt: number): void {
       o.kind === 'flyingcarpet' && o.liftAt !== undefined
         ? Math.max(0, Math.min(dt, w.time - o.liftAt - LIFT))
         : dt
-    const ms = o.run ? 125 : 250 // ms per tile: 250 walking, 125 running
+    const tumbling = o.kind === 'npc' && o.thrown && !o.flat
+    const ms = tumbling ? 600 : o.run ? 125 : 250 // a somersault lasts as long as the opening crash
     o.step.t += elapsed / ms // progress alone is not a visible change, so no rev
     while (o.step && o.step.t >= 1) {
       const leftover = o.step.t - 1
       o.x = o.step.x
       o.y = o.step.y
       o.step = null
+      if (tumbling) delete o.thrown
       o.parity = !o.parity
       w.rev++
       stepObj(w, o, leftover) // consumes every crossed tile, even after a slow frame
@@ -276,6 +301,10 @@ export function tickWalks(w: World, dt: number): void {
       it.y = o.y + dy
       it.step = null
     }
-    if (!o.step && !o.path?.length) delete o.push // the walk is over: it stays where he left it
+    if (!o.step && !o.path?.length) {
+      delete o.push // the walk is over: it stays where he left it
+      cueInteract(w)
+    }
   }
+  tickWander(w, dt)
 }

@@ -1,5 +1,12 @@
 import type { Dir, Item, Obj } from './world'
 
+export function revealed(text: string, elapsed: number): number {
+  // Return a string offset without splitting a surrogate pair.
+  return Array.from(text)
+    .slice(0, Math.max(0, Math.floor(elapsed / 14)))
+    .join('').length
+}
+
 // The content side of the game: what a dialogue file is, and every act a cutscene node can run.
 // Data only, so a whole scene is one json file and every path through it is testable without Phaser.
 
@@ -76,12 +83,18 @@ export interface DialogueNode {
   // spends items as the node opens, one of an Item or the counts in a record; no got box
   take?: Item | Partial<Record<Item, number>>
   give?: Item // hands over one as the node opens: a crate's gain, got box and all, from a line
+  open?: string // opens this crate once, handing over its loot and firing crate:open
   set?: Record<string, boolean | number | string>
   // used when there are no choices; null or missing closes the dialogue. A list is read like `start`:
   // the first matching entry wins, and none matching closes it.
   next?: string | null | Branch[]
   after?: number // ms: a text node with one moves on by itself once it has been up that long
-  choices?: { text: string; next: string | null; set?: Record<string, boolean | number | string> }[]
+  choices?: {
+    text: string
+    next: string | null
+    set?: Record<string, boolean | number | string>
+    has?: Partial<Record<Item, number>>
+  }[]
 }
 
 export interface Content {

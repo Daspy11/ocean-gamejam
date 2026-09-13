@@ -1,5 +1,6 @@
 import type Phaser from 'phaser'
 import { describe, expect, it, vi } from 'vitest'
+import { apply } from '../game/actions'
 import { createWorld, npc, type Obj, type Content } from '../game/world'
 import { load, setContent } from '../store'
 import { drawThrow, inTheAir } from './crash'
@@ -37,6 +38,9 @@ function sprite(x = 0, y = 0) {
       this.height = (Array.isArray(text) ? text : text.split('\n')).length * 16
       return this
     },
+    getTextBounds() {
+      return { wrappedText: Array.isArray(this.text) ? this.text.join('\n') : this.text }
+    },
     setSize(_width: number, height: number) {
       this.height = height
       return this
@@ -56,25 +60,15 @@ function sprite(x = 0, y = 0) {
       this.frame = frame
       return this
     },
-    setScale() {
-      return this
-    },
-    setOrigin() {
-      return this
-    },
-    setDropShadow() {
-      return this
-    },
+    setScale: vi.fn().mockReturnThis(),
+    setOrigin: vi.fn().mockReturnThis(),
+    setDropShadow: vi.fn().mockReturnThis(),
     setVisible(visible: boolean) {
       this.visible = visible
       return this
     },
-    setTintFill() {
-      return this
-    },
-    setMaxWidth() {
-      return this
-    },
+    setTintFill: vi.fn().mockReturnThis(),
+    setMaxWidth: vi.fn().mockReturnThis(),
     clear() {
       return this
     },
@@ -134,6 +128,7 @@ describe('the flight out', () => {
     const panels: ReturnType<typeof sprite>[] = []
     const ui = new UI()
     Object.assign(ui, {
+      events: { once: vi.fn(), on: vi.fn() },
       add: {
         rectangle: sprite,
         graphics: sprite,
@@ -154,6 +149,19 @@ describe('the flight out', () => {
     expect(texts[2].text.toString()).toContain('> [PLACEHOLDER item]')
     expect(texts[2].y + texts[2].height).toBeLessThanOrEqual(panels[0].y + panels[0].height - 8)
     expect(panels[0].y).toBeGreaterThanOrEqual(0)
+    const bounds = [panels[0].y, panels[0].height, texts[2].y]
+    w.typing = { text: '[PLACEHOLDER pick]', at: w.time }
+    load(w)
+    ui.update()
+    expect(texts[2].text).toBe('')
+    apply(w, { type: 'tick', dt: 90 }, c)
+    ui.update()
+    expect(texts[2].text).toBe('[PLACE')
+    expect([panels[0].y, panels[0].height, texts[2].y]).toEqual(bounds)
+    apply(w, { type: 'confirm' }, c)
+    ui.update()
+    expect(texts[2].text.toString()).toContain('> [PLACEHOLDER item]')
+    expect(w.dialogue?.choice).toBe(5)
     setContent({ dialogues: {}, items: {} })
   })
 
@@ -211,7 +219,9 @@ describe('the flight out', () => {
         return this
       },
     }
+    const music = { play: vi.fn(), destroy: vi.fn() }
     const scene = {
+      sound: { add: vi.fn(() => music) },
       cameras: { main: camera },
       scene: { launch: vi.fn(), stop: vi.fn() },
       add: { tileSprite: sprite, image: sprite },
@@ -224,6 +234,17 @@ describe('the flight out', () => {
       player as unknown as Phaser.GameObjects.Sprite,
       sprite() as unknown as Phaser.GameObjects.Sprite,
     )
+    expect(scene.sound.add).toHaveBeenCalledWith('music/nowhereland', {
+      loop: true,
+      volume: 0,
+      mute: false,
+    })
+    expect(music.play).not.toHaveBeenCalled()
+    const fade = scene.tweens.add.mock.calls[0][0]
+    fade.onStart()
+    expect(music.play).toHaveBeenCalledOnce()
+    expect(fade.targets).toBe(music)
+    expect(fade).toMatchObject({ volume: 0.6, delay: 1500, duration: 1700 })
     const tick = scene.events.on.mock.calls[0][1] as (now: number, dt: number) => void
     const positions: number[] = []
     for (let time = 100; time <= 18000; time += 100) {
@@ -242,6 +263,9 @@ describe('the flight out', () => {
     expect(positions.at(-1)).toBeGreaterThan(640 / 2 + 32 * camera.zoom)
     expect(scene.scene.launch).toHaveBeenCalledWith('outro')
     expect(scene.scene.stop).not.toHaveBeenCalledWith('ui')
+    expect(music.destroy).not.toHaveBeenCalled()
+    scene.events.once.mock.calls[0][1]()
+    expect(music.destroy).toHaveBeenCalledOnce()
   })
 
   it('keeps the changing score visible while the HUD fades over four seconds', () => {
@@ -252,6 +276,7 @@ describe('the flight out', () => {
     const texts: ReturnType<typeof sprite>[] = []
     const ui = new UI()
     Object.assign(ui, {
+      events: { once: vi.fn(), on: vi.fn() },
       add: {
         rectangle: sprite,
         graphics: sprite,

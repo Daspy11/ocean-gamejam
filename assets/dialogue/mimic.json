@@ -1,0 +1,21 @@
+{
+  "name": "chest",
+  "trigger": { "event": "arrive:big", "unless": "had:electrolytes" },
+  "start": [{ "node": "approach" }],
+  "nodes": {
+    "approach": { "walk": { "id": "crate2", "near": "player" }, "next": "rude" },
+    "rude": { "text": "kind of rude to come to my island and not even open me", "next": "what" },
+    "what": { "who": "", "text": "what", "next": "mimic" },
+    "mimic": { "text": "what? you never seen a mimic before?", "next": "fight" },
+    "fight": { "who": "", "text": "does this mean we fight now", "next": "loot" },
+    "loot": {
+      "text": "no i am a mimic mimic, i actually have loot. can you open me?",
+      "choices": [{ "text": "yes", "next": "open" }, { "text": "yes", "next": "open" }]
+    },
+    "open": { "open": "crate2", "next": "wait" },
+    "wait": { "wait": 500, "next": "thanks" },
+    "thanks": { "text": "thanks", "next": "home" },
+    "home": { "walk": { "id": "crate2", "to": { "x": 24, "y": 17 } }, "next": null },
+    "undercover": { "text": "shh im undercover", "next": null }
+  }
+}

@@ -1,7 +1,7 @@
 import type Phaser from 'phaser'
 import { LIFT, hopMs } from '../game/boat'
-import { ITEMS, KINDS, type Obj } from '../game/world'
-import { world } from '../store'
+import { ITEMS, KINDS, type Dir, type Obj } from '../game/world'
+import { settings, world } from '../store'
 
 type Sprite = Phaser.GameObjects.Sprite
 
@@ -39,6 +39,7 @@ const hopT = (a: { x: number; y: number; hop?: Obj['thrown'] }) =>
 // where whoever is riding `on` is drawn: he swings with a carpet, flies with it, and stands on the
 // weave rather than behind it; on somebody's shoulders he is drawn a head up.
 export function deck(on?: Obj, who = ''): [number, number] {
+  if (on?.kind === 'boat' && who === 'etarp') return [0, 1]
   // up on somebody's head: he goes wherever that somebody is drawn, carpet, jump and all, and
   // sits five pixels down and a pixel over from square on top of her
   if (on?.kind === 'npc') {
@@ -126,6 +127,7 @@ export function crashIn(scene: Phaser.Scene, cast: Cast, done: () => void): void
     onUpdate: seat,
     onComplete: () => {
       boat.setDepth(depth)
+      if (settings.sfx) scene.sound.play('sfx/crash')
       scene.cameras.main.shake(300, 0.015)
       // a beat between each of them, so they read as three throws rather than one lump
       crew.forEach((c, n) =>
@@ -178,9 +180,8 @@ function flip(
   })
 }
 
-// Everything the ground has not got hold of yet. Anyone stepping off a boat that has just been
-// wrecked was thrown out of it: that one step is drawn as a somersault over the bow rather than a
-// walk, so Etarp lands like the two in the intro. Tarq, knocked off his carpet, lies where he fell,
+// Everything the ground has not got hold of yet. Etarp's impact step is a somersault over the bow,
+// so he lands like the two in the intro. Tarq, knocked off his carpet, lies where he fell,
 // and the carpet itself comes down out of the sky over its 3 s.
 export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
   if (o.kind !== 'npc' && o.thrown !== undefined) {
@@ -216,23 +217,19 @@ export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
     )
     return
   }
-  const off =
-    o.kind === 'npc' &&
-    o.step &&
-    world.objects.some(
-      (b) =>
-        b.kind === 'boat' && b.wrecked && b.y === o.y && o.x >= b.x && o.x < b.x + KINDS.boat.w,
-    )
-  if (!off) {
+  if (o.kind !== 'npc' || !o.thrown || !o.step) {
     if (sprite.originY !== 1) sprite.setOrigin(0, 1).setRotation(0) // back on his feet
     return
   }
-  const t = o.step!.t
-  // draw() has him mid-step already: this only lifts him over the gunwale and turns him over
-  sprite.setOrigin(0.5, 0.5)
-  sprite.x += 8
-  sprite.y += -12 - Math.sin(t * Math.PI) * 20
-  sprite.rotation = t * Math.PI * 2
+  const t = o.step.t
+  sprite
+    .setOrigin(0.5, 0.5)
+    .setDepth(9000)
+    .setRotation(t * Math.PI * 2)
+  sprite.setPosition(
+    (o.thrown.x + (o.step.x - o.thrown.x) * t) * 16 + 8,
+    (o.thrown.y + (o.step.y - o.thrown.y) * t) * 16 + 4 - Math.sin(t * Math.PI) * 28,
+  )
 }
 
 export function drawThrow(sprite: Sprite): void {
@@ -250,4 +247,31 @@ export function drawThrow(sprite: Sprite): void {
     .setDepth(9100)
     .setPosition((f.x + f.vx * elapsed) * 16, (f.y + f.vy * elapsed) * 16)
     .setRotation(elapsed * 12)
+}
+
+const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
+const ROW = { down: 0, left: 1, right: 2, up: 3 }
+type Actor = Pick<Obj & { kind: 'npc' }, 'x' | 'y' | 'facing' | 'step' | 'parity' | 'hop'>
+// position and frame are pure functions of the world, so there are no tweens and no animations
+export function drawActor(sprite: Phaser.GameObjects.Sprite, a: Actor, who = '', on?: Obj) {
+  const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
+  const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
+  const walking = a.step && !on // a rider shares his deck's step, but stands still on it
+  const col = walking ? (a.step!.t < 0.5 ? (a.parity ? 0 : 2) : a.parity ? 1 : 3) : 1
+  // the crab scuttles sideways, then faces his conversation partner when he stops;
+  // the pirate is blind, so he is always drawn looking the opposite way to the one he faces
+  const crab: Dir = !walking ? a.facing : a.facing === 'left' ? 'left' : 'right'
+  const facing = who === 'walter' ? crab : who === 'etarp' ? OPP[a.facing] : a.facing
+  const [swing, up] = deck(on, who) // riding: he goes with it, and stands on top of it
+  const shift = (on ? KINDS[on.kind].w * 8 - 8 : 0) + swing
+  const flying =
+    on?.kind === 'flyingcarpet' ||
+    (on?.kind === 'npc' && world.objects.some((o) => o.id === on.ride && o.kind === 'flyingcarpet'))
+  // centred on what he rides, and arcing over from where he sprang if he is still on his way up
+  return sprite
+    .setPosition(...spring(a, x + shift, y + 16 - up, up, shift))
+    .setDepth(
+      (flying ? 9000 : y + 16) + (on ? (on.kind === 'boat' ? -1 : on.kind === 'npc' ? 2 : 1) : 0),
+    )
+    .setFrame(ROW[facing] * 4 + col)
 }

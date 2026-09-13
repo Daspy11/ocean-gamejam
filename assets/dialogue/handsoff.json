@@ -1,7 +1,43 @@
 {
   "name": "suspicious harry",
-  "start": [{ "node": "1" }],
+  "start": [
+    {
+      "when": "harry:warned",
+      "node": "1"
+    },
+    {
+      "node": "warning"
+    }
+  ],
   "nodes": {
-    "1": { "text": "GET YER HANDS OFF THOSE CHAIRS", "next": null }
+    "1": {
+      "text": "GET YER HANDS OFF THOSE CHAIRS",
+      "next": null
+    },
+    "warning": {
+      "text": "GET YER HANDS OFF THOSE CHAIRS",
+      "next": "three"
+    },
+    "three": {
+      "who": "",
+      "text": "do you really need all three",
+      "next": "yes"
+    },
+    "yes": {
+      "text": "yes",
+      "next": "why"
+    },
+    "why": {
+      "who": "",
+      "text": "why",
+      "next": "stella"
+    },
+    "stella": {
+      "text": "I DRANK MY LAST CAN OF STELLA",
+      "set": {
+        "harry:warned": true
+      },
+      "next": null
+    }
   }
 }

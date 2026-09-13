@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { createWorld, type Content, type Obj, type World } from './world'
+import { tileIndex, createWorld, type Content, type Obj, type World } from './world'
 
 // the shape of assets/dialogue/boat.json: one line about the wreck, and no speaker name to draw
 const content: Content = {
@@ -85,7 +85,7 @@ const tick = (w: World, n: number, dt = 250) => {
 // the player one tile short of the north island, on the salt bridge he laid across row 8
 function ashore(): World {
   const w = createWorld()
-  for (let y = 6; y <= 12; y++) w.tiles[y * w.width + 20] = 'salt'
+  for (let y = 6; y <= 12; y++) w.tiles[tileIndex(w, 20, y)] = 'salt'
   w.player = { ...w.player, x: 20, y: 6, facing: 'up' }
   apply(w, { type: 'move', dir: 'up' }, pirateContent)
   apply(w, { type: 'tick', dt: 250 }, pirateContent) // one step: he is on the sand at 20,5
@@ -97,8 +97,12 @@ describe('the pirate arriving', () => {
     const w = ashore()
     expect([w.player.x, w.player.y]).toEqual([20, 5])
     expect(w.dialogue).toMatchObject({ key: 'pirate', node: '1' })
-    expect(w.rumble).toBe(1050) // 800 ms from the 250 ms tick he arrived on
+    expect(w.rumble).toBe(2250) // two seconds for the entrance music before the ship appears
     expect(obj(w, 'ship')).toBeUndefined() // the ship waits for the shake to pass
+    apply(w, { type: 'tick', dt: 1999 }, pirateContent)
+    expect(obj(w, 'ship')).toBeUndefined()
+    apply(w, { type: 'tick', dt: 1 }, pirateContent)
+    expect(obj(w, 'ship')?.kind).toBe('boat')
   })
 
   it('never plays a second time, however often he walks back ashore', () => {
@@ -115,7 +119,7 @@ describe('the pirate arriving', () => {
 
   it('sails the ship in with the pirate riding it, and wrecks it on the bridge', () => {
     const w = ashore()
-    tick(w, 6, 200) // the 800 ms shake, then a tick each for the two spawns and the walk
+    tick(w, 12, 200) // the two-second lead-in, then a tick each for the crew spawn and walk
     expect(obj(w, 'ship')).toMatchObject({ x: 30, y: 8 })
     expect(obj(w, 'etarp')).toMatchObject({ x: 30, y: 8, ride: 'ship' })
 
@@ -127,19 +131,37 @@ describe('the pirate arriving', () => {
     expect(ship(w)).toMatchObject({ x: 21, y: 8, wrecked: true, path: [] })
     expect(ship(w).step).toBe(null) // the tile east of the salt: it stopped dead there
     expect(w.dialogue?.node).toBe('5') // straight into the second shake
+    expect(etarp(w).ride).toBeUndefined()
+    expect(etarp(w).step).toEqual({ x: 20, y: 8, t: 0 })
+    expect(etarp(w).thrown?.at).toBe(w.time)
   })
 
-  it('shakes again, says its line, and puts the pirate down on the salt', () => {
+  it('flips at impact for 600 ms, waits 300 ms after landing, then speaks without another step off', () => {
     const w = ashore()
-    tick(w, 30, 125)
+    tick(w, 12, 200)
+    tick(w, 9, 125)
+    const impact = w.time
+    expect(w.typing).toBeUndefined()
+    apply(w, { type: 'interact' }, pirateContent)
+    expect(w.dialogue?.node).toBe('5')
+    tick(w, 1, 300)
+    expect(etarp(w).step?.t).toBe(0.5)
+    expect(w.dialogue?.node).toBe('5')
+    tick(w, 1, 300)
+    expect(etarp(w)).toMatchObject({ x: 20, y: 8, step: null, facing: 'left' })
+    expect(etarp(w).thrown).toBeUndefined()
+    expect(w.typing).toBeUndefined()
+    tick(w, 1, 299)
+    expect(w.dialogue?.node).toBe('5')
+    tick(w, 1, 1)
+    expect(w.time).toBe(impact + 900)
     expect(w.dialogue?.node).toBe('6')
-    expect(obj(w, 'etarp')).toMatchObject({ x: 21, y: 8, ride: 'ship' })
 
-    apply(w, { type: 'interact' }, pirateContent) // the line closes into the last walk
+    apply(w, { type: 'interact' }, pirateContent)
     expect(w.dialogue?.node).toBe('7')
+    expect(etarp(w).step).toBe(null)
     tick(w, 2)
     expect(etarp(w)).toMatchObject({ x: 20, y: 8, facing: 'left' })
-    expect(etarp(w).ride).toBeUndefined() // he got out of the boat to walk
     expect(w.dialogue).toBe(null)
   })
 })

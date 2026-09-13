@@ -50,8 +50,8 @@
         { "text": "no", "next": "no" }
       ]
     },
-    "yes": { "text": "[PLACEHOLDER yes]", "next": null },
-    "no": { "text": "[PLACEHOLDER no]", "next": null },
-    "again": { "text": "[PLACEHOLDER sea horse]", "next": null }
+    "yes": { "text": "um actually i can't", "next": null },
+    "no": { "text": "ok then i won't fix it then", "next": null },
+    "again": { "text": "sea horse? no, i don't, i'm the only one", "next": null }
   }
 }

@@ -1,0 +1,8 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "west:four" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "there's actually nothing that way", "next": null }
+  }
+}

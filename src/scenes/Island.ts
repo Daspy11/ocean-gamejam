@@ -1,13 +1,12 @@
 import Phaser from 'phaser'
-import { KINDS, tileAt, type Dir, type Obj } from '../game/world'
-import { dispatch, world } from '../store'
-import { crashIn, deck, drawThrow, hopOff, inTheAir, shade, spring } from './crash'
+import { KINDS, tileAt, type Dir } from '../game/world'
+import { dispatch, settings, world } from '../store'
+import { bindControls, openSettings } from './Settings'
+import { crashIn, drawActor, drawThrow, hopOff, inTheAir, shade } from './crash'
 import { makeGround, syncGround } from './ground'
 import { flyOut } from './leave'
+import { background, hearWorld } from './speech'
 const ROW = { down: 0, left: 1, right: 2, up: 3 } // character sheet row per facing
-const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
-// anything drawn walking on the grid: the player, and npcs a cutscene is walking
-type Actor = Pick<Obj & { kind: 'npc' }, 'x' | 'y' | 'facing' | 'step' | 'parity' | 'hop'>
 
 export default class Island extends Phaser.Scene {
   private rev = -1
@@ -39,17 +38,27 @@ export default class Island extends Phaser.Scene {
   }[] = []
   // one per world.pops entry, with the sim time it started and the y it floats up from
   private pops: { text: Phaser.GameObjects.BitmapText; at: number; baseY: number }[] = []
-  private keys!: Record<string, Phaser.Input.Keyboard.Key>
+  private controls!: ReturnType<typeof bindControls>
   private sent: { dir: Dir | null; run: boolean } = { dir: null, run: false }
   private arriving = false // the crash is playing: the world is frozen and nothing takes input
   private leaving = false // and the carpet is flying out east, on its way into the Outro scene
 
-  constructor() {
-    super('island')
+  constructor(key = 'island') {
+    super(key)
   }
 
   create() {
-    this.scene.launch('ui') // so a direct scene.start('island') still brings the HUD along
+    background(this)
+    hearWorld(this)
+    this.arriving = this.leaving = false
+    this.sent = { dir: null, run: false }
+    this.objects = []
+    this.smoke = []
+    this.blooms = []
+    this.trees = []
+    this.pops = []
+    this.scene.run('ui') // keep the shared HUD running across doorway transitions
+    this.scene.bringToTop('ui')
     this.layers = makeGround(this)
 
     this.player = this.add.sprite(0, 0, 'sprites/player', 1).setOrigin(0, 1)
@@ -57,17 +66,11 @@ export default class Island extends Phaser.Scene {
     this.shadow = this.add.sprite(0, 0, 'sprites/shadow').setOrigin(0.5, 0.5).setAlpha(0.35)
 
     this.cameras.main.setZoom(2)
-    this.cameras.main.setBounds(0, 0, world.width * 16, world.height * 16)
+    this.cameras.main.setBounds(16 * (world.left ?? 0), 0, 16 * world.width, 16 * world.height)
     // the sprite's origin is its feet, so offset the follow back to the centre of the player's tile
     this.cameras.main.startFollow(this.player, true, 1, 1, -8, 8)
 
-    this.keys = this.input.keyboard!.addKeys(
-      'UP,DOWN,LEFT,RIGHT,W,A,S,D,SHIFT,E,SPACE,ENTER,I,TAB,ESC',
-    ) as Record<string, Phaser.Input.Keyboard.Key>
-    // a click only ever advances the box on screen: it must never interact with the world
-    this.input.on('pointerdown', () => {
-      if (world.dialogue) dispatch({ type: 'interact' })
-    })
+    this.controls = bindControls(this)
 
     this.sync()
     this.drawActors()
@@ -77,33 +80,29 @@ export default class Island extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
+    if (settings.open) return
+    const input = this.controls(world.dialogue !== null)
+    if (input.settings) {
+      openSettings(this)
+      return
+    }
     // the ending: the carpet flies east out over the sea, drawn on top of the world it leaves. The
     // sim keeps running under it, so the shelling behind them plays itself out.
     if (world.flags.outro && !this.leaving)
       this.leaving = flyOut(this, () => this.objects, this.player, this.shadow)
     if (this.arriving) return // the crash tweens own the sprites until they are on their feet
-    if (this.leaving) return this.frame(delta) // no input, and the flight owns crew and camera
-    const dirs: [Dir, Phaser.Input.Keyboard.Key[]][] = [
-      ['up', [this.keys.UP, this.keys.W]],
-      ['down', [this.keys.DOWN, this.keys.S]],
-      ['left', [this.keys.LEFT, this.keys.A]],
-      ['right', [this.keys.RIGHT, this.keys.D]],
-    ]
-    // the most recently pressed direction wins, so rolling from one key to another never sticks
-    let dir: Dir | null = null
-    let at = 0
-    for (const [d, keys] of dirs)
-      for (const key of keys) if (key.isDown && key.timeDown >= at) [at, dir] = [key.timeDown, d]
-    const run = this.keys.SHIFT.isDown
+    if (this.leaving) {
+      if (world.dialogue && input.confirm) dispatch({ type: 'confirm' })
+      return this.frame(delta)
+    }
+    const { dir, run } = input
     if (dir !== this.sent.dir || run !== this.sent.run) {
       this.sent = { dir, run }
       dispatch({ type: 'move', dir, run })
     }
 
-    const down = (keys: Phaser.Input.Keyboard.Key[]) =>
-      keys.some((key) => Phaser.Input.Keyboard.JustDown(key))
-    if (down([this.keys.E, this.keys.SPACE, this.keys.ENTER])) dispatch({ type: 'interact' })
-    if (down([this.keys.I, this.keys.TAB, this.keys.ESC])) dispatch({ type: 'menu' })
+    if (input.confirm) dispatch({ type: 'confirm' })
+    if (input.inventory) dispatch({ type: 'menu' })
 
     this.frame(delta)
   }
@@ -111,7 +110,16 @@ export default class Island extends Phaser.Scene {
   // the world, drawn: one tick of the sim and everything that moves off it. The camera goes with
   // the player, except during the ending, when the flight has taken it.
   private frame(delta: number) {
+    const target = world.area === 'cave' ? 'cave' : 'island'
+    if (this.scene.key !== target) {
+      this.scene.start(target, {})
+      return
+    }
     dispatch({ type: 'tick', dt: delta })
+    if ((world.area === 'cave' ? 'cave' : 'island') !== target) {
+      this.scene.start(world.area === 'cave' ? 'cave' : 'island', {})
+      return
+    }
     if (world.rev !== this.rev) {
       this.rev = world.rev
       this.sync()
@@ -233,7 +241,7 @@ export default class Island extends Phaser.Scene {
   // up with world.objects[i], sync maps them in order
   private drawActors() {
     const rides = world.objects.find((o) => o.id === world.player.ride) // he can ride too
-    this.draw(this.player, world.player, 'player', rides)
+    drawActor(this.player, world.player, 'player', rides)
     // once the zoom is in, the UI scene's big sheet stands in for him, on the same spot
     const c = world.closeup
     const star =
@@ -243,7 +251,7 @@ export default class Island extends Phaser.Scene {
       if (!sprite) return
       if (o.kind === 'npc') {
         const on = world.objects.find((r) => r.id === o.ride) // a rider shares its tile
-        this.draw(sprite, o, o.sprite, on).setVisible(o !== star)
+        drawActor(sprite, o, o.sprite, on).setVisible(o !== star)
       }
       // a boat under sail, a carpet in the air or a cannon being shoved moves like an actor, but
       // its frame is its own state, set by sync()
@@ -255,31 +263,6 @@ export default class Island extends Phaser.Scene {
     })
     const rug = world.objects.findIndex((o) => o.kind === 'flyingcarpet')
     shade(this.shadow, world.objects[rug], this.objects[rug])
-  }
-
-  // position and frame are pure functions of the world, so there are no tweens and no animations
-  private draw(sprite: Phaser.GameObjects.Sprite, a: Actor, who = '', on?: Obj) {
-    const x = (a.step ? a.x + (a.step.x - a.x) * a.step.t : a.x) * 16
-    const y = (a.step ? a.y + (a.step.y - a.y) * a.step.t : a.y) * 16
-    const walking = a.step && !on // a rider shares his deck's step, but stands still on it
-    const col = walking ? (a.step!.t < 0.5 ? (a.parity ? 0 : 2) : a.parity ? 1 : 3) : 1
-    // the crab scuttles sideways whichever way he is going and turns to face you when he stops;
-    // the pirate is blind, so he is always drawn looking the opposite way to the one he faces
-    const crab: Dir = !walking ? 'down' : a.facing === 'left' ? 'left' : 'right'
-    const facing = who === 'walter' ? crab : who === 'etarp' ? OPP[a.facing] : a.facing
-    const [swing, up] = deck(on, who) // riding: he goes with it, and stands on top of it
-    const shift = (on ? KINDS[on.kind].w * 8 - 8 : 0) + swing
-    const flying =
-      on?.kind === 'flyingcarpet' ||
-      (on?.kind === 'npc' &&
-        world.objects.some((o) => o.id === on.ride && o.kind === 'flyingcarpet'))
-    // centred on what he rides, and arcing over from where he sprang if he is still on his way up
-    return sprite
-      .setPosition(...spring(a, x + shift, y + 16 - up, up, shift))
-      .setDepth(
-        (flying ? 9000 : y + 16) + (on ? (on.kind === 'boat' ? -1 : on.kind === 'npc' ? 2 : 1) : 0),
-      )
-      .setFrame(ROW[facing] * 4 + col)
   }
 
   private sync() {

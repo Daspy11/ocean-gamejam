@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, type Content, type World } from './world'
@@ -49,6 +50,48 @@ function belowChair(): World {
 }
 
 describe('the deck chairs', () => {
+  it.each(['chair', 'harry'])(
+    'plays the Stella exchange once when first approaching %s',
+    (first) => {
+      const c: Content = {
+        ...content,
+        dialogues: Object.fromEntries(
+          ['handsoff', 'harry'].map((key) => [
+            key,
+            JSON.parse(
+              readFileSync(new URL(`../../assets/dialogue/${key}.json`, import.meta.url), 'utf8'),
+            ),
+          ]),
+        ),
+      }
+      const w = belowChair()
+      if (first === 'harry') Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
+      apply(w, { type: 'interact' }, c)
+      for (const [who, text] of [
+        ['suspicious harry', 'GET YER HANDS OFF THOSE CHAIRS'],
+        ['', 'do you really need all three'],
+        ['suspicious harry', 'yes'],
+        ['', 'why'],
+        ['suspicious harry', 'I DRANK MY LAST CAN OF STELLA'],
+      ]) {
+        const d = c.dialogues[w.dialogue!.key]
+        const node = d.nodes[w.dialogue!.node]
+        expect([node.who ?? d.name, node.text]).toEqual([who, text])
+        apply(w, { type: 'interact' }, c)
+      }
+      expect(w.flags['harry:warned']).toBe(true)
+      for (let i = 0; i < 10 && w.dialogue; i++) apply(w, { type: 'interact' }, c)
+      Object.assign(w.player, { x: 41, y: 27, facing: 'up' })
+      apply(w, { type: 'interact' }, c)
+      expect(w.dialogue?.key).toBe('handsoff')
+      apply(w, { type: 'interact' }, c)
+      expect(w.dialogue).toBeNull()
+      Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
+      apply(w, { type: 'interact' }, c)
+      expect(w.dialogue?.node).toBe(first === 'chair' ? '1' : 'again')
+    },
+  )
+
   it("are harry's until he says so: interact only gets you shouted at", () => {
     const w = belowChair()
     apply(w, { type: 'interact' }, content)

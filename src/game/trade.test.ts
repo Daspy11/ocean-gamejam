@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { createWorld, type Content, type World } from './world'
+import { createWorld, objectAt, tileAt, type Content, type World } from './world'
 
 // A dialogue that reads the bag and pays out of it: `has` on a branch, a record `take`, a `give`.
 const content: Content = {
@@ -69,6 +69,71 @@ function toBranch(w: World) {
 }
 
 describe('an npc who wants ten twigs', () => {
+  it('wanders inside the same 4x4 patch with 4–8 second pauses, reproducibly after saving', () => {
+    const w = createWorld()
+    const bird = w.objects.find((o) => o.id === 'albatross')!
+    const visited = new Set<string>()
+    const pauses = new Set<number>()
+    for (let i = 0; i < 3000; i++) {
+      const moving = !!bird.step
+      apply(w, { type: 'tick', dt: 100 }, content)
+      for (const p of [bird, ...(bird.step ? [bird.step] : [])]) {
+        expect(p.x).toBeGreaterThanOrEqual(34)
+        expect(p.x).toBeLessThan(38)
+        expect(p.y).toBeGreaterThanOrEqual(19)
+        expect(p.y).toBeLessThan(23)
+        expect(['water', 'rock']).not.toContain(tileAt(w, p.x, p.y))
+        expect(objectAt(w, p.x, p.y)?.id ?? bird.id).toBe(bird.id)
+      }
+      visited.add(`${bird.x},${bird.y}`)
+      if (moving && !bird.step && bird.kind === 'npc') {
+        const wait = bird.wander!.wait!
+        expect(wait).toBeGreaterThanOrEqual(4000)
+        expect(wait).toBeLessThanOrEqual(8000)
+        pauses.add(wait)
+      }
+    }
+    expect(visited.size).toBeGreaterThan(4)
+    expect(pauses.size).toBeGreaterThan(4)
+    const saved: World = JSON.parse(JSON.stringify(w))
+    for (let i = 0; i < 200; i++) {
+      apply(w, { type: 'tick', dt: 100 }, content)
+      apply(saved, { type: 'tick', dt: 100 }, content)
+    }
+    expect(JSON.parse(JSON.stringify(w))).toEqual(saved)
+  })
+
+  it.each([false, true])(
+    'pauses for conversation and inventory, and avoids a player step: %s',
+    (stepping) => {
+      const w = atBird(0)
+      const bird = w.objects.find((o) => o.id === 'albatross')!
+      apply(w, { type: 'interact' }, content)
+      const stopped = structuredClone(bird)
+      apply(w, { type: 'tick', dt: 20000 }, content)
+      expect(bird).toEqual(stopped)
+      w.dialogue = null
+      w.menu = { screen: 'inventory', cursor: 0 }
+      apply(w, { type: 'tick', dt: 20000 }, content)
+      expect(bird).toEqual(stopped)
+      w.menu = null
+      for (let i = 0; i < 100 && !bird.step; i++) apply(w, { type: 'tick', dt: 100 }, content)
+      expect(bird.step).toBeTruthy()
+      apply(w, { type: 'interact' }, content)
+      expect(w.dialogue).toMatchObject({ key: 'albatross' })
+      const midStep = structuredClone(bird)
+      apply(w, { type: 'tick', dt: 20000 }, content)
+      expect(bird).toEqual(midStep)
+      w.dialogue = null
+      const target = { x: bird.step!.x, y: bird.step!.y }
+      if (stepping) w.player.step = { ...target, t: 0 }
+      else Object.assign(w.player, target)
+      apply(w, { type: 'tick', dt: stepping ? 1 : 250 }, content)
+      expect(bird.step).toBeNull()
+      expect([bird.x, bird.y]).not.toEqual([target.x, target.y])
+    },
+  )
+
   it('branches on what is in the bag', () => {
     const w = atBird(10)
     toBranch(w)

@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { JSONS, SHEETS, resolve } from '../assets'
+import { AUDIO, JSONS, MUSIC, SFX, SHEETS, resolve } from '../assets'
 import { MAPS } from '../game/map'
 import { createWorld, type Dialogue } from '../game/world'
 import { load, setContent } from '../store'
@@ -16,6 +16,8 @@ export default class Boot extends Phaser.Scene {
   }
 
   preload() {
+    for (const [key, audio] of Object.entries({ ...AUDIO, ...MUSIC, ...SFX }))
+      this.load.audio(key, audio.url)
     for (const [key, frame] of Object.entries(SHEETS))
       this.load.spritesheet(key, resolve(`${key}.png`).url, frame)
     for (const key of JSONS) this.load.json(key, resolve(`${key}.json`).url)
@@ -71,6 +73,7 @@ export default class Boot extends Phaser.Scene {
   }
 
   create() {
+    this.input.mouse?.disableContextMenu()
     for (const key of Object.keys(FONTS) as (keyof typeof FONTS)[]) this.bakeFont(key)
     const dialogues: Record<string, Dialogue> = {}
     // the dialogue id is the basename: 'dialogue/mich' loads as 'mich'
@@ -91,10 +94,13 @@ export default class Boot extends Phaser.Scene {
     // ?map=<name> drops straight into gameplay on that map: ?map=gallery is the artist's proof sheet
     if (map && map in MAPS) {
       load(createWorld(map as keyof typeof MAPS))
-      this.scene.start('island')
+      this.scene.start(map === 'cave' ? 'cave' : 'island')
       return
     }
-    // ?scene=island skips the cutscene; tests and dev use it
-    this.scene.start(params.get('scene') ?? 'intro')
+    // ?scene=island skips the menu and cutscene; ?scene=intro previews the opening directly.
+    const scene = params.get('scene')
+    this.scene.start(scene === 'title' ? 'intro' : (scene ?? 'intro'), {
+      title: !scene || scene === 'title',
+    })
   }
 }

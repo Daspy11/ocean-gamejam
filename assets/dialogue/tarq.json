@@ -59,7 +59,8 @@
     "21": { "text": "cool story but give me the orb", "next": "22" },
     "22": { "who": "Mich", "text": "quick, someone throw something at him", "next": "pick" },
     "pick": {
-      "text": "[PLACEHOLDER what do you throw]",
+      "who": null,
+      "text": "choose something to throw",
       "choices": [
         { "text": "deck chair", "next": "chair" },
         { "text": "deck chair", "next": "chair" },
@@ -172,6 +173,6 @@
       "next": "off3"
     },
     "off3": { "set": { "outro": true }, "next": null },
-    "again": { "text": "[PLACEHOLDER Tarq, again]", "next": null }
+    "again": { "text": "don't talk to me", "next": null }
   }
 }

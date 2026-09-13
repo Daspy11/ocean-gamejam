@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import { world } from '../store'
+import { settings, world } from '../store'
 
 // The ending, played out in the island scene so there is never a cut: the carpet, already up at
 // its height from the last act, gathers pace east, the camera holds it and eases in over open water,
@@ -19,6 +19,21 @@ export function flyOut(
   player: Phaser.GameObjects.Sprite,
   shadow: Phaser.GameObjects.Sprite, // the carpet's shade, which runs east under them
 ): boolean {
+  const music = scene.sound.add('music/nowhereland', {
+    loop: true,
+    volume: 0,
+    mute: !settings.music,
+  })
+  scene.tweens.add({
+    targets: music,
+    volume: 0.6,
+    delay: 1500,
+    duration: OUT - 1500,
+    ease: 'Sine.easeInOut',
+    onStart: () => music.play(),
+  }) // the ambient loop finishes fading out before this track begins
+  // The island keeps running beneath the credits; restarting or a debug jump shuts it down.
+  scene.events.once('shutdown', () => music.destroy())
   const rug = world.objects.find((o) => o.kind === 'flyingcarpet')
   if (!rug) {
     scene.scene.launch('outro') // a debug jump straight to the names: there is nothing to fly
@@ -57,10 +72,18 @@ export function flyOut(
   cam.removeBounds() // they are leaving the map, and the shot has to follow them past its edge
   cam.roundPixels = false // the zoom lands between whole pixels, and snapping it reads as a judder
   // the tilemap stops at the east shore, so lay sea under everything for them to fly out over
-  scene.add
-    .tileSprite(world.width * 16, 0, 7000, world.height * 16, 'tiles/water')
+  const east = ((world.left ?? 0) + world.width) * 16
+  const sea = scene.add
+    .tileSprite(east, 0, 7000, world.height * 16, 'tiles/water')
     .setOrigin(0)
     .setDepth(-1000)
+
+  const escort = world.flags['etarp:i']
+    ? [
+        scene.add.image(0, 0, 'sprites/boat', 0).setOrigin(0, 1).setDepth(8999).setVisible(false),
+        scene.add.image(0, 0, 'sprites/etarp', 9).setOrigin(0, 1).setDepth(8998).setVisible(false),
+      ]
+    : []
 
   const hearts: { s: Phaser.GameObjects.Image; x: number; y: number; a: number }[] = []
   const hop = (who: { x: number; y: number }, by: number) => {
@@ -99,9 +122,12 @@ export function flyOut(
     [RIDE + 10800, () => scene.scene.launch('outro')], // the names, over the flight
   ]
 
-  let [t, x, done] = [0, 0, 0]
+  let [t, x, done, held] = [0, 0, 0, 0]
   const tick = (_now: number, delta: number) => {
     t += delta
+    const visit = world.farewell
+    if (visit && visit.phase !== 'waiting' && visit.phase !== 'done') held += delta
+    const storyTime = t - held
     const p = Math.min(1, t / OUT)
     const q = Math.min(1, Math.max(0, (t - OUT) / IN))
     const zoom = 2 + q * q * (3 - 2 * q) // smoothstep: no kick into the zoom, and none out of it
@@ -110,7 +136,7 @@ export function flyOut(
     const cruise = CRUISE / zoom
     x += ((RUN + (cruise - RUN) * Math.sin((p * Math.PI) / 2)) * delta) / 1000
     const swell = Math.sin(t / 700) * 2 * Math.max(0, 1 - Math.max(0, t - OUT) / RIDE)
-    const dash = Math.min(2.4, Math.max(0, (t - OUT - RIDE - 8400) / 1000))
+    const dash = Math.min(2.4, Math.max(0, (storyTime - OUT - RIDE - 8400) / 1000))
     const away = 60 * dash * dash // build speed gently over 2.4 s before the spotlight closes
     // the scene has just drawn them back on the island: this is where they have got to since
     const aboard = crew()
@@ -119,20 +145,31 @@ export function flyOut(
         .setPosition(s.x + x + away + (seat?.x ?? 0), s.y + swell + (seat?.y ?? 0))
         .setDepth(9000 + i),
     )
-    if (me) player.setFrame(face)
+    const talking = world.dialogue?.key === 'etarip-farewell'
+    if (me) player.setFrame(talking && visit?.phase !== 'leave' ? LOOK : face)
+    for (const { s, seat } of aboard)
+      if (seat === her) s.setFrame(visit?.phase === 'alongside' ? LOOK : SIDE)
     const deck = aboard[0].s
+    sea.x = Math.max(east, Math.floor((deck.x - 400) / 16) * 16)
+    const visible = !!visit && ['approach', 'alongside', 'leave'].includes(visit.phase)
+    const progress = visit ? Math.min(1, (world.time - visit.at) / 1600) : 0
+    const behind = visit?.phase === 'approach' ? 212 * (1 - progress) ** 3 : 0
+    const ahead = visit?.phase === 'leave' ? 300 * progress ** 2 : 0
+    escort.forEach((s, i) =>
+      s.setVisible(visible).setPosition(deck.x - 48 - behind + ahead + i * 8, deck.y + 10 - i * 5),
+    )
     // the scene has drawn the shade at full size under the carpet's tile: it runs along under
     // them over the island, over the trees, and there is nothing to fall on past the shore
     shadow
       .setDepth(8999)
       .setPosition(deck.x + 8, rug.y * 16 + 8)
-      .setAlpha(0.35 * Math.max(0, Math.min(1, (world.width * 16 - deck.x) / 160)))
+      .setAlpha(0.35 * Math.max(0, Math.min(1, (east - deck.x) / 160)))
     for (const h of hearts) h.s.setPosition(deck.x + h.x, deck.y + h.y).setAlpha(h.a)
     const settle = 1 - p * p * (3 - 2 * p)
     cam
       .setZoom(zoom)
       .centerOn(deck.x - away + 8 + cameraOffset.x * settle, deck.y - 6 + cameraOffset.y * settle)
-    while (done < beats.length && t - OUT >= beats[done][0]) beats[done++][1](aboard)
+    while (done < beats.length && storyTime - OUT >= beats[done][0]) beats[done++][1](aboard)
   }
   scene.events.on('postupdate', tick) // after the scene has drawn the world it is leaving behind
   scene.events.once('shutdown', () => scene.events.off('postupdate', tick))

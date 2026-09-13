@@ -23,12 +23,12 @@
     },
     "4": { "text": "holy hell these twigs are amazing where did you get them", "next": "5" },
     "5": {
-      "text": "great ok thanks take this",
+      "text": "finally i can build the perfect nest. i wouldn't want to spoil the perfect nest by putting an egg in it so you can have this.",
       "take": { "twig": 10 },
       "give": "egg",
       "set": { "albatross:egg": true },
       "next": null
     },
-    "after": { "text": "[PLACEHOLDER golfer's delight, after the egg]", "next": null }
+    "after": { "text": "finally i can build the perfect nest.", "next": null }
   }
 }

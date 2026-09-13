@@ -1,7 +1,57 @@
+import michLetters from '../audio/mich.json'
+import etarpLetters from '../audio/etarp.json'
+import harryLetters from '../audio/harry.json'
+import antoineLetters from '../audio/antoine.json'
+import tarqLetters from '../audio/tarq.json'
+import walterLetters from '../audio/walter.json'
+
+export const MUSIC = {
+  'music/ambient': {
+    url: new URL('../audio/bigbeatloop_sergequadrado.wav', import.meta.url).href,
+  },
+  'music/saltyditty': {
+    url: new URL('../audio/saltyditty_kevinmcleod.mp3', import.meta.url).href,
+  },
+  'music/nowhereland': {
+    url: new URL('../assets/music/nowhereland_kevinmcleod.mp3', import.meta.url).href,
+  },
+} as const
+
+export const SFX = {
+  'sfx/powerup': { url: new URL('../audio/sfx/powerup/sound.wav', import.meta.url).href },
+  'sfx/chime': { url: new URL('../audio/sfx/chime/sound.wav', import.meta.url).href },
+  'sfx/crash': { url: new URL('../audio/sfx/crash/sound.wav', import.meta.url).href },
+  'sfx/hiss': { url: new URL('../audio/sfx/hiss/sound.wav', import.meta.url).href },
+  'sfx/interact': { url: new URL('../audio/sfx/interact/sound.wav', import.meta.url).href },
+} as const
+
+// Cleaned from the author's recording; each marker is [start, duration] in seconds.
+export const AUDIO = {
+  'voices/mich': { url: new URL('../audio/mich.wav', import.meta.url).href, letters: michLetters },
+  'voices/etarp': {
+    url: new URL('../audio/etarp.wav', import.meta.url).href,
+    letters: etarpLetters,
+  },
+  'voices/harry': {
+    url: new URL('../audio/harry.wav', import.meta.url).href,
+    letters: harryLetters,
+  },
+  'voices/antoine': {
+    url: new URL('../audio/antoine.wav', import.meta.url).href,
+    letters: antoineLetters,
+  },
+  'voices/tarq': { url: new URL('../audio/tarq.wav', import.meta.url).href, letters: tarqLetters },
+  'voices/walter': {
+    url: new URL('../audio/walter.wav', import.meta.url).href,
+    letters: walterLetters,
+  },
+} as const
+
 // Keys below are paths relative to assets/ (human-made) and placeholder/ (generated stand-ins).
 // resolve() prefers the real file and falls back to the placeholder, so dropping a PNG into
 // assets/ at the same path swaps it in with no other change.
 export const SHEETS = {
+  'sprites/logo': { frameWidth: 343, frameHeight: 112 }, // one frame: cropped title logo
   'tiles/water': { frameWidth: 16, frameHeight: 16 }, // base fill under everything
   'tiles/salt': { frameWidth: 16, frameHeight: 16 }, // 80x48: 5x3 terrain layout, see assets/README.md
   'tiles/sand': { frameWidth: 16, frameHeight: 16 }, // 5x3 terrain layout, see assets/README.md
@@ -65,7 +115,8 @@ export const SHEETS = {
   // 4 frames of 16x24 for the close-up, drawn 7.5x: Walter as he stands, his hat lifted off, the hat
   // gone and a barrel coming out, and the minigun out across him
   'sprites/serious': { frameWidth: 16, frameHeight: 24 },
-  'sprites/items': { frameWidth: 16, frameHeight: 16 }, // one frame per item in ITEMS order
+  'sprites/items': { frameWidth: 16, frameHeight: 16 }, // ITEMS order through chair; glassi has its own sheet
+  'sprites/glassi': { frameWidth: 16, frameHeight: 16 }, // one frame: the glass i inventory icon
   // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
   // row are stretched to whatever size the box is, so keep those flat along the way they stretch
   'ui/box': { frameWidth: 24, frameHeight: 24 },
@@ -90,6 +141,7 @@ export const JSONS = [
   'dialogue/carrotfield',
   'dialogue/crate',
   'dialogue/etarp',
+  'dialogue/etarip-farewell',
   'dialogue/firstsalt',
   'dialogue/flower',
   'dialogue/gate',
@@ -101,6 +153,7 @@ export const JSONS = [
   'dialogue/inventory2',
   'dialogue/landing',
   'dialogue/mich',
+  'dialogue/mimic',
   'dialogue/negative',
   'dialogue/pirate',
   'dialogue/seahorse',
@@ -108,14 +161,17 @@ export const JSONS = [
   'dialogue/shake7',
   'dialogue/shrimp',
   'dialogue/sign',
+  'dialogue/rum-sign',
   'dialogue/tarq',
   'dialogue/tree',
   'dialogue/tree2',
   'dialogue/treealive',
   'dialogue/treefriend',
   'dialogue/walter',
+  'dialogue/west',
   'text/items',
   'text/intro',
+  'text/title',
 ] as const
 
 export function resolve(file: string): { url: string; placeholder: boolean } {

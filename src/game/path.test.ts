@@ -7,6 +7,7 @@ import { createWorld, npc, type Content, type DialogueNode, type Obj, type World
 // unless a test moves him, and `a` is the one walking, whoever he is
 function room(rows: string[], objects: Obj[] = []): World {
   const w = createWorld()
+  w.left = 0
   w.width = rows[0].length
   w.height = rows.length
   const glyph = { '.': 'sand', '~': 'water', '^': 'rock' } as const

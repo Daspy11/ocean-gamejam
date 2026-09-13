@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { createWorld, objectAt, type Content, type World } from './world'
+import { tileIndex, createWorld, objectAt, type Content, type World } from './world'
 
 // only the boxes using an item can open; the real lines live in assets/dialogue
 const content: Content = {
@@ -108,7 +108,7 @@ describe('using an item out of the bag', () => {
     w.inventory = { salt: 1 }
     w.player.facing = 'right'
     apply(w, { type: 'interact' }, content)
-    expect([w.tiles[16 * w.width + 21], w.score, w.menu]).toEqual(['salt', -1, null])
+    expect([w.tiles[tileIndex(w, 21, 16)], w.score, w.menu]).toEqual(['salt', -1, null])
     expect(w.dialogue?.key).toBe('insalting')
   })
 

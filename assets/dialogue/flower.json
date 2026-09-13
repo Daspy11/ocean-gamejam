@@ -96,6 +96,27 @@
         "to": { "x": 18, "y": 15 },
         "facing": "up"
       },
+      "next": [
+        { "when": "fired:mimic", "node": "offscreen" },
+        { "node": "7" }
+      ]
+    },
+    "offscreen": {
+      "who": "",
+      "text": "i actually cannot see what you are doing, you walked off screen",
+      "next": "comeHere"
+    },
+    "comeHere": {
+      "text": "ok walk over here then",
+      "next": "fine"
+    },
+    "fine": {
+      "who": "",
+      "text": "fine",
+      "next": "walkBack"
+    },
+    "walkBack": {
+      "walk": { "id": "player", "to": { "x": 23, "y": 16 }, "facing": "left" },
       "next": "7"
     },
     "7": {
@@ -132,7 +153,7 @@
       "next": "14"
     },
     "14": {
-      "text": "i can't eat math this is worthless get this out of my face",
+      "text": "i cant eat math",
       "next": "16"
     },
     "16": {
@@ -174,8 +195,9 @@
     "20c": {
       "who": "Walter",
       "text": "walter",
-      "next": "20d"
+      "next": "wow"
     },
+    "wow": { "text": "wow", "next": "20d" },
     "20d": { "closeup": null, "next": "21" },
     "21": {
       "who": "Walter",
@@ -184,8 +206,9 @@
     },
     "22": {
       "text": "you can't quantify beauty",
-      "next": "22b"
+      "next": "yes"
     },
+    "yes": { "who": "Walter", "text": "yes you can", "next": "22b" },
     "23": {
       "who": "Walter",
       "text": "you LITERALLY just saw beauty points poof into existence in front of your very eyes",
@@ -202,15 +225,6 @@
     },
     "26": {
       "text": "...",
-      "next": "27"
-    },
-    "27": {
-      "text": "ok yes very funny but i cant fix our boat with beauty points",
-      "next": "28"
-    },
-    "28": {
-      "who": "Walter",
-      "text": "yeah but you can make your shipwreck look nicer",
       "next": "29"
     },
     "29": {
@@ -252,6 +266,14 @@
       "set": {
         "score:on": true
       },
+      "next": "boat"
+    },
+    "boat": {
+      "text": "im gonna stare at the hole in our boat",
+      "next": "boatWalk"
+    },
+    "boatWalk": {
+      "walk": { "id": "mich", "to": { "x": 14, "y": 16 }, "facing": "left" },
       "next": "walk"
     },
     "walk": {
@@ -319,11 +341,6 @@
     },
     "carpet3": {
       "text": "what",
-      "next": "carpet4"
-    },
-    "carpet4": {
-      "who": "Walter",
-      "text": "ok nerd",
       "next": "chill"
     }
   }

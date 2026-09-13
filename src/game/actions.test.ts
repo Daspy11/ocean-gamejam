@@ -96,10 +96,11 @@ describe('blocked', () => {
   })
 
   it('does not walk into rock', () => {
-    const w = at(8, 38, 'left') // the west wall of the cave room, at 7,38
+    const w = createWorld('cave')
+    Object.assign(w.player, { x: 8, y: 6, facing: 'left' })
     apply(w, { type: 'move', dir: 'left' }, content)
     apply(w, { type: 'tick', dt: 300 }, content)
-    expect([w.player.x, w.player.y, w.player.facing, w.player.step]).toEqual([8, 38, 'left', null])
+    expect([w.player.x, w.player.y, w.player.facing, w.player.step]).toEqual([8, 6, 'left', null])
   })
 
   it('does not walk into solid objects', () => {
@@ -110,7 +111,6 @@ describe('blocked', () => {
       [14, 16, 'left'], // the wrecked boat covers 12..13 x 16, right where the player spawns
       [14, 17, 'left'], // mich at 13,17
       [24, 16, 'down'], // crate2 at 24,17, over on the second island
-      [10, 38, 'up'], // rum1 at 10,37, in the cave room
     ] as const
     for (const [x, y, dir] of cases) {
       const w = at(x, y)

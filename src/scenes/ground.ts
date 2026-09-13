@@ -17,8 +17,8 @@ export function makeGround(scene: Phaser.Scene): Phaser.Tilemaps.TilemapLayer[] 
       height: world.height + (n ? 1 : 0),
     })
     const layer = map.createBlankLayer(terrain, map.addTilesetImage(`tiles/${terrain}`)!)!
-    if (n) layer.setPosition(-8, -8)
-    else layer.fill(0, 0, 0, world.width, world.height)
+    layer.setPosition((world.left ?? 0) * 16 - (n ? 8 : 0), n ? -8 : 0)
+    if (!n) layer.fill(0, 0, 0, world.width, world.height)
     return layer
   })
 }
@@ -27,7 +27,7 @@ export function syncGround(layers: Phaser.Tilemaps.TilemapLayer[]): void {
   for (let n = 1; n < GROUND.length; n++) {
     // a higher terrain counts as every terrain below it, so a rounded corner never opens onto water
     const is = (x: number, y: number, bit: number) => {
-      const tile = tileAt(world, x, y) // undefined off the map: nothing there
+      const tile = tileAt(world, x + (world.left ?? 0), y) // undefined off the map: nothing there
       return tile && GROUND.indexOf(tile) >= n ? bit : 0
     }
     for (let j = 0; j <= world.height; j++)

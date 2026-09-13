@@ -1,6 +1,14 @@
 import { walkPlayer } from './boat'
-import { beauty } from './salt'
-import { ITEMS, KINDS, type Dialogue, type DialogueNode, type Item, type World } from './world'
+import { beauty, takeItem } from './salt'
+import {
+  cueInteract,
+  ITEMS,
+  KINDS,
+  type Dialogue,
+  type DialogueNode,
+  type Item,
+  type World,
+} from './world'
 
 // The finale: a `throw` act sends the player off to fetch the first thing of some kind standing on
 // the island and huck it at somebody. Only the golden egg does anything — it knocks Tarq off his
@@ -25,6 +33,8 @@ function sources(w: World, kind: NonNullable<DialogueNode['throw']>['kind']) {
 export function choices(w: World, node?: DialogueNode, dialogue?: Dialogue) {
   const used: Record<string, number> = {}
   return (node?.choices ?? []).flatMap((choice) => {
+    if (Object.entries(choice.has ?? {}).some(([item, n]) => (w.inventory[item as Item] ?? 0) < n))
+      return []
     const t = choice.next ? dialogue?.nodes[choice.next]?.throw : undefined
     if (!t) return [{ ...choice, object: undefined as string | undefined }]
     const index = used[t.kind] ?? 0
@@ -63,7 +73,8 @@ export function tickThrow(w: World): void {
     t.launchAt ??= w.time + 300
     if (w.time < t.launchAt) return
     if (it) w.objects.splice(w.objects.indexOf(it), 1)
-    else if (source.item) w.inventory[source.item]!--
+    else if (source.item) takeItem(w, source.item, 1)
+    cueInteract(w)
     const riding =
       him.kind === 'npc' && w.objects.some((o) => o.id === him.ride && o.kind === 'flyingcarpet')
     const [x, y] = [p.x + 0.5, p.y + 0.25]
@@ -89,13 +100,14 @@ export function tickThrow(w: World): void {
     const him = w.objects.find((o) => o.id === t.at)
     const rug = him?.kind === 'npc' ? w.objects.find((o) => o.id === him.ride) : undefined
     if (t.kind === 'egg' && him?.kind === 'npc' && rug?.kind === 'flyingcarpet') {
+      cueInteract(w)
       const speed = Math.hypot(t.flight.vx, t.flight.vy) || 1
       const aim = { x: him.x + (t.flight.vx / speed) * 2, y: him.y + (t.flight.vy / speed) * 2 }
       // Leave room for his sideways sprite, not just an unoccupied centre tile.
       const landing = w.tiles
         .flatMap((tile, i) => {
           if (tile === 'water' || tile === 'rock') return []
-          const [x, y] = [i % w.width, Math.floor(i / w.width)]
+          const [x, y] = [(i % w.width) + (w.left ?? 0), Math.floor(i / w.width)]
           if (Math.abs(x - p.x) <= 1 && Math.abs(y - p.y) <= 1) return []
           const crowded = w.objects.some(
             (o) =>
@@ -127,6 +139,7 @@ export function tickThrow(w: World): void {
     if (w.time < rug.landAt + WAFT) return
     // landAt stays: it is what tells the scene the carpet is down, with no shadow and no height
     beauty(w, 200, rug.x, rug.y) // a fashionable carpet, and the finest thing on the island
+    cueInteract(w)
     w.rev++
   }
   w.throwing = null

@@ -1,30 +1,104 @@
 {
   "name": "suspicious harry",
   "start": [
-    { "when": "harry:ok", "node": "after" },
-    { "when": "harry:asked", "has": { "otijom": 1 }, "node": "cocktail" },
-    { "when": "harry:asked", "node": "again" },
-    { "node": "1" }
+    {
+      "when": "harry:ok",
+      "node": "after"
+    },
+    {
+      "when": "harry:asked",
+      "has": {
+        "otijom": 1
+      },
+      "node": "cocktail"
+    },
+    {
+      "when": "harry:asked",
+      "node": "again"
+    },
+    {
+      "when": "harry:warned",
+      "node": "1"
+    },
+    {
+      "node": "warning"
+    }
   ],
   "nodes": {
-    "1": { "text": "hello", "next": "2" },
-    "2": { "who": "", "text": "can i steal these chairs", "next": "3" },
-    "3": { "text": "no", "next": "4" },
-    "4": { "who": "", "text": "what if i pay you", "next": "5" },
-    "5": { "text": "no", "next": "6" },
-    "6": { "who": "", "text": "cmon", "next": "7" },
+    "1": {
+      "text": "hello",
+      "next": "2"
+    },
+    "2": {
+      "who": "",
+      "text": "can i steal these chairs",
+      "next": "3"
+    },
+    "3": {
+      "text": "no",
+      "next": "4"
+    },
+    "4": {
+      "who": "",
+      "text": "what if i pay you",
+      "next": "5"
+    },
+    "5": {
+      "text": "no",
+      "next": "6"
+    },
+    "6": {
+      "who": "",
+      "text": "cmon",
+      "next": "7"
+    },
     "7": {
       "text": "ok maybe if you bring me a nice cocktail",
-      "set": { "harry:asked": true },
+      "set": {
+        "harry:asked": true
+      },
       "next": null
     },
-    "again": { "text": "ok maybe if you bring me a nice cocktail", "next": null },
+    "again": {
+      "text": "ok maybe if you bring me a nice cocktail",
+      "next": null
+    },
     "cocktail": {
-      "text": "[PLACEHOLDER suspicious harry takes the cocktail]",
+      "text": "it's not a pint, but it'll do",
       "take": "otijom",
-      "set": { "harry:ok": true },
+      "set": {
+        "harry:ok": true
+      },
       "next": null
     },
-    "after": { "text": "[PLACEHOLDER suspicious harry, the chairs are yours]", "next": null }
+    "after": {
+      "text": "STOP PESTERIN ME AND LET ME ENJOY MY DRINK",
+      "next": null
+    },
+    "warning": {
+      "text": "GET YER HANDS OFF THOSE CHAIRS",
+      "next": "three"
+    },
+    "three": {
+      "who": "",
+      "text": "do you really need all three",
+      "next": "yes"
+    },
+    "yes": {
+      "text": "yes",
+      "next": "why"
+    },
+    "why": {
+      "who": "",
+      "text": "why",
+      "next": "stella"
+    },
+    "stella": {
+      "text": "I DRANK MY LAST CAN OF STELLA",
+      "set": {
+        "harry:warned": true
+      },
+      "next": "2"
+    }
   }
 }
