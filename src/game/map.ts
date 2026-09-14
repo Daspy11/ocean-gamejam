@@ -205,7 +205,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
             // the chest on the north island's west tip, with the key to the gate in it
             { id: 'crate4', kind: 'crate', x: 19, y: 3, open: false, item: 'key' },
             { id: 'crate5', kind: 'crate', x: -3, y: 17, open: false, item: 'glassi' },
-            // suspicious harry, reclining over his three deck chairs on the big island's south shore:
+            // suspicious harry, reclining over his three chairs on the big island's south shore:
             // one picture of the whole scene on a 4x2 footprint. The chairs under it sit on 40, across
             // 41..42 (one chair painted over two tiles) and 43, and stay their own objects for the
             // pick-up-a-chair mechanic, but draw nothing themselves while his sheet still shows them.
