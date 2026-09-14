@@ -4,7 +4,7 @@ import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
-import { beauty, homeChairs, takeItem, tickOrbs, useItem } from './salt'
+import { beauty, homeChairs, PRIZES, takeItem, tickOrbs, useItem } from './salt'
 import { michHint } from './script'
 import { tickStep } from './step'
 import { cueInteract, DIRS, objectAt, objectsAt } from './world'
@@ -206,7 +206,11 @@ export function apply(w: World, a: Action, c: Content): void {
     cueInteract(w, true)
     if (did !== 'used') fire(`salt:${did}`)
     // something stood at home has a word said over it: place:carpet, or place:chair:<n standing>
-    else fire(slot[0] === 'chair' ? `place:chair:${homeChairs(w)}` : `place:${slot[0]}`)
+    else {
+      fire(slot[0] === 'chair' ? `place:chair:${homeChairs(w)}` : `place:${slot[0]}`)
+      // and Walter thanks him for the first prize to go down after he explained what loot is for
+      if (PRIZES.includes(slot[0] as Item)) fire('place:prize')
+    }
     fire('menu:close')
     return
   }

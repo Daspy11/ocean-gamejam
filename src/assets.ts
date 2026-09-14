@@ -190,6 +190,7 @@ export const JSONS = [
   'dialogue/sign',
   'dialogue/rum-sign',
   'dialogue/tarq',
+  'dialogue/thanks',
   'dialogue/tree',
   'dialogue/tree2',
   'dialogue/treealive',

@@ -8,6 +8,7 @@
     "3": { "text": "a crab who can smell BEAUTY from a mile away", "next": "4" },
     "4": {
       "text": "place your loot on your island by pressing i, selecting the relevant item, then hitting e",
+      "set": { "walter:told": true },
       "next": null
     }
   }

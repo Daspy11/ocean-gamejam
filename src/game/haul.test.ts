@@ -16,10 +16,24 @@ const content: Content = {
     notsofast: {
       name: '[PLACEHOLDER NPC NAME]',
       start: [{ node: '1' }],
-      nodes: { '1': { text: '[PLACEHOLDER not so fast]', next: null } },
+      nodes: {
+        '1': { text: '[PLACEHOLDER not so fast]', next: '2' },
+        '2': { who: '', text: '[PLACEHOLDER how do i do that]', next: '3' },
+        '3': {
+          text: '[PLACEHOLDER by pressing i then hitting e]',
+          set: { 'walter:told': true },
+          next: null,
+        },
+      },
+    },
+    thanks: {
+      name: '[PLACEHOLDER NPC NAME]',
+      trigger: { event: 'place:prize', when: 'walter:told' },
+      start: [{ node: '1' }],
+      nodes: { '1': { text: '[PLACEHOLDER thanks, keep going]', next: null } },
     },
   },
-  items: {},
+  items: { egg: { name: '[PLACEHOLDER egg]' } },
 }
 
 // the two-tile bridge east: 21,16 and 22,16 are crust joined to the main island, and 23,16 is the
@@ -43,13 +57,22 @@ function walk(w: World, dir: 'left' | 'right') {
   apply(w, { type: 'tick', dt: 217 }, content)
 }
 
+// read whatever box is up to the end
+function read(w: World) {
+  for (let i = 0; i < 20 && w.dialogue; i++) {
+    apply(w, { type: 'tick', dt: 4000 }, content)
+    apply(w, { type: 'interact' }, content)
+  }
+}
+
 describe('loot on the island', () => {
   it('stops him walking off the island with a prize, and lets him go once it is down', () => {
     const w = bridged(22, 'right')
     walk(w, 'right')
     expect(w.dialogue?.key).toBe('notsofast')
     expect(w.player).toMatchObject({ x: 22, y: 16, step: null, held: null })
-    apply(w, { type: 'interact' }, content) // close the box, stand the egg down, and off he goes
+    read(w) // he asks how, Walter tells him again, and with the egg down he is free to go
+    expect(w.flags['walter:told']).toBe(true)
     w.inventory = {}
     walk(w, 'right')
     expect(w.player.x).toBe(23)
@@ -59,7 +82,7 @@ describe('loot on the island', () => {
   it('says it again on the next try, and never over an open box', () => {
     const w = bridged(22, 'right')
     walk(w, 'right')
-    apply(w, { type: 'interact' }, content)
+    read(w)
     expect(w.dialogue).toBeNull()
     walk(w, 'right')
     expect(w.dialogue?.key).toBe('notsofast')
@@ -91,7 +114,7 @@ describe('loot on the island', () => {
     expect(w.player).toMatchObject({ x: 22, step: null })
     expect(w.dialogue?.key).toBe('haul')
     expect(w.typing?.text).toBe('[PLACEHOLDER what a haul, by pressing I then hitting E]')
-    apply(w, { type: 'interact' }, content)
+    read(w)
     Object.assign(w.player, { x: 23, facing: 'left' })
     walk(w, 'left')
     expect(w.dialogue).toBeNull()
@@ -107,6 +130,23 @@ describe('loot on the island', () => {
     early.flags = {}
     walk(early, 'left')
     expect(early.dialogue).toBeNull()
+  })
+
+  it('thanks him for the first prize to go down once he has been told what loot is for', () => {
+    const w = bridged(22, 'right')
+    w.menu = { screen: 'inventory', cursor: 0 }
+    apply(w, { type: 'interact' }, content) // the egg onto 23,16, off the island and worth nothing
+    read(w)
+    expect(w.flags['fired:thanks']).toBeUndefined()
+
+    const told = bridged(22, 'right')
+    told.flags['walter:told'] = true
+    Object.assign(told.player, { facing: 'left' }) // turned back to Walter, as the box leaves him
+    told.menu = { screen: 'inventory', cursor: 0 }
+    apply(told, { type: 'interact' }, content)
+    expect(told.score).toBe(5)
+    read(told)
+    expect(told.flags['fired:thanks']).toBe(true)
   })
 
   it('names the buttons the title picked in the tutorial line', () => {

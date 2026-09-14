@@ -1,0 +1,12 @@
+{
+  "name": "Walter",
+  "trigger": { "event": "place:prize", "when": "walter:told" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "thanks", "next": "2" },
+    "2": {
+      "text": "keep going, and try to fill up this island with MAX BEAUTY and i am SURE someone will help you fix your boat",
+      "next": null
+    }
+  }
+}

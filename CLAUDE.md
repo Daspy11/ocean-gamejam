@@ -80,7 +80,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `haul` (stepped back onto the main
   island with a prize still in the bag, `haul.json`), `salt:away` (any item put down off
   the main island), `place:<item>` (a prize stood on the main island, `carpetdown.json`, `eggdown.json`,
-  `certdown.json`; a chair is `place:chair:<n>` with n now standing there, `chair1.json`, `chair2.json`), `score:fifteen`, `done:<dialogue key>` (that box has just
+  `certdown.json`; a chair is `place:chair:<n>` with n now standing there, `chair1.json`, `chair2.json`),
+  `place:prize` (any of the three stood at home, Walter's thank-you in `thanks.json`), `score:fifteen`, `done:<dialogue key>` (that box has just
   closed), add more in `apply`) and the `when` flag is
   truthy and the `unless` flag is not (`negative.json` is dead once the sea horse has been met); it
   sets `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`, or the
@@ -151,7 +152,10 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   The three prizes are `PRIZES` in `src/game/salt.ts`, and Walter will not have one carried off:
   once his scene has run, walking home with one in the bag fires `haul` and a step off the main
   island is taken back, stopping him dead with `notsofast.json` (`walterStops` in
-  `src/game/step.ts`). A chair is left out of it, since the shrimp is owed one. The map is
+  `src/game/step.ts`); the box turns him round to face Walter as it opens, so the bag puts the prize
+  down inland rather than out to sea. Either box sets `walter:told`, and the next prize to go down at
+  home gets his thanks (`place:prize`, `thanks.json`). A chair is left out of it, since the shrimp is
+  owed one. The map is
   ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
   farmland with a carrot on it, `=` is grass with a fence post on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets

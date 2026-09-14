@@ -2,6 +2,12 @@
   "name": "Walter",
   "start": [{ "node": "1" }],
   "nodes": {
-    "1": { "text": "NOT SO FAST PARTNER, beautify this island before you leave pls", "next": null }
+    "1": { "text": "NOT SO FAST PARTNER, beautify this island before you leave pls", "next": "2" },
+    "2": { "who": "", "text": "how do i do that", "next": "3" },
+    "3": {
+      "text": "place your loot on your island by pressing i, selecting the relevant item, then hitting e",
+      "set": { "walter:told": true },
+      "next": null
+    }
   }
 }
