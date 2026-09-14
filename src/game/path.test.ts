@@ -93,6 +93,17 @@ describe('finding a way', () => {
     const crate: Obj = { id: 'c', kind: 'crate', x: 1, y: 0, open: true, item: 'orb' }
     const w = room(['...'], [who('mich', 0, 0), crate])
     expect(findPath(w, a(w), { x: 2, y: 0 })).toBe(null)
+    expect(findPath(w, a(w), { x: 2, y: 0 }, false, true)).toEqual(['right', 'right']) // last resort
+    const tree: Obj = { id: 't', kind: 'tree', x: 1, y: 0, dialogue: 'bigtree' }
+    const wood = room(['...'], [who('mich', 0, 0), tree])
+    expect(findPath(wood, a(wood), { x: 2, y: 0 }, false, true)).toBe(null) // a tree stays a wall
+    const wide = room(['...', '...'], [who('mich', 0, 0), crate])
+    expect(findPath(wide, a(wide), { x: 2, y: 0 }, false, true)).toEqual([
+      'down',
+      'right',
+      'right',
+      'up',
+    ]) // still round it when there is a way round
     const floor = room(['...'], [who('mich', 0, 0), { id: 'f', kind: 'floor', x: 1, y: 0 }])
     expect(findPath(floor, a(floor), { x: 2, y: 0 })).toEqual(['right', 'right'])
   })
