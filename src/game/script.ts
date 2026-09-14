@@ -89,7 +89,8 @@ export interface Dialogue {
   // plays once, when the sim emits `event`, flag `when` (if given) is truthy and flag `unless` (if
   // given) is not; sets flags['fired:<key>'].
   // events: crate:open (a crate, or the orb picked up off the sand) · menu:close · salt:spawn · salt:place · salt:away (a block laid off the main
-  // island) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
+  // island) · place:<item> (a prize stood on the main island; a chair is place:chair:<n> with n
+  // now standing there) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
   // zero) · score:thirty (30 beauty with all three prizes placed) · arrive:north (stepped ashore up north) ·
   // done:<dialogue key> (that box has just closed)
   trigger?: { event: string; when?: string; unless?: string }

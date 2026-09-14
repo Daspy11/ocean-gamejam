@@ -1,0 +1,7 @@
+{
+  "name": "Mich",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "NO TAKE IT BACK. NO MORE CHAIRS.", "next": null }
+  }
+}

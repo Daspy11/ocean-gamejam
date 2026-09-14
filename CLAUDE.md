@@ -76,7 +76,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open` (a crate opened, or the orb picked up off the sand), `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
   `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `salt:away` (any item put down off
-  the main island), `score:fifteen`, `done:<dialogue key>` (that box has just
+  the main island), `place:<item>` (a prize stood on the main island, `carpetdown.json`, `eggdown.json`,
+  `certdown.json`; a chair is `place:chair:<n>` with n now standing there, `chair1.json`, `chair2.json`), `score:fifteen`, `done:<dialogue key>` (that box has just
   closed), add more in `apply`) and the `when` flag is
   truthy and the `unless` flag is not (`negative.json` is dead once the sea horse has been met); it
   sets `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`, or the
@@ -140,7 +141,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   so he can see it land. Each is worth 5 at home, except that the last of the carpet, the egg and
   the certificate to go down (`flags['placed:<item>']`) is worth whatever multiple of 5 brings
   beauty to 15, so the sea horse comes once everything is down; a chair picked back up takes its 5
-  with it. Nothing else in the bag goes anywhere. The map is
+  with it. Two chairs standing at home is the limit: a third stays in the bag and Mich opens
+  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). Nothing else in the bag goes anywhere. The map is
   ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
   farmland with a carrot on it, `=` is grass with a fence post on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets

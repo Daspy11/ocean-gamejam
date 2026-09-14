@@ -1,0 +1,11 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "place:chair:2" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "text": "i don't know why you think we need 2 chairs. it's not like you'll be sitting around since you're so busy fixing our boat",
+      "next": null
+    }
+  }
+}

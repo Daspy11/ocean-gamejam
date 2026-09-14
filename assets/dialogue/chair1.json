@@ -1,0 +1,8 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "place:chair:1" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "wow, it's actually starting to feel quite homely here", "next": null }
+  }
+}

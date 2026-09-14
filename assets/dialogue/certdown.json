@@ -1,0 +1,12 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "place:certificate" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": {
+      "text": "are you serious. our boat is broken and you thought now would be a good time to get certified.",
+      "next": "2"
+    },
+    "2": { "text": "get a forklift license next", "next": null }
+  }
+}

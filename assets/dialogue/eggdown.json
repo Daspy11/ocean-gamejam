@@ -1,0 +1,8 @@
+{
+  "name": "Walter",
+  "trigger": { "event": "place:egg" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "ooooh shiny", "next": null }
+  }
+}

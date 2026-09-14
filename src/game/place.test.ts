@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
-import { makeSalt, useItem } from './salt'
+import { homeChairs, makeSalt, useItem } from './salt'
 import { createWorld, objectAt, type Content, type Item, type World } from './world'
 
 const content: Content = { dialogues: {}, items: {} }
@@ -17,11 +17,11 @@ function home(item: Item, score = 0): World {
   return w
 }
 // one more out of the bag, put down the way he faces
-function put(w: World, item: Item, facing: 'left' | 'up' | 'right') {
+function put(w: World, item: Item, facing: 'left' | 'up' | 'right', c = content) {
   w.inventory[item] = 1
   w.menu = { screen: 'inventory', cursor: 0 }
   w.player.facing = facing
-  apply(w, { type: 'interact' }, content)
+  apply(w, { type: 'interact' }, c)
 }
 
 describe('standing a prize on the ground', () => {
@@ -108,8 +108,8 @@ describe('standing a prize on the ground', () => {
       }
       apply(w, { type: 'interact' }, c)
       put(w, order[1], 'up')
-      w.inventory.chair = 3
-      for (const x of [15, 16, 17]) {
+      w.inventory.chair = 2 // a third never goes down
+      for (const x of [15, 16]) {
         useItem(w, 'chair', x, 18)
         apply(w, { type: 'tick', dt: 16 }, c)
         expect(w.score).toBeLessThan(30)
@@ -154,5 +154,80 @@ describe('standing a prize on the ground', () => {
     apply(w, { type: 'tick', dt: 16 }, c)
     expect(w.dialogue).toBeNull()
     expect(w.flags['fired:seahorse']).toBeUndefined()
+  })
+})
+
+describe('a word over each thing stood at home', () => {
+  // the shape of carpetdown.json and friends: one line each on its place:<item> event
+  const c: Content = {
+    items: {},
+    dialogues: {
+      carpetdown: {
+        name: '',
+        trigger: { event: 'place:carpet' },
+        start: [{ node: '1' }],
+        nodes: { '1': { text: '[PLACEHOLDER carpet]', next: null } },
+      },
+      chair1: {
+        name: '',
+        trigger: { event: 'place:chair:1' },
+        start: [{ node: '1' }],
+        nodes: { '1': { text: '[PLACEHOLDER first chair]', next: null } },
+      },
+      chair2: {
+        name: '',
+        trigger: { event: 'place:chair:2' },
+        start: [{ node: '1' }],
+        nodes: { '1': { text: '[PLACEHOLDER second chair]', next: null } },
+      },
+      chair3: {
+        name: '',
+        start: [{ node: '1' }],
+        nodes: { '1': { text: '[PLACEHOLDER no more chairs]', next: null } },
+      },
+    },
+  }
+  const shut = (w: World) => apply(w, { type: 'interact' }, c)
+
+  it('fires place:<item> for a prize stood on the main island, and not off it', () => {
+    const w = home('carpet')
+    apply(w, { type: 'interact' }, c)
+    expect(w.dialogue?.key).toBe('carpetdown')
+    const away = home('carpet')
+    away.player = { ...away.player, x: 33, y: 16, facing: 'right' } // the big island
+    apply(away, { type: 'interact' }, c)
+    expect([objectAt(away, 34, 16)?.kind, away.dialogue]).toEqual(['floor', null])
+  })
+
+  it('numbers the chairs by how many stand at home, and keeps the third in the bag', () => {
+    const w = home('chair')
+    apply(w, { type: 'interact' }, c)
+    expect(w.dialogue?.key).toBe('chair1')
+    shut(w)
+    put(w, 'chair', 'up', c)
+    expect(w.dialogue?.key).toBe('chair2')
+    shut(w)
+    put(w, 'chair', 'right', c)
+    expect([objectAt(w, 17, 14), w.inventory.chair, w.menu, w.dialogue?.key]).toEqual([
+      undefined,
+      1,
+      null,
+      'chair3',
+    ])
+    shut(w)
+    put(w, 'chair', 'right', c) // and says so every time, not once
+    expect(w.dialogue?.key).toBe('chair3')
+    shut(w)
+    apply(w, { type: 'interact' }, c) // one picked back up, facing right at an empty tile: nothing
+    w.player.facing = 'left'
+    apply(w, { type: 'interact' }, c) // the first chair back into the bag
+    expect(homeChairs(w)).toBe(1)
+    put(w, 'chair', 'right', c) // room for one again, though its line has been said
+    expect([objectAt(w, 17, 14)?.kind, w.dialogue]).toEqual(['chair', null])
+  })
+
+  it("does not count harry's chairs on the big island", () => {
+    const w = home('chair')
+    expect(homeChairs(w)).toBe(0)
   })
 })

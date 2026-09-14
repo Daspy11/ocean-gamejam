@@ -54,14 +54,20 @@ export function tickOrbs(w: World): boolean {
   return laid
 }
 
+// deck chairs stood on the main island: two make a home, and Mich will not have a third
+export function homeChairs(w: World): number {
+  return w.objects.filter((o) => o.kind === 'chair' && w.main[tileIndex(w, o.x, o.y)]).length
+}
+
 // using one out of the bag on the tile at x,y: salt and the orb go in the sea, a carpet goes down on
-// bare ground. 'used' is "it happened, with nothing to say about it"; null is "nothing happened".
+// bare ground. 'used' is "it happened, with nothing to say about it"; 'chairs' is a third chair
+// staying in the bag; null is "nothing happened".
 export function useItem(
   w: World,
   item: Item,
   x: number,
   y: number,
-): 'place' | 'away' | 'used' | null {
+): 'place' | 'away' | 'used' | 'chairs' | null {
   const tile = tileAt(w, x, y)
   if ((w.inventory[item] ?? 0) < 1) return null
   if (item === 'salt') {
@@ -92,6 +98,7 @@ export function useItem(
   if (!kind) return null // nothing else in the bag goes anywhere yet
   const ground = tile !== undefined && tile !== 'water' && tile !== 'rock'
   if (!ground || objectAt(w, x, y)) return null
+  if (kind === 'chair' && homeChairs(w) >= 2) return 'chairs'
   const placed: Obj = { id: `${kind}${x}-${y}`, kind, x, y }
   w.objects.push(placed)
   cueInteract(w, !!w.main[tileIndex(w, x, y)])

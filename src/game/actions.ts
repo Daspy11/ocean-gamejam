@@ -1,13 +1,13 @@
-import { enterCave } from './map'
 import { nodeDone, pickBranch, startAct, tickCloseup } from './act'
 import { tickFarewell, tickWalks } from './boat'
 import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
-import { beauty, takeItem, tickOrbs, useItem } from './salt'
+import { beauty, homeChairs, takeItem, tickOrbs, useItem } from './salt'
 import { michHint } from './script'
-import { cueInteract, DIRS, KINDS, objectAt, tileAt } from './world'
+import { tickStep } from './step'
+import { cueInteract, DIRS, objectAt } from './world'
 import type { Action, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
@@ -17,18 +17,6 @@ export function apply(w: World, a: Action, c: Content): void {
   // the node the box is on, if any: a `clear` act frees him to walk while the scene waits on it
   const cur = w.dialogue ? c.dialogues[w.dialogue.key]?.nodes[w.dialogue.node] : undefined
   const busy = (w.dialogue !== null && !cur?.clear) || w.menu !== null
-  // two call sites: the start from standing and the restart at a tile boundary
-  const startStep = (t: number) => {
-    const [dx, dy] = DIRS[p.facing]
-    const [x, y] = [p.x + dx, p.y + dy]
-    const tile = tileAt(w, x, y)
-    const obj = objectAt(w, x, y)
-    // blocked: stand facing it, and no rev (a held key would otherwise spam it)
-    const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
-    if (!ground || (obj && KINDS[obj.kind].solid)) return
-    p.step = { x, y, t }
-    w.rev++
-  }
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item, object?: string) => {
     const dlg = c.dialogues[key]
@@ -141,37 +129,7 @@ export function apply(w: World, a: Action, c: Content): void {
       w.pops = live
       w.rev++
     }
-    const ms = p.run ? 144 : 217 // ms per tile: 217 walking (4.6 tiles/s), 144 running
-    // 50 ms turn delay: a tapped direction only turns, a held one walks
-    if (!p.step && !busy && p.facing === p.held && w.time - p.turnedAt >= 50) startStep(0)
-    if (p.step && !p.ride) {
-      p.step.t += a.dt / ms // progress alone is not a visible change, so no rev
-      if (p.step.t >= 1) {
-        const leftover = (p.step.t - 1) * ms
-        p.x = p.step.x
-        p.y = p.step.y
-        p.step = null
-        p.parity = !p.parity
-        w.rev++
-        const mouth = objectAt(w, p.x, p.y) // stepping onto a cave mouth puts him down at the far end
-        if (mouth?.kind === 'cave') {
-          enterCave(w, mouth)
-          if (mouth.to.area) return
-        }
-        const on = tileAt(w, p.x, p.y) // the north island is the only land this far up the map
-        if (p.y <= 5 && (on === 'sand' || on === 'grass')) fire('arrive:north')
-        if (p.x >= 32 && p.y < 28 && (on === 'sand' || on === 'grass')) fire('arrive:big')
-        const west = (w.left ?? 0) < 0 && p.y >= 12 && p.y <= 21
-        if (west && p.x <= 9) fire('west:four')
-        if (p.held && !busy && (!w.dialogue || cur?.clear)) {
-          if (p.facing !== p.held) {
-            p.facing = p.held // already walking, so no turn delay
-            w.rev++
-          }
-          startStep(leftover / ms) // keeps the speed constant across the boundary
-        }
-      }
-    }
+    if (!tickStep(w, a.dt, !busy, fire)) return // down a cave: nothing else moves this tick
     tickWalks(w, a.dt)
     tickThrow(w)
     const act = w.dialogue
@@ -240,8 +198,15 @@ export function apply(w: World, a: Action, c: Content): void {
       slot && useItem(w, slot[0] as Item, p.x + DIRS[p.facing][0], p.y + DIRS[p.facing][1])
     if (!did) return
     w.menu = null // out of the bag, so he can see what he just did with it
+    if (did === 'chairs') {
+      cueInteract(w)
+      open('chair3') // the third stays in the bag, and Mich says so every time
+      return
+    }
     cueInteract(w, true)
     if (did !== 'used') fire(`salt:${did}`)
+    // something stood at home has a word said over it: place:carpet, or place:chair:<n standing>
+    else fire(slot[0] === 'chair' ? `place:chair:${homeChairs(w)}` : `place:${slot[0]}`)
     fire('menu:close')
     return
   }
