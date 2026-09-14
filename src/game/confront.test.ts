@@ -1,8 +1,50 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { apply } from './actions'
 import { startWalk, tickWalks } from './boat'
 import { startFire, tickCannons } from './cannon'
 import { blast } from './machine'
-import { DIRS, createWorld, npc, objectAt, tileAt, type Obj } from './world'
+import { DIRS, createWorld, npc, objectAt, tileAt, type Content, type Obj } from './world'
+
+it.each([
+  [16, 17],
+  [40, 25],
+  [-3, 17],
+  [22, 3],
+])('flies Tarq in two rows above the player at %i,%i and holds there for the dialogue', (x, y) => {
+  const content: Content = {
+    dialogues: {
+      tarq: JSON.parse(
+        readFileSync(new URL('../../assets/dialogue/tarq.json', import.meta.url), 'utf8'),
+      ),
+    },
+    items: {},
+  }
+  const w = createWorld()
+  Object.assign(w.player, { x, y })
+  const mich = w.objects.find((o) => o.id === 'mich')!
+  const stayed = { x: mich.x, y: mich.y }
+  w.objects.push(npc('albatross', 'albatross', x, y - 2, 'down', ''))
+  apply(w, { type: 'talk', key: 'tarq' }, content)
+  for (let i = 0; i < 100 && w.dialogue?.node !== '5'; i++) {
+    apply(w, { type: 'tick', dt: 100 }, content)
+    for (const o of w.objects.filter((o) => ['tarq', 'flyingcarpet1'].includes(o.id))) {
+      expect(o.y).toBe(y - 2)
+      expect(o.x).toBeLessThanOrEqual(x)
+      if (o.step) expect(o.step.y).toBe(y - 2)
+    }
+  }
+  expect(w.dialogue?.node).toBe('5')
+  expect(w.objects.find((o) => o.id === 'tarq')).toMatchObject({ x, y: y - 2 })
+  expect(w.objects.find((o) => o.id === 'flyingcarpet1')).toMatchObject({ x, y: y - 2 })
+  for (let i = 0; i < 30 && w.dialogue?.node !== 'pick'; i++) {
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 100 }, content)
+    expect(w.objects.find((o) => o.id === 'tarq')).toMatchObject({ x, y: y - 2 })
+    expect(mich).toMatchObject(stayed)
+  }
+  expect(w.dialogue?.node).toBe('pick')
+})
 
 describe('Tarq confronting Mich', () => {
   it.each([1, 7, 123, 999])(

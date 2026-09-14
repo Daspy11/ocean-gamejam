@@ -1,8 +1,7 @@
-import { walkPlayer } from './boat'
-import { beauty, takeItem } from './salt'
+import { startWalk, walkPlayer } from './boat'
+import { beauty } from './salt'
 import {
   cueInteract,
-  ITEMS,
   KINDS,
   type Dialogue,
   type DialogueNode,
@@ -17,30 +16,20 @@ import {
 const WAFT = 3000 // ms the carpet takes to come down out of the sky
 
 function sources(w: World, kind: NonNullable<DialogueNode['throw']>['kind']) {
-  const item = (kind === 'floor' ? 'carpet' : kind) as Item
-  return [
-    ...w.objects
-      .filter((o) => o.kind === kind && !o.thrown)
-      .map((o) => ({ id: o.id, item: undefined as Item | undefined })),
-    ...Array.from({ length: ITEMS.includes(item) ? (w.inventory[item] ?? 0) : 0 }, (_, i) => ({
-      id: `bag:${item}:${i}`,
-      item,
-    })),
-  ]
+  return w.objects.filter((o) => o.kind === kind && !o.thrown)
 }
 
 // Resolve each physical copy once, so two chairs stay separate and used items disappear.
 export function choices(w: World, node?: DialogueNode, dialogue?: Dialogue) {
-  const used: Record<string, number> = {}
+  const used = new Set<string>()
   return (node?.choices ?? []).flatMap((choice) => {
     if (Object.entries(choice.has ?? {}).some(([item, n]) => (w.inventory[item as Item] ?? 0) < n))
       return []
     const t = choice.next ? dialogue?.nodes[choice.next]?.throw : undefined
     if (!t) return [{ ...choice, object: undefined as string | undefined }]
-    const index = used[t.kind] ?? 0
-    used[t.kind] = index + 1
-    const source = sources(w, t.kind)[index]
-    return source ? [{ ...choice, object: source.id }] : []
+    if (used.has(t.kind)) return []
+    used.add(t.kind)
+    return sources(w, t.kind).map((source) => ({ ...choice, object: source.id }))
   })
 }
 
@@ -49,7 +38,7 @@ export function choices(w: World, node?: DialogueNode, dialogue?: Dialogue) {
 export function startThrow(w: World, t: NonNullable<DialogueNode['throw']>, id?: string): void {
   const it = sources(w, t.kind).find((o) => id === undefined || o.id === id)
   if (!it) return
-  if (!it.item) walkPlayer(w, { id: 'player', near: it.id })
+  walkPlayer(w, { id: 'player', near: it.id })
   w.throwing = { kind: t.kind, at: t.at, object: it.id }
   if (!w.player.step && !w.player.path?.length) w.throwing.launchAt = w.time + 300
 }
@@ -64,16 +53,14 @@ export function tickThrow(w: World): void {
   if (!t || p.step || p.path?.length) return
   if (!t.flight) {
     const source = sources(w, t.kind).find((o) => o.id === t.object)
-    const it = w.objects.find((o) => o.id === t.object)
     const him = w.objects.find((o) => o.id === t.at)
-    if (!source || !him || (it && Math.abs(p.x - it.x) + Math.abs(p.y - it.y) > 1)) {
+    if (!source || !him || Math.abs(p.x - source.x) + Math.abs(p.y - source.y) > 1) {
       w.throwing = null // it went somewhere between the act opening and him getting there
       return
     }
     t.launchAt ??= w.time + 300
     if (w.time < t.launchAt) return
-    if (it) w.objects.splice(w.objects.indexOf(it), 1)
-    else if (source.item) takeItem(w, source.item, 1)
+    w.objects.splice(w.objects.indexOf(source), 1)
     cueInteract(w)
     const riding =
       him.kind === 'npc' && w.objects.some((o) => o.id === him.ride && o.kind === 'flyingcarpet')
@@ -92,6 +79,11 @@ export function tickThrow(w: World): void {
       until: Math.max(w.time + 2250, hitAt + 1400),
     }
     p.facing = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up'
+    if (t.kind !== 'egg' && him.kind === 'npc') {
+      const left = !!w.flags[`dodge:${him.id}:left`]
+      startWalk(w, { id: him.ride ?? him.id, path: [left ? 'left' : 'right'], run: true })
+      w.flags[`dodge:${him.id}:left`] = !left
+    }
     w.rev++
     return
   }

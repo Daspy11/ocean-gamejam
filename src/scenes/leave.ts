@@ -78,9 +78,14 @@ export function flyOut(
     .setOrigin(0)
     .setDepth(-1000)
 
+  const together = !!world.flags['etarp:peace']
   const escort = world.flags['etarp:i']
     ? [
-        scene.add.image(0, 0, 'sprites/boat', 0).setOrigin(0, 1).setDepth(8999).setVisible(false),
+        scene.add
+          .image(0, 0, together ? 'sprites/seahorse' : 'sprites/boat', together ? 9 : 0)
+          .setOrigin(0, 1)
+          .setDepth(together ? 8997 : 8999)
+          .setVisible(false),
         scene.add.image(0, 0, 'sprites/etarp', 9).setOrigin(0, 1).setDepth(8998).setVisible(false),
       ]
     : []
@@ -156,7 +161,12 @@ export function flyOut(
     const behind = visit?.phase === 'approach' ? 212 * (1 - progress) ** 3 : 0
     const ahead = visit?.phase === 'leave' ? 300 * progress ** 2 : 0
     escort.forEach((s, i) =>
-      s.setVisible(visible).setPosition(deck.x - 48 - behind + ahead + i * 8, deck.y + 10 - i * 5),
+      s
+        .setVisible(visible)
+        .setPosition(
+          deck.x - 48 - behind + ahead + i * (together ? 1 : 8),
+          deck.y + 10 - i * (together ? 15 : 5),
+        ),
     )
     // the scene has drawn the shade at full size under the carpet's tile: it runs along under
     // them over the island, over the trees, and there is nothing to fall on past the shore

@@ -93,7 +93,19 @@ export function walkPlayer(w: World, walk: NonNullable<DialogueNode['walk']>): v
   const to = near ?? walk.to
   const path = to ? findPath(w, me, to, !!near) : [...(walk.path ?? [])]
   p.path = path ?? []
-  p.face = walk.facing ?? (near && p.path.length ? p.path.pop() : undefined)
+  p.face = walk.facing
+  if (path && to) {
+    let [x, y] = [p.x, p.y]
+    for (const dir of path) {
+      x += DIRS[dir][0]
+      y += DIRS[dir][1]
+    }
+    const [dx, dy] = [to.x - x, to.y - y]
+    // A path to an npc already stops beside him; only a path onto a prop loses its last step.
+    if (dx || dy)
+      p.face = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up'
+    else if (near && path.length) p.face = p.path.pop()
+  }
   delete p.ride // walking gets him off whatever he was standing on
 }
 
@@ -246,6 +258,13 @@ export function tickWalks(w: World, dt: number): void {
   // a spinning npc turns a quarter every 50 ms; scenes draw facing every frame like step progress,
   // so the turns bump no rev, only the stop
   for (const o of w.objects) {
+    if (o.kind === 'harry' && o.satAt !== undefined) {
+      const chairs = w.objects.filter((c) => c.kind === 'chair' && c.hidden)
+      while (chairs.length > Math.max(0, 3 - Math.floor((w.time - o.satAt) / 200))) {
+        delete chairs.pop()!.hidden // each freed chair now draws separately from Harry's sheet
+        w.rev++
+      }
+    }
     if (o.kind !== 'npc' || o.spin === undefined) continue
     if (w.time < o.spin) {
       o.facing = (['down', 'left', 'up', 'right'] as const)[Math.floor(w.time / 50) % 4]

@@ -5,7 +5,7 @@ import { createWorld, tileAt, tileIndex, type Content } from './world'
 
 const content: Content = {
   dialogues: Object.fromEntries(
-    ['pirate', 'got'].map((key) => [
+    ['pirate', 'got', 'note'].map((key) => [
       key,
       JSON.parse(
         readFileSync(new URL(`../../assets/dialogue/${key}.json`, import.meta.url), 'utf8'),
@@ -58,7 +58,7 @@ it.each(['crate2', 'crate3', 'crate5'])('opening %s does not summon Etarp', (id)
   const chest = w.objects.find((o) => o.id === id)!
   Object.assign(w.player, { x: chest.x, y: chest.y + 1, facing: 'up' })
   apply(w, { type: 'interact' }, content)
-  expect(w.dialogue?.key).toBe('got')
+  expect(w.dialogue?.key).toBe(id === 'crate3' ? 'note' : 'got')
   expect(w.flags['fired:pirate']).toBeUndefined()
   expect(w.queue).toEqual([])
 })

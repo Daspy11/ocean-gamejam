@@ -79,8 +79,8 @@ describe('the flight out', () => {
   it('draws a throw on a straight line with continuing rotation past its target', () => {
     const w = createWorld()
     w.throwing = {
-      kind: 'seal',
-      object: 'bag:seal:0',
+      kind: 'chair',
+      object: 'chair1',
       at: 'tarq',
       flight: { x: 10, y: 10, vx: 20, vy: -10, at: 0, hitAt: 200, until: 1600 },
     }

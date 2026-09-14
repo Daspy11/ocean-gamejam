@@ -6,6 +6,7 @@ import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
 import { beauty, takeItem, tickOrbs, useItem } from './salt'
+import { michHint } from './script'
 import { cueInteract, DIRS, KINDS, objectAt, tileAt } from './world'
 import type { Action, Content, DialogueNode, Item, World } from './world'
 
@@ -31,7 +32,7 @@ export function apply(w: World, a: Action, c: Content): void {
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item, object?: string) => {
     const dlg = c.dialogues[key]
-    const at = node ?? pickBranch(w, dlg?.start)
+    const at = node ?? (dlg?.hint === 'mich' ? michHint(w) : pickBranch(w, dlg?.start))
     const to = at === undefined ? undefined : dlg?.nodes[at]
     if (at === undefined || !to) return false
     Object.assign(w.flags, to.set)
@@ -44,8 +45,8 @@ export function apply(w: World, a: Action, c: Content): void {
     const crate = w.objects.find((o) => o.id === to.open)
     if (crate?.kind === 'crate' && !crate.open) {
       crate.open = true
-      gain(crate.item)
-      fire('crate:open')
+      if (crate.item) gain(crate.item)
+      if (crate.item) fire('crate:open')
     }
     startAct(w, w.dialogue, to, c)
     if (to.shake !== undefined) {
@@ -77,6 +78,7 @@ export function apply(w: World, a: Action, c: Content): void {
     if (to !== null && open(d.key, to, d.item, chosen?.object)) return
     if (d.back && open(d.back.key, d.back.node, d.back.item)) return
     w.dialogue = null
+    if (d.key === 'albatross' || d.key === 'sign') w.flags[`talked:${d.key}`] = true
     w.typing = undefined
     w.closeup = null // a close-up only ever lasts the box it went up under
     w.rev++
@@ -93,6 +95,7 @@ export function apply(w: World, a: Action, c: Content): void {
   // cannot chain into the next.
   const fire = (e: string) => {
     if (w.area === 'cave') return
+    if (e === 'arrive:big') w.flags['arrived:big'] = true
     const due = Object.entries(c.dialogues).filter(([key, dlg]) => {
       const t = dlg.trigger
       if (!t || t.event !== e || w.flags[`fired:${key}`]) return false
@@ -116,10 +119,7 @@ export function apply(w: World, a: Action, c: Content): void {
   }
 
   // record the controller even in a dialogue or the menu, so a release is never missed
-  if (a.type === 'move') {
-    p.held = a.dir
-    p.run = !!a.run
-  }
+  if (a.type === 'move') Object.assign(p, { held: a.dir, run: !!a.run })
 
   if (a.type === 'tick') {
     w.time += a.dt
@@ -198,7 +198,7 @@ export function apply(w: World, a: Action, c: Content): void {
     if (a.type !== 'move') return // asked out of the way: walking is all he can do until he is
   } else if (d) {
     const node = c.dialogues[d.key]?.nodes[d.node]
-    if (node && node.text === undefined) return // an act runs to its end; input cannot skip it
+    if (w.closeup?.auto || (node && node.text === undefined)) return // acts cannot be skipped
     if (node && a.type === 'move') {
       const count = choices(w, node, c.dialogues[d.key]).length
       const by = a.dir === 'up' ? -1 : a.dir === 'down' ? 1 : 0
@@ -261,6 +261,7 @@ export function apply(w: World, a: Action, c: Content): void {
     return
   }
   if (obj && ('dialogue' in obj || obj.kind === 'boat' || obj.kind === 'tree')) {
+    if (obj.kind === 'crate' && obj.open) return
     cueInteract(w)
     if (obj.kind === 'tree' && obj.dialogue === 'bigtree' && !w.flags[`inspected:${obj.id}`]) {
       w.flags[`inspected:${obj.id}`] = true
@@ -276,7 +277,7 @@ export function apply(w: World, a: Action, c: Content): void {
       return
     }
     obj.open = true
-    gain(obj.item)
+    if (obj.item) gain(obj.item)
     fire('crate:open') // fired after the got box, so Mich's line queues up behind it
     if (obj.id === 'crate4') fire('arrive:north') // salt beside the chest can bypass stepping ashore
     return

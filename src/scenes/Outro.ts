@@ -16,7 +16,8 @@ const CREDITS = [
   ['programming', 'Stuart Johnson'],
   ['writing', 'Stuart Johnson'],
   ['art', 'Michelle Vizina'],
-  ['music', 'Michelle Vizina'],
+  ['voice acting', 'stuart johnson, michelle virzina'],
+  ['music', 'kevin macleod, serge quadrado'],
 ]
 
 // the send-off after the names, a card at a time. Written by the author; do not reword.
@@ -139,7 +140,7 @@ export default class Outro extends Phaser.Scene {
   private credits() {
     const all: Phaser.GameObjects.BitmapText[] = []
     CREDITS.forEach(([job, name], i) => {
-      const y = 72 + i * 60
+      const y = 42 + i * 60
       all.push(
         this.add.bitmapText(MID, y, 'nihonium', job).setOrigin(0.5, 0).setTint(0x7a8a9a),
         this.add.bitmapText(MID, y + 20, 'nihonium', name).setOrigin(0.5, 0),

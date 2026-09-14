@@ -262,10 +262,7 @@ export const items = [
     [3, 10, 10, 2, '#7a5a3a'],
     [9, 6, 2, 5, '#7a5a3a'],
   ], // 3 twig, a stick with one shoot
-  [
-    [4, 6, 8, 7, '#9aa0a8'],
-    [5, 4, 6, 4, '#9aa0a8'],
-  ], // 4 seal, a blob with a head
+  [], // 4 unused: keep the remaining icons aligned with the human sheet
   [
     [5, 4, 6, 9, '#e0c040'],
     [4, 6, 8, 5, '#e0c040'],

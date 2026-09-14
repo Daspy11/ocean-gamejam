@@ -40,7 +40,7 @@ export function startAct(
     const ids: Record<string, string> = {
       you: 'player',
       etarip: 'etarp',
-      'sea horse': 'seahorse',
+      'dr. sceantist': 'seahorse',
       "golfer's delight": 'albatross',
       'antoine le shrimp': 'shrimp',
       'suspicious harry': 'harry',
@@ -86,8 +86,7 @@ export function startAct(
     if (['flower', 'tree', 'treealive'].includes(d.key) && d.node.startsWith('sun'))
       listener = speaker === 'mich' ? 'walter' : 'mich'
     if (d.key === 'seahorse' && d.node !== 'again')
-      listener =
-        d.node === '6' ? 'walter' : speaker === 'seahorse' || d.node === '5' ? 'mich' : 'seahorse'
+      listener = speaker === 'seahorse' ? 'mich' : 'seahorse'
     if (d.key === 'cannon' || (d.key === 'tarq' && ['yarr', 'sea0'].includes(d.node))) {
       if (speaker === 'etarp') listener = 'seahorse'
       if (speaker === 'seahorse') listener = 'etarp'
@@ -128,6 +127,8 @@ export function startAct(
     (to.walk.id === 'player' ? walkPlayer : startWalk)(w, to.walk)
   if (pause) d.until = w.time + 300 // let the closed dialogue settle before he moves
   if (to.wait !== undefined) d.until = w.time + to.wait
+  const seated = w.objects.find((o) => o.id === to.sit)
+  if (seated?.kind === 'harry') seated.satAt = w.time
   if (to.after !== undefined) d.until = w.time + to.after
   if (to.rumble !== undefined)
     // Give the pirate's entrance music a lead-in before his ship appears.
@@ -147,7 +148,12 @@ export function startAct(
     if (mich?.kind === 'npc') mich.facing = 'up' // turn back to planting after calling the player over
   }
   if (spawn && !w.objects.some((o) => o.id === spawn.id)) {
-    w.objects.push(structuredClone(spawn))
+    const obj = structuredClone(spawn)
+    if (to.spawnRelative === 'player') {
+      obj.x += w.player.x
+      obj.y += w.player.y
+    }
+    w.objects.push(obj)
     if (
       [
         'bar',
@@ -181,7 +187,19 @@ export function startAct(
     w.rev++
   }
   if (to.burst && w.closeup?.burst === null) w.closeup.burst = w.time
-  if (to.spin !== undefined) startSpin(w, to.spin)
+  if (to.take === 'glassi' || (typeof to.take === 'object' && to.take.glassi)) {
+    w.closeup = {
+      sheet: 'etarp',
+      frame: 1,
+      frames: 1,
+      at: w.time,
+      since: w.time,
+      burst: null,
+      auto: true,
+    }
+    w.rev++
+  }
+  if (to.spin !== undefined && !w.closeup?.auto) startSpin(w, to.spin)
   const turn = to.face && w.objects.find((o) => o.id === to.face?.id)
   if (turn?.kind === 'npc') {
     turn.facing = to.face!.dir
@@ -207,6 +225,7 @@ export function nodeDone(
   node: DialogueNode,
   confirm = false,
 ): boolean {
+  if (w.closeup?.auto) return false
   if (confirm) {
     if (node.text === undefined) return false
     const t = w.typing
@@ -264,8 +283,20 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
 
 // a burst close-up taken down is gone once the camera has had its second to ease back out
 export function tickCloseup(w: World): void {
+  const c = w.closeup
+  if (c?.auto) {
+    if (c.burst === null && w.time >= c.at + 1000) {
+      c.burst = c.at + 1000
+      w.rev++
+    }
+    if (c.down === undefined && w.time >= c.at + 3000) {
+      c.down = c.at + 3000
+      w.rev++
+    }
+  }
   const down = w.closeup?.down
   if (down !== undefined && w.time >= down + 1000) {
+    if (c?.auto && w.typing) w.typing.at = w.time
     w.closeup = null
     w.rev++
   }

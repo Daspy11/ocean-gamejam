@@ -60,14 +60,14 @@
       "next": "askchair"
     },
     "askchair": {
-      "text": "EYE AVE EUGH SOMETHIN FOR YOUR EICHLAND IF EUGH, YOU CAN ELP ME FIND A CHAIR",
+      "text": "ey ave somethin for your island eef, eugh, you can elp me find a chair",
       "set": {
         "shrimp:chair": true
       },
       "next": null
     },
     "nochair": {
-      "text": "EYE AVE EUGH SOMETHIN FOR YOUR EICHLAND IF EUGH, YOU CAN ELP ME FIND A CHAIR",
+      "text": "ey ave somethin for your island eef, eugh, you can elp me find a chair",
       "next": null
     },
     "chair": {

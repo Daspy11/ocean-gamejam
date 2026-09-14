@@ -14,7 +14,9 @@ export function background(scene: Phaser.Scene): void {
   }) as Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound
   music.play()
   const fade = (_time: number, delta: number) => {
-    const featured = sound.get('music/nowhereland') || sound.get('music/saltyditty')
+    const featured = ['music/nowhereland', 'music/saltyditty', 'music/heartbreaking'].some((key) =>
+      sound.get(key),
+    )
     const target = world.flags.outro || featured ? 0 : 0.175
     const step = (0.175 * Math.max(0, delta)) / 1500
     music.setVolume(
@@ -37,16 +39,19 @@ export function hearWorld(scene: Phaser.Scene) {
   let at = world.time
   let interact = world.interactCue ?? 0
   let chime = world.chimeCue ?? 0
+  let explosion = world.explosionCue ?? 0
   let closeup = world.closeup
   let power: Phaser.Sound.BaseSound | undefined
   let wrecks = new Set(world.objects.filter((o) => o.kind === 'boat' && o.wrecked).map((o) => o.id))
   const hisses = new Map<Obj, Phaser.Sound.BaseSound>()
   let ditty: Phaser.Sound.BaseSound | undefined
+  let track: string | undefined
   let fade: Phaser.Tweens.Tween | undefined
   const stopMusic = () => {
     fade?.stop()
     ditty?.destroy()
     ditty = fade = undefined
+    track = undefined
   }
   const stop = () => {
     for (const sound of hisses.values()) sound.destroy()
@@ -70,8 +75,7 @@ export function hearWorld(scene: Phaser.Scene) {
     const crashed = world.objects.filter((o) => o.kind === 'boat' && o.wrecked)
     const d = world.dialogue
     const c = world.closeup
-    const powering =
-      d?.key === 'flower' && c?.sheet === 'walter' && c.burst !== undefined && c.down === undefined
+    const powering = !!c && c.burst !== undefined && c.down === undefined
     const end = powering && typeof c.burst === 'number' ? c.burst + 1200 : Infinity
     if (
       power &&
@@ -90,9 +94,16 @@ export function hearWorld(scene: Phaser.Scene) {
       d?.key === 'pirate' &&
       ['1', '2', '3', '4'].includes(d.node) &&
       !crashed.some((o) => o.id === 'ship')
-    if (!entering) stopMusic()
-    else if (!ditty) {
-      ditty = scene.sound.add('music/saltyditty', { loop: true, volume: 0, mute: !settings.music })
+    const plea =
+      d?.key === 'tarq' &&
+      ['crab4', 'crab5', 'crab6', 'crab6a', 'crab6b', 'crab7', 'ask', 'sad1a', 'sad2a'].includes(
+        d.node,
+      )
+    const song = plea ? 'music/heartbreaking' : entering ? 'music/saltyditty' : undefined
+    if (song !== track) stopMusic()
+    if (song && !ditty) {
+      track = song
+      ditty = scene.sound.add(song, { loop: true, volume: 0, mute: !settings.music })
       ditty.play()
       fade = scene.tweens.add({
         targets: ditty,
@@ -109,6 +120,7 @@ export function hearWorld(scene: Phaser.Scene) {
       if ((world.chimeCue ?? 0) > chime || (at < end && world.time >= end)) playChime(scene)
       else if ((world.interactCue ?? 0) > interact) scene.sound.play('sfx/interact')
       for (const boat of crashed) if (!wrecks.has(boat.id)) scene.sound.play('sfx/crash')
+      if ((world.explosionCue ?? 0) > explosion) scene.sound.play('sfx/crash')
       for (const orb of boiling) {
         if (orb.kind !== 'orb') continue
         const landed = orb.doneAt - 1700 // the first 300 ms of the two-second throw are airborne
@@ -124,6 +136,7 @@ export function hearWorld(scene: Phaser.Scene) {
     at = world.time
     interact = world.interactCue ?? 0
     chime = world.chimeCue ?? 0
+    explosion = world.explosionCue ?? 0
     closeup = c
     wrecks = new Set(crashed.map((o) => o.id))
   }
@@ -131,6 +144,7 @@ export function hearWorld(scene: Phaser.Scene) {
     stop()
     interact = world.interactCue ?? 0
     chime = world.chimeCue ?? 0
+    explosion = world.explosionCue ?? 0
     ditty?.pause()
     power?.pause()
   }
@@ -177,7 +191,7 @@ export const VOICES: Record<
   "golfer's delight": { hz: 620, wave: 'sine', volume: 0.06 },
   'antoine le shrimp': { sample: 'voices/antoine', rate: 1.8, volume: 0.65, ms: 110, gap: 12 },
   'suspicious harry': { sample: 'voices/harry', rate: 1.8, volume: 0.65, ms: 110, gap: 12 },
-  'sea horse': { hz: 280, wave: 'square', volume: 0.025 },
+  'dr. sceantist': { sample: 'voices/seahorse', rate: 1, volume: 0.65, ms: 110, gap: 12 },
   tarq: { sample: 'voices/tarq', rate: 1, volume: 0.65, ms: 110, gap: 12 },
   tree: { hz: 95, wave: 'square', volume: 0.025 },
   'tree 2': { hz: 125, wave: 'square', volume: 0.025 },

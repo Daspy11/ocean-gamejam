@@ -51,7 +51,7 @@ const north = (w: World) => {
   for (let y = 6; y <= 13; y++) w.tiles[tileIndex(w, 20, y)] = 'salt' // 20,13 is the tile that lands it
   w.objects.push({ id: 'ship', kind: 'boat', x: 21, y: 8, wrecked: true, dialogue: 'ship' })
   w.objects.push(npc('etarp', 'etarp', 22, 2, 'down', 'etarp'))
-  w.objects.push({ id: 'bar1', kind: 'bar', x: 23, y: 2 }, { id: 'bar2', kind: 'bar', x: 23, y: 3 })
+  w.objects.push({ id: 'bar2', kind: 'bar', x: 23, y: 3 })
   w.objects.push({ id: 'bar3', kind: 'bar', x: 22, y: 3 }, { id: 'bar4', kind: 'bar', x: 21, y: 3 })
   Object.assign(w.flags, { 'fired:pirate': true, 'etarp:bar': true })
 }
@@ -87,7 +87,9 @@ const placed = (w: World) => {
   w.objects.push({ id: 'floor15-14', kind: 'floor', x: 15, y: 14 })
   w.objects.push({ id: 'egg15-17', kind: 'egg', x: 15, y: 17 })
   w.objects.push({ id: 'certificate17-17', kind: 'certificate', x: 17, y: 17 })
-  w.objects = w.objects.filter((o) => o.kind !== 'carrot' && o.id !== 'chair1')
+  w.objects = w.objects.filter((o) => o.kind !== 'carrot' && o.kind !== 'chair')
+  w.objects.push({ id: 'chair15-18', kind: 'chair', x: 15, y: 18 })
+  w.objects.push({ id: 'chair16-18', kind: 'chair', x: 16, y: 18 })
   delete w.inventory.carpet
   Object.assign(w.flags, {
     'placed:carpet': true,
@@ -98,6 +100,7 @@ const placed = (w: World) => {
     'had:carrot': true,
     'had:otijom': true,
     'had:certificate': true,
+    'had:chair': true,
     'shrimp:asked': true,
     'shrimp:chair': true,
     'sprite:shrimp': 'shrimpchair',
@@ -124,8 +127,8 @@ const afterCannon = (w: World) => {
   afterSeahorse(w)
   move(w, 'etarp', 19, 15)
   move(w, 'walter', 17, 18)
-  move(w, 'mich', 13, 14)
   w.objects.push({ id: 'cannon', kind: 'cannon', x: 18, y: 15 })
+  w.objects.push({ id: 'cannon2', kind: 'cannon', x: 14, y: 15, right: true })
   w.flags['fired:cannon'] = true
 }
 
@@ -183,6 +186,24 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
       placed(w) // and the carpet, the egg and the certificate are down, which is what got it to 15
       w.score = 15 // the next tick brings the sea horse in from the west, under the chest
       w.player = { ...w.player, x: 16, y: 17, facing: 'left' }
+    },
+  },
+  {
+    label: 'fifteen beauty: saved electrolytes',
+    at: (w) => {
+      STATES.find((s) => s.label === 'fifteen beauty')!.at!(w)
+      w.inventory.electrolytes = 1
+      delete w.flags['ate:electrolytes']
+    },
+  },
+  {
+    label: 'good ending: both gifts',
+    at: (w) => {
+      STATES.find((s) => s.label === 'fifteen beauty: saved electrolytes')!.at!(w)
+      w.inventory.glassi = 1
+      w.flags['had:glassi'] = true
+      const crate = w.objects.find((o) => o.id === 'crate5')
+      if (crate?.kind === 'crate') crate.open = true
     },
   },
   // straight into the scene the sea horse leaves behind: talk opens it once the world is loaded
@@ -251,9 +272,7 @@ export default class Debug extends Phaser.Scene {
 
   create() {
     const scenes = this.scene.manager.getScenes(false).filter((scene) => scene !== this)
-    const active = scenes
-      .filter((scene) => scene.sys.isActive())
-      .map((scene) => scene.sys.settings.key)
+    const active = scenes.filter((s) => s.sys.isActive()).map((s) => s.sys.settings.key)
     for (const key of active) this.scene.pause(key)
     let jumped = false
     // Cancelling resumes the scene stack we paused; a jump must never resurrect it.
@@ -311,10 +330,10 @@ export default class Debug extends Phaser.Scene {
       this.draw()
     }
     if (down([this.keys.ESC]))
-      this.close() // Z closes it too, from the one listener in main.ts
+      this.scene.stop() // Z closes it too, from the one listener in main.ts
     else if (down([this.keys.E, this.keys.SPACE, this.keys.ENTER])) {
       this.options[this.cursor].run()
-      this.close()
+      this.scene.stop()
     }
   }
 
@@ -322,9 +341,5 @@ export default class Debug extends Phaser.Scene {
     this.lines.forEach((line, i) =>
       line.setText(`${i === this.cursor ? '> ' : '  '}${this.options[i].label}`),
     )
-  }
-
-  private close() {
-    this.scene.stop()
   }
 }

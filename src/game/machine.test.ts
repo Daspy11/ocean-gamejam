@@ -101,8 +101,10 @@ describe('the desalinator 9000', () => {
 
     apply(w, { type: 'tick', dt: 1000 }, content)
     expect([w.objects.some((o) => o.kind === 'machine'), w.dialogue?.node]).toEqual([true, '6'])
+    expect(w.explosionCue).toBeUndefined()
     apply(w, { type: 'tick', dt: 1000 }, content)
 
+    expect(w.explosionCue).toBe(1)
     expect(w.objects.some((o) => o.kind === 'machine')).toBe(false)
     expect(w.dialogue?.node).toBe('7') // the act is over the moment the thing is gone
     expect(tileAt(w, 13, 21)).toBe('salt') // a disc seven tiles out from 13,14
@@ -111,5 +113,7 @@ describe('the desalinator 9000', () => {
     expect(tileAt(w, 5, 14)).toBe('water') // and not a tile further
     expect(w.score).toBeLessThan(0) // what it ate, plus a beauty for every tile of new crust
     expect(w.rumble).toBeGreaterThan(w.time)
+    apply(w, { type: 'tick', dt: 2000 }, content)
+    expect(w.explosionCue).toBe(1)
   })
 })

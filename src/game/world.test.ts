@@ -1,14 +1,22 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { MAPS } from './map'
 import { apply } from './actions'
 import { findPath } from './path'
 import { walkPlayer } from './boat'
-import { DIRS, KINDS, createWorld, npc, objectAt, tileAt } from './world'
+import { DIRS, KINDS, createWorld, npc, objectAt, tileAt, type Content } from './world'
 
 describe('createWorld', () => {
-  it('requires a salt route around the trees to reach the stuffed seal chest', () => {
+  it('requires a salt route around the trees to reach the note chest', () => {
     const w = createWorld()
-    const c = { dialogues: {}, items: {} }
+    const c: Content = {
+      dialogues: {
+        note: JSON.parse(
+          readFileSync(new URL('../../assets/dialogue/note.json', import.meta.url), 'utf8'),
+        ),
+      },
+      items: {},
+    }
     Object.assign(w.player, { x: 46, y: 22 })
     const walker = npc('player', 'player', 46, 22, 'right', '')
     const chest = w.objects.find((o) => o.id === 'crate3')!
@@ -37,7 +45,24 @@ describe('createWorld', () => {
       apply(w, { type: 'tick', dt: 100 }, c)
     expect(w.player).toMatchObject({ x: chest.x + 1, y: chest.y, facing: 'left' })
     apply(w, { type: 'interact' }, c)
-    expect(w.inventory.seal).toBe(1)
+    expect(chest).toMatchObject({ open: true })
+    for (const text of [
+      'you found a note',
+      'the note reads:',
+      "DR. SCEANTIST'S EXPERIMENT NOTES (PLS DONT STEAL)",
+      'i regret working on this whole name augmentation thing',
+      'i paid some guy $20 to test out my letter removal potion but it accidentally reversed his name too',
+      "and then he ran off backwards and i couldn't find him to give him his letter back",
+      'anyway, i have stowed it on a little island to the west for safekeeping so i can give it back to him later',
+    ]) {
+      expect(w.typing?.text).toBe(text)
+      apply(w, { type: 'interact' }, c)
+    }
+    expect(w.dialogue).toBeNull()
+    expect(w.inventory).toEqual({ orb: 1 })
+    apply(w, { type: 'interact' }, c)
+    expect(w.dialogue).toBeNull()
+    expect(w.inventory).toEqual({ orb: 1 })
   })
 
   it('takes the grid size from the rows of the map it is given', () => {

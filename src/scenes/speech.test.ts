@@ -67,10 +67,10 @@ describe('speech audio', () => {
   })
   it('plays only new letters, preserves gaps, and follows Phaser volume and mute routing', () => {
     const { scene, sound, oscillator, gain } = audio()
-    speak(scene, 'sea horse', 'a b.', 0, 4)
+    speak(scene, 'tree', 'a b.', 0, 4)
     expect(sound.context.createOscillator).toHaveBeenCalledTimes(2)
     expect(oscillator.start.mock.calls).toEqual([[10], [10.028]])
-    expect(oscillator.frequency.setValueAtTime).toHaveBeenCalledWith(280, 10)
+    expect(oscillator.frequency.setValueAtTime).toHaveBeenCalledWith(95, 10)
     expect(gain.connect).toHaveBeenCalledWith(sound.destination)
     expect(gain.gain.setValueAtTime).toHaveBeenCalledWith(0, 10)
     expect(oscillator.stop).toHaveBeenCalledWith(10.022)
@@ -204,7 +204,16 @@ describe('speech audio', () => {
     expect(sound.context.createOscillator).not.toHaveBeenCalled()
   })
 
-  it.each(['mich', 'etarp', 'harry', 'antoine', 'tarq', 'walter'] as const)(
+  it('plays dr. sceantist from his recording at its original rate', () => {
+    const { scene, source, sound } = audio()
+    speak(scene, 'dr. sceantist', 'c', 0, 1, { until: 0 })
+    expect(scene.cache.audio.get).toHaveBeenCalledWith('voices/seahorse')
+    expect(source.playbackRate.setValueAtTime).toHaveBeenCalledWith(1, 10)
+    expect(source.start).toHaveBeenCalledWith(10, AUDIO['voices/seahorse'].letters.c[0], 0.11)
+    expect(sound.context.createOscillator).not.toHaveBeenCalled()
+  })
+
+  it.each(['mich', 'etarp', 'harry', 'antoine', 'tarq', 'walter', 'seahorse'] as const)(
     'ships 26 valid letter markers for %s',
     (who) => {
       const wav = readFileSync(new URL(`../../audio/${who}.wav`, import.meta.url))

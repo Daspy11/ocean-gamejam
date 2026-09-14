@@ -1,0 +1,13 @@
+{
+  "name": "",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "you found a note", "open": "crate3", "set": { "had:note": true }, "next": "2" },
+    "2": { "text": "the note reads:", "next": "3" },
+    "3": { "text": "DR. SCEANTIST'S EXPERIMENT NOTES (PLS DONT STEAL)", "next": "4" },
+    "4": { "text": "i regret working on this whole name augmentation thing", "next": "5" },
+    "5": { "text": "i paid some guy $20 to test out my letter removal potion but it accidentally reversed his name too", "next": "6" },
+    "6": { "text": "and then he ran off backwards and i couldn't find him to give him his letter back", "next": "7" },
+    "7": { "text": "anyway, i have stowed it on a little island to the west for safekeeping so i can give it back to him later", "next": null }
+  }
+}

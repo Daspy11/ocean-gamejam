@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
-import { createWorld } from '../game/world'
+import { readFileSync } from 'node:fs'
+import { apply } from '../game/actions'
+import { choices } from '../game/throw'
+import { createWorld, tileAt, tileIndex, type Content, type Dialogue } from '../game/world'
 import { load, world } from '../store'
 import Debug from './Debug'
 import Intro from './Intro'
@@ -85,6 +88,74 @@ function menu(running: string[]) {
 }
 
 describe('debug story jumps', () => {
+  it('starts the good ending with both gifts and reaches the reconciliation', () => {
+    const { options } = menu(['island', 'ui'])
+    options.find((option) => option.label === 'good ending: both gifts')!.run()
+    expect(world.inventory).toMatchObject({ electrolytes: 1, glassi: 1 })
+    expect(world.flags['ate:electrolytes']).toBeUndefined()
+    expect(world.flags['had:glassi']).toBe(true)
+    expect(world.flags['seahorse:peace']).toBeUndefined()
+    expect(world.flags['etarp:i']).toBeUndefined()
+    const content: Content = {
+      dialogues: Object.fromEntries(
+        ['seahorse', 'cannon', 'tarq'].map((key) => [
+          key,
+          JSON.parse(
+            readFileSync(new URL(`../../assets/dialogue/${key}.json`, import.meta.url), 'utf8'),
+          ),
+        ]),
+      ),
+      items: {},
+    }
+    for (let i = 0; i < 2000 && world.dialogue?.key !== 'tarq'; i++) {
+      const d = world.dialogue
+      if (d && content.dialogues[d.key].nodes[d.node].text !== undefined && !world.closeup?.auto)
+        apply(world, { type: 'interact' }, content)
+      else apply(world, { type: 'tick', dt: 100 }, content)
+      expect(world.objects.some((o) => o.kind === 'cannon' && o.firing)).toBe(false)
+    }
+    expect(world.dialogue?.key).toBe('tarq')
+    expect(world.flags['seahorse:peace']).toBe(true)
+    expect(world.flags['etarp:peace']).toBe(true)
+    expect(world.flags['etarp:i']).toBe(true)
+    expect(world.inventory.electrolytes).toBeUndefined()
+    expect(world.inventory.glassi).toBeUndefined()
+    expect(world.objects.find((o) => o.id === 'etarp')).toMatchObject({ ride: 'seahorse' })
+  })
+
+  it.each([
+    'fifteen beauty',
+    'fifteen beauty: saved electrolytes',
+    'good ending: both gifts',
+    "etarp's cannon",
+    'tarq flies in',
+    'leaving the island',
+    'leaving with etarip',
+  ])('stocks two visible home-island chairs and leaves the note chest closed for %s', (label) => {
+    const { options } = menu(['island', 'ui'])
+    options.find((option) => option.label === label)!.run()
+    const chairs = world.objects.filter((o) => o.kind === 'chair')
+    expect(chairs).toHaveLength(2)
+    for (const chair of chairs) {
+      expect(chair.hidden).toBeFalsy()
+      expect(world.main[tileIndex(world, chair.x, chair.y)]).toBe(true)
+      expect(['sand', 'grass', 'salt']).toContain(tileAt(world, chair.x, chair.y))
+      expect(world.objects.filter((o) => o.x === chair.x && o.y === chair.y)).toHaveLength(1)
+    }
+    expect(world.objects.find((o) => o.id === 'crate3')).toMatchObject({
+      open: false,
+      dialogue: 'note',
+    })
+    const dialogue: Dialogue = JSON.parse(
+      readFileSync(new URL('../../assets/dialogue/tarq.json', import.meta.url), 'utf8'),
+    )
+    const offered = choices(world, dialogue.nodes.pick, dialogue)
+    expect(offered.filter((c) => c.next === 'chair').map((c) => c.object)).toEqual(
+      chairs.map((o) => o.id),
+    )
+    expect(offered.every((c) => world.objects.some((o) => o.id === c.object))).toBe(true)
+  })
+
   it.each([Intro, UI])('silences %s on pause and removes its audio hook on shutdown', (Scene) => {
     load(createWorld())
     const scene = new Scene()

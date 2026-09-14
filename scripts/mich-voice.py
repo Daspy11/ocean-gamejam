@@ -11,12 +11,14 @@ from scipy.signal import butter, resample_poly, sosfiltfilt
 # Rebuild from the author's recording: python -m pip install numpy scipy soundfile
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
-parser.add_argument('speaker', choices=['mich', 'etarp', 'harry', 'antoine', 'tarq', 'walter'], nargs='?', default='mich')
+parser.add_argument('speaker', choices=['mich', 'etarp', 'harry', 'antoine', 'tarq', 'walter', 'seahorse'], nargs='?', default='mich')
 speaker = parser.parse_args().speaker
 if speaker == 'mich':
     source = root / '2026_09_12_16_23_00_1.mp3'
 elif speaker == 'walter':
     source = root / '2026_09_12_16_30_26_1.mp3'
+elif speaker == 'seahorse':
+    source = root / '2026_09_13_18_47_51_1.mp3'
 else:
     recording = {'etarp': 3, 'harry': 4, 'antoine': 5, 'tarq': 6}[speaker]
     source = root / f'Record (online-voice-recorder.com) ({recording}).mp3'
@@ -34,7 +36,10 @@ hop = rate // 100
 frames = filtered[:len(filtered) // hop * hop].reshape(-1, hop)
 energy = np.sqrt(np.mean(frames ** 2, axis=1))
 threshold = 0.008 if speaker in ('mich', 'walter') else 0.002  # The newer recordings have more background noise.
-active = binary_closing(energy > threshold, structure=np.ones(12 if speaker in ('etarp', 'walter') else 22))
+if speaker == 'seahorse':
+    threshold = 0.016  # Separate the closely spaced U and V despite the background noise.
+gap = 8 if speaker == 'seahorse' else 12 if speaker in ('etarp', 'walter') else 22
+active = binary_closing(energy > threshold, structure=np.ones(gap))
 edges = np.diff(np.r_[False, active, False].astype(int))
 spans = [(a, b) for a, b in zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)) if b - a >= 8]
 assert len(spans) == 26, f'Expected 26 letters, found {len(spans)}; inspect cuts before rebuilding'

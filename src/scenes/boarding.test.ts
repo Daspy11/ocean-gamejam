@@ -17,6 +17,28 @@ function pose(a: World['player'] | (Obj & { kind: 'npc' }), who: string) {
 }
 
 describe('drawing the ending jumps', () => {
+  it('arcs Etarip from the ground onto the sea horse head and keeps him there while moving', () => {
+    const w = createWorld()
+    const horse = npc('seahorse', 'seahorse', 13, 15, 'right', '') as Obj & { kind: 'npc' }
+    const etarp = npc('etarp', 'etarp', 14, 15, 'left', '') as Obj & { kind: 'npc' }
+    w.objects = [etarp, horse]
+    load(w)
+    const from = pose(etarp, 'etarp')
+    mount(w, { id: 'etarp', on: 'seahorse' })
+    expect(pose(etarp, 'etarp')).toEqual(from)
+    w.time = 175
+    expect(pose(etarp, 'etarp')[1]).toBeLessThan(from[1])
+    w.time = 350
+    tickWalks(w, 350)
+    for (const progress of [0, 0.5, 0.9]) {
+      horse.step = { x: 14, y: 15, t: progress }
+      tickWalks(w, 0)
+      const [hx, hy] = pose(horse, 'seahorse')
+      const [ex, ey] = pose(etarp, 'etarp')
+      expect([ex - hx, ey - hy]).toEqual([1, -15])
+    }
+  })
+
   it('starts at the existing feet and keeps Walter on Mich throughout her jump', () => {
     const w = createWorld()
     const mich = npc('mich', 'mich', 15, 17, 'right', '') as Obj & { kind: 'npc' }
@@ -52,7 +74,7 @@ describe('drawing the ending jumps', () => {
 })
 
 describe('the shipped ending dialogue', () => {
-  it('plays the revised approach and offers exactly the six requested item copies', () => {
+  it('keeps Mich and Tarq still during their exchange and offers the five item copies', () => {
     const tarq = JSON.parse(
       readFileSync(new URL('../../assets/dialogue/tarq.json', import.meta.url), 'utf8'),
     )
@@ -62,16 +84,27 @@ describe('the shipped ending dialogue', () => {
     const mich = w.objects.find((o) => o.id === 'mich') as Obj & { kind: 'npc' }
     Object.assign(mich, { x: 13, y: 14 })
     blast(w, 13, 14)
-    w.inventory = { chair: 2, egg: 1, certificate: 1, carpet: 1, seal: 1 }
+    w.inventory = {}
+    w.objects.push(
+      { id: 'chair1', kind: 'chair', x: 15, y: 16 },
+      { id: 'chair2', kind: 'chair', x: 14, y: 17 },
+      { id: 'egg', kind: 'egg', x: 15, y: 17 },
+      { id: 'certificate', kind: 'certificate', x: 16, y: 17 },
+      { id: 'floor', kind: 'floor', x: 17, y: 17 },
+    )
     apply(w, { type: 'talk', key: 'tarq' }, content)
+    let arrived: { x: number; y: number } | undefined
     for (let i = 0; i < 600 && w.dialogue?.node !== 'pick'; i++) {
       const node = w.dialogue && content.dialogues.tarq.nodes[w.dialogue.node]
-      if (w.dialogue?.node === '5') expect([mich.x, mich.y]).toEqual([13, 14])
+      const him = w.objects.find((o) => o.id === 'tarq')
+      if (w.dialogue?.node === '5' && him) arrived = { x: him.x, y: him.y }
       if (node && node.text !== undefined) apply(w, { type: 'interact' }, content)
       apply(w, { type: 'tick', dt: 50 }, content)
+      expect([mich.x, mich.y]).toEqual([13, 14])
+      if (arrived) expect(him).toMatchObject(arrived)
     }
     expect(w.dialogue?.node).toBe('pick')
-    expect(Math.abs(mich.x - 13) + Math.abs(mich.y - 14)).toBe(4)
+    expect(arrived).toBeDefined()
     const offered = choices(w, content.dialogues.tarq.nodes.pick, content.dialogues.tarq)
     expect(offered.map((c) => c.text)).toEqual([
       'deck chair',
@@ -79,15 +112,16 @@ describe('the shipped ending dialogue', () => {
       'egg',
       'certificate',
       'carpet',
-      'stuffed seal',
     ])
-    expect(new Set(offered.map((c) => c.object)).size).toBe(6)
-    for (let i = 0; i < 5; i++) apply(w, { type: 'move', dir: 'down' }, content)
+    expect(new Set(offered.map((c) => c.object)).size).toBe(5)
+    for (let i = 0; i < 4; i++) apply(w, { type: 'move', dir: 'down' }, content)
     apply(w, { type: 'interact' }, content)
-    for (let i = 0; i < 100 && w.dialogue?.node !== 'pick'; i++)
+    for (let i = 0; i < 100 && w.dialogue?.node !== 'carpetReply'; i++)
       apply(w, { type: 'tick', dt: 50 }, content)
+    expect(w.dialogue?.node).toBe('carpetReply')
+    apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.node).toBe('pick')
-    expect(choices(w, content.dialogues.tarq.nodes.pick, content.dialogues.tarq)).toHaveLength(5)
+    expect(choices(w, content.dialogues.tarq.nodes.pick, content.dialogues.tarq)).toHaveLength(4)
   })
 
   it.each([16, 50, 250])('boards and departs with or without Walter at %i ms per frame', (dt) => {

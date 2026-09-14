@@ -1,5 +1,5 @@
 {
-  "name": "sea horse",
+  "name": "dr. sceantist",
   "trigger": { "event": "score:fifteen" },
   "start": [{ "when": "seahorse:met", "node": "again" }, { "node": "1" }],
   "nodes": {
@@ -17,41 +17,47 @@
       "next": "2"
     },
     "2": { "walk": { "id": "seahorse", "to": { "x": 13, "y": 15 }, "run": true }, "next": "3" },
-    "3": { "text": "FIFTEEN BEAUTY???", "next": "4" },
-    "4": { "who": "Walter", "text": "i know right", "next": "5" },
-    "5": { "who": "Walter", "text": "how's that for quantifiable beauty", "next": "6" },
-    "6": { "who": "Mich", "text": "shut up", "next": "7" },
-    "7": { "text": "luckily for you guys, i am a MASTER INDUSTRIALIST", "next": "8" },
-    "8": { "who": "Mich", "text": "um", "next": "9" },
-    "9": { "text": "look at this", "next": "10" },
+    "3": { "text": "FIFTEEN BEAUTY???", "next": "terrible" },
+    "terrible": { "text": "i wish i could appreciate it but i feel terrible", "next": "4" },
+    "4": { "text": "holy HELL i need electrolytes", "next": "5" },
+    "5": { "who": "Mich", "text": "can't you just drink seawater for that?", "next": "6" },
+    "6": { "text": "SEAWATER??", "next": "7" },
+    "7": { "text": "full of REGULAR OLD NORMAL ELECTROLYTES?", "next": "8" },
+    "8": { "text": "do you understand how much water i would have to drink for that?", "next": "9" },
+    "9": { "text": "if it's ok i will just put my electrolyte extractor here for a bit", "next": "10" },
     "10": {
       "put": { "by": "seahorse", "obj": { "id": "desalinator", "kind": "machine", "x": 0, "y": 0 } },
-      "next": "11"
+      "next": "17"
     },
-    "11": { "text": "this is my prototype of desalinator 9000", "next": "12" },
-    "12": { "who": "Mich", "text": "um could you turn that off", "next": "13" },
-    "13": { "text": "what", "next": "14" },
-    "14": { "text": "no obviously not marvel in its glory", "next": "15" },
-    "15": { "who": "Mich", "text": "what does it do", "next": "16" },
-    "16": { "text": "um, it extracts salt from the surrounding environment", "next": "17" },
     "17": { "boom": "desalinator", "next": "18" },
-    "18": { "who": "Mich", "text": "what the hell man", "next": "19" },
-    "19": { "text": "i said it was a prototype", "next": "19b" },
-    "19b": { "walk": { "id": "mich", "to": { "x": 13, "y": 14 } }, "next": "20" },
-    "20": {
-      "who": "Mich",
-      "text": "THAT'S NOT WHAT I MEAN LOOK AT WHAT YOU DID TO OUR ISLAND",
-      "next": "21"
+    "18": { "text": "NOOOOOOO my electrolyte extractor", "next": "19" },
+    "19": {
+      "text": "if i don't get my electrolytes i will suffer from UNFATHOMABLE RAGE",
+      "next": [{ "has": { "electrolytes": 1 }, "node": "20" }, { "node": "none" }]
     },
-    "21": {
-      "text": "oh, um, would you like me to fix that",
+    "20": { "who": "Mich", "text": "you didn't have to do all that you know", "next": "offer" },
+    "offer": {
+      "who": "Mich",
+      "text": "i think we have some horse electrolytes lying around",
       "choices": [
-        { "text": "yes", "next": "yes" },
-        { "text": "no", "next": "no" }
+        { "text": "yes we do", "has": { "electrolytes": 1 }, "next": "approach" },
+        { "text": "no i actually have not seen any", "next": null }
       ]
     },
-    "yes": { "text": "um actually i can't", "next": null },
-    "no": { "text": "ok then i won't fix it then", "next": null },
+    "none": { "who": "Mich", "text": "no i actually have not seen any", "next": null },
+    "approach": { "walk": { "id": "player", "near": "seahorse" }, "next": "given" },
+    "given": {
+      "who": null,
+      "text": "you gave dr. sceantist the horse electrolytes",
+      "take": "electrolytes",
+      "set": { "seahorse:peace": true },
+      "next": "peaceZoom"
+    },
+    "peaceZoom": { "closeup": { "sheet": "seahorse", "frame": 1, "burst": true }, "next": "peaceBurst" },
+    "peaceBurst": { "burst": true, "next": "delicious" },
+    "delicious": { "text": "mmmm that was delicious.", "next": "peace" },
+    "peace": { "text": "i have achieved spiritual peace", "next": "peaceDown" },
+    "peaceDown": { "closeup": null, "wait": 1000, "next": null },
     "again": { "text": "sea horse? no, i don't, i'm the only one", "next": null }
   }
 }

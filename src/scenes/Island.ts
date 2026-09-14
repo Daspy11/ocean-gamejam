@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
+import { choices } from '../game/throw'
 import { KINDS, tileAt, type Dir } from '../game/world'
-import { dispatch, settings, world } from '../store'
+import { content, dispatch, settings, world } from '../store'
 import { bindControls, openSettings } from './Settings'
 import { crashIn, drawActor, drawThrow, hopOff, inTheAir, shade } from './crash'
 import { makeGround, syncGround } from './ground'
@@ -81,7 +82,12 @@ export default class Island extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     if (settings.open) return
-    const input = this.controls(world.dialogue !== null)
+    const open = world.dialogue
+    const dialogue = open ? content.dialogues[open.key] : undefined
+    const node = open && dialogue ? dialogue.nodes[open.node] : undefined
+    const input = this.controls(
+      node?.text !== undefined && choices(world, node, dialogue).length === 0,
+    )
     if (input.settings) {
       openSettings(this)
       return
@@ -304,7 +310,6 @@ export default class Island extends Phaser.Scene {
       if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
       if ((o.kind === 'bar' && o.drink) || (o.kind === 'cave' && o.inside)) frame = 1 // cocktail up, or the room-side mouth
-      if (o.kind === 'harry') frame = 3 - world.objects.filter((c) => c.hidden).length
       if (o.kind === 'npc') frame = ROW[o.facing] * 4 + 1 // standing; draw() takes it from here
       // flags['sprite:<id>'] draws an npc off another sheet: the shrimp once he has his deck chair
       const skin = world.flags[`sprite:${o.id}`]

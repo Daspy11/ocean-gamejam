@@ -8,23 +8,59 @@
       "walk": { "id": "etarp", "to": { "x": 19, "y": 15 }, "push": "cannon", "run": true, "facing": "left" },
       "next": "3"
     },
-    "3": { "text": "YARR, DON'T LET THAT SEA HORSE NEAR THIS ISLAND.", "next": "4" },
-    "4": { "who": "sea horse", "text": "oh hi again lol your name is backwards", "next": "5" },
-    "5": { "who": "sea horse", "text": "...", "next": "6" },
-    "6": { "who": "sea horse", "text": "is that one of my autocannon 9000s", "next": "7" },
-    "7": { "text": "yes", "next": "8" },
+    "3": { "text": "YARR, DON'T LET THAT SEA HORSE NEAR THIS ISLAND.", "next": [{ "has": { "glassi": 1 }, "node": "iFound" }, { "node": "resolve" }] },
+    "iFound": { "who": "", "text": "we found your i by the way", "next": "iApproach" },
+    "iApproach": { "walk": { "id": "player", "near": "etarp" }, "next": "iMine" },
+    "iMine": { "text": "ME I!", "take": "glassi", "next": "iBless" },
+    "iBless": { "text": "BLESSINS BE UPON YOUS", "set": { "name:Etarp": "etarip", "etarp:i": true }, "next": "resolve" },
+    "resolve": { "next": [{ "when": "seahorse:peace", "node": "restored" }, { "node": "8" }] },
+    "restored": { "next": [{ "when": "etarp:i", "node": "dontShoot" }, { "node": "8" }] },
+    "dontShoot": { "who": "dr. sceantist", "text": "...don't shoot", "next": "half" },
+    "half": { "text": "i am only half a man thanks to you", "next": "sorry" },
+    "sorry": { "who": "dr. sceantist", "text": "i am so sorry", "next": "accident" },
+    "accident": { "who": "dr. sceantist", "text": "it was an accident", "next": "experiment" },
+    "experiment": { "who": "dr. sceantist", "text": "my... experiment went wrong", "next": "doesntHelp" },
+    "doesntHelp": { "text": "that doesn't help me", "next": "backwards" },
+    "backwards": { "text": "i am still backwards", "next": "job" },
+    "job": { "text": "i can't hold down a job because i can only make backwards cocktails", "next": "otijom" },
+    "otijom": { "text": "like this stupid otijom", "next": "thinking" },
+    "thinking": { "who": "dr. sceantist", "text": "...", "next": "cure" },
+    "cure": { "who": "dr. sceantist", "text": "i can help you find a cure", "next": "canYou" },
+    "canYou": { "text": "...you can?", "next": "maybe" },
+    "maybe": { "who": "dr. sceantist", "text": "maybe idk honestly", "next": "enough" },
+    "enough": { "text": "that's good enough for me", "next": "sunset" },
+    "sunset": { "who": "dr. sceantist", "text": "RIDE ME INTO THE SUNSET", "next": "together" },
+    "together": { "text": "TOGETHER WE SHALL FIND A CURE", "next": "approach" },
+    "approach": { "walk": { "id": "etarp", "near": "seahorse" }, "next": "ride" },
+    "ride": { "ride": { "id": "etarp", "on": "seahorse" }, "set": { "etarp:peace": true }, "next": null },
     "8": {
       "walk": { "id": "walter", "path": ["down", "down"], "run": true },
-      "next": [{ "in": { "x": 14, "y": 15, "w": 4, "h": 1 }, "node": "8b" }, { "node": "9" }]
+      "next": [{ "in": { "x": 14, "y": 15, "w": 4, "h": 1 }, "node": "8b" }, { "node": "threat" }]
     },
     "8b": { "who": "Walter", "text": "we should probably get out of the way", "next": "8c" },
-    "8c": { "clear": { "x": 14, "y": 15, "w": 4, "h": 1 }, "next": "9" },
+    "8c": { "clear": { "x": 14, "y": 15, "w": 4, "h": 1 }, "next": "threat" },
+    "threat": { "next": [{ "when": "seahorse:peace", "node": "9" }, { "node": "rage" }] },
+    "rage": { "who": "dr. sceantist", "text": "I CURSED YOU ONCE AND I WILL CURSE YOU AGAIN", "next": "9" },
     "9": { "fire": "cannon", "next": "10" },
-    "10": { "who": "sea horse", "text": "lol you missed", "next": "11" },
-    "11": {
-      "who": "sea horse",
-      "text": "but FINE you can have that part of the island and i'll have this part",
-      "next": null
-    }
+    "10": {
+      "who": "dr. sceantist",
+      "text": "lol you missed",
+      "next": [{ "when": "seahorse:peace", "node": "pause" }, { "node": "retaliate" }]
+    },
+    "retaliate": {
+      "put": { "by": "seahorse", "obj": { "id": "cannon2", "kind": "cannon", "x": 0, "y": 0, "right": true } },
+      "next": "returnFire"
+    },
+    "returnFire": { "fire": "cannon2", "next": "alsoMissed" },
+    "alsoMissed": { "text": "lol you also missed", "next": "stalemate" },
+    "stalemate": { "who": "dr. sceantist", "text": "i guess we're at a stalemate then", "next": "pause" },
+    "pause": {
+      "wait": 1000,
+      "next": [{ "when": "seahorse:peace", "node": "thanksEtarp" }, { "node": "thanksGuys" }]
+    },
+    "thanksGuys": { "who": "Mich", "text": "thanks guys our beauty is {score} now. couldn't have done it without you", "next": "always" },
+    "thanksEtarp": { "who": "Mich", "text": "thanks etarp our beauty is {score} now. couldn't have done it without you", "next": "always" },
+    "always": { "who": "Walter", "text": "they always do this", "next": "tired" },
+    "tired": { "who": "Walter", "text": "starting to get real tired of it.", "next": null }
   }
 }

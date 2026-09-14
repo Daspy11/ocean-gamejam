@@ -42,7 +42,7 @@ const fencev = (x, y) => fence(y, x)
 
 // The dialogue and inventory frame: a flat panel behind a plain edge, drawn in game as a nine-slice
 // cut at 8px, so only the corners survive intact and the middle column and row get stretched.
-const boxframe = (x, y) => (x < 2 || y < 2 || x > 21 || y > 21 ? '#e0e0e0' : '#101820')
+const boxframe = (x, y) => (x < 2 || y < 2 || x > 21 || y > 21 ? '#FFFFFF' : '#2B374B')
 
 const sheets = [
   { file: 'sprites/logo.png', w: 343, h: 112, cols: 1, frames: [[[0, 0, 343, 112, '#b0d8e0']]] },
@@ -292,7 +292,8 @@ for (const sheet of sheets) {
               )
         if (!colour) continue
         const rgb = [1, 3, 5].map((k) => parseInt(colour.slice(k, k + 2), 16))
-        png.data.set([...rgb, 255], ((oy + y) * png.width + ox + x) * 4)
+        const alpha = colour.length === 9 ? parseInt(colour.slice(7, 9), 16) : 255
+        png.data.set([...rgb, alpha], ((oy + y) * png.width + ox + x) * 4)
       }
   })
   write(sheet.file, PNG.sync.write(png))

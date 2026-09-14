@@ -4,6 +4,7 @@ import harryLetters from '../audio/harry.json'
 import antoineLetters from '../audio/antoine.json'
 import tarqLetters from '../audio/tarq.json'
 import walterLetters from '../audio/walter.json'
+import seahorseLetters from '../audio/seahorse.json'
 
 export const MUSIC = {
   'music/ambient': {
@@ -11,6 +12,9 @@ export const MUSIC = {
   },
   'music/saltyditty': {
     url: new URL('../audio/saltyditty_kevinmcleod.mp3', import.meta.url).href,
+  },
+  'music/heartbreaking': {
+    url: new URL('../audio/heartbreaking_kevinmcleod.mp3', import.meta.url).href,
   },
   'music/nowhereland': {
     url: new URL('../assets/music/nowhereland_kevinmcleod.mp3', import.meta.url).href,
@@ -44,6 +48,10 @@ export const AUDIO = {
   'voices/walter': {
     url: new URL('../audio/walter.wav', import.meta.url).href,
     letters: walterLetters,
+  },
+  'voices/seahorse': {
+    url: new URL('../audio/seahorse.wav', import.meta.url).href,
+    letters: seahorseLetters,
   },
 } as const
 
@@ -84,8 +92,8 @@ export const SHEETS = {
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
   // on a 1x1 footprint at its bottom-left corner, drawn up and right from that corner: he never
-  // gets up, so there is no walk cycle, just how many of his three chairs are still there to
-  // recline across: 0 all three · 1 two left · 2 one left · 3 none, just him
+  // gets up: frames 0..3 lower his feet as he frees the three chairs, one every 200 ms.
+  // Freed chairs draw separately; frame 3 leaves him seated with his feet down.
   'sprites/harry': { frameWidth: 64, frameHeight: 32 },
   // bottom-anchored on its 1x1 tile, a rock hump standing higher than the ground: 0 the mouth out
   // on the grass · 1 the same hole seen from inside the room
@@ -115,7 +123,7 @@ export const SHEETS = {
   // 4 frames of 16x24 for the close-up, drawn 7.5x: Walter as he stands, his hat lifted off, the hat
   // gone and a barrel coming out, and the minigun out across him
   'sprites/serious': { frameWidth: 16, frameHeight: 24 },
-  'sprites/items': { frameWidth: 16, frameHeight: 16 }, // ITEMS order through chair; glassi has its own sheet
+  'sprites/items': { frameWidth: 16, frameHeight: 16 }, // ITEMS order through chair, skipping unused frame 4; glassi has its own sheet
   'sprites/glassi': { frameWidth: 16, frameHeight: 16 }, // one frame: the glass i inventory icon
   // one frame, drawn as a nine-slice: the four 8x8 corners are pinned and the middle column and
   // row are stretched to whatever size the box is, so keep those flat along the way they stretch
@@ -140,6 +148,7 @@ export const JSONS = [
   'dialogue/cannon',
   'dialogue/carrotfield',
   'dialogue/crate',
+  'dialogue/note',
   'dialogue/etarp',
   'dialogue/etarip-farewell',
   'dialogue/firstsalt',

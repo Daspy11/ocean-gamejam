@@ -50,6 +50,73 @@ function belowChair(): World {
 }
 
 describe('the deck chairs', () => {
+  it.each([
+    ['', 'warning'],
+    ['harry:warned', '1'],
+    ['harry:asked', 'again'],
+    ['harry:ok', 'after'],
+  ])('rejects rum alone without spending it, at stage %s', (flag, normal) => {
+    const c: Content = {
+      dialogues: {
+        harry: JSON.parse(
+          readFileSync(new URL('../../assets/dialogue/harry.json', import.meta.url), 'utf8'),
+        ),
+      },
+      items: {},
+    }
+    for (const rum of [0, 1])
+      for (const otijom of [0, 1]) {
+        const w = belowChair()
+        Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
+        if (flag) w.flags[flag] = true
+        w.inventory = { rum, otijom }
+        apply(w, { type: 'interact' }, c)
+        if (rum && !otijom) {
+          expect(w.typing?.text).toBe("MATE I AINT DRINKIN RAW SPIRITS. YOU THINK I'M AN ANIMAL?")
+          apply(w, { type: 'interact' }, c)
+          expect(w.dialogue).toBeNull()
+          expect(w.flags['harry:ok']).toBe(flag === 'harry:ok' ? true : undefined)
+        } else expect(w.dialogue?.node).toBe(otijom && flag !== 'harry:ok' ? 'cocktail' : normal)
+        expect(w.inventory.rum).toBe(rum)
+      }
+  })
+
+  it.each(['', 'harry:warned', 'harry:asked'])(
+    'accepts a cocktail and lowers his feet before freeing the chairs: %s',
+    (flag) => {
+      const c: Content = {
+        dialogues: {
+          harry: JSON.parse(
+            readFileSync(new URL('../../assets/dialogue/harry.json', import.meta.url), 'utf8'),
+          ),
+        },
+        items: {},
+      }
+      const w = belowChair()
+      Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
+      if (flag) w.flags[flag] = true
+      w.inventory = { otijom: 1, rum: 1 }
+      apply(w, { type: 'interact' }, c)
+      expect(w.typing?.text).toBe("MMM, THAT'S WHAT I NEED")
+      expect(w.inventory.otijom).toBeUndefined()
+      expect(w.inventory.rum).toBe(1)
+      apply(w, { type: 'interact' }, c)
+      expect(w.objects.find((o) => o.id === 'harry')).toHaveProperty('satAt', w.time)
+      apply(w, { type: 'tick', dt: 599 }, c)
+      expect(w.objects.filter((o) => o.kind === 'chair' && o.hidden)).toHaveLength(1)
+      expect(w.flags['harry:ok']).toBeUndefined()
+      apply(w, { type: 'tick', dt: 1 }, c)
+      expect(w.objects.filter((o) => o.kind === 'chair' && !o.hidden)).toHaveLength(3)
+      apply(w, { type: 'tick', dt: 0 }, c)
+      expect(w.flags['harry:ok']).toBe(true)
+      expect(w.dialogue).toBeNull()
+      Object.assign(w.player, { x: 41, y: 27, facing: 'up' })
+      apply(w, { type: 'interact' }, c)
+      expect(w.inventory.chair).toBe(1)
+      expect(w.objects.filter((o) => o.kind === 'chair')).toHaveLength(2)
+    },
+  )
+
   it.each(['chair', 'harry'])(
     'plays the Stella exchange once when first approaching %s',
     (first) => {

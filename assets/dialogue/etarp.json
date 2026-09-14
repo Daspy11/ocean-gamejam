@@ -1,12 +1,16 @@
 {
   "name": "Etarp",
   "start": [
+    { "when": "etarp:bar", "has": { "glassi": 1 }, "node": "iFound" },
     { "when": "etarp:served", "node": "after" },
     { "when": "etarp:bar", "has": { "rum": 1 }, "node": "rum" },
     { "when": "etarp:bar", "node": "bar" },
     { "node": "1" }
   ],
   "nodes": {
+    "iFound": { "who": "", "text": "we found your i", "next": "iMine" },
+    "iMine": { "text": "ME I!", "take": "glassi", "next": "iBless" },
+    "iBless": { "text": "BLESSINS BE UPON YOUS", "set": { "name:Etarp": "etarip", "etarp:i": true }, "next": null },
     "1": { "text": "i must fulfill my masculine urge to build a bar", "next": null },
     "bar": { "text": "IF YA CAN FIND ME SOME RUM, I'LL MAKE YARR A DELICIOUS COCKTAIL", "next": null },
     "rum": { "text": "FINE, HERE YE GO.", "take": "rum", "next": "spin" },

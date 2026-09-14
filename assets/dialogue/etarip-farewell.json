@@ -1,8 +1,10 @@
 {
   "name": "etarip",
   "trigger": { "event": "etarip:alongside" },
-  "start": [{ "node": "1" }],
+  "start": [{ "when": "etarp:peace", "node": "science" }, { "node": "1" }],
   "nodes": {
+    "science": { "text": "WITH THE POWER OF SCIENCE AND PIRACY, WE WILL PLUNDER THE CURE FROM ANY WHO CROSS OUR PATH", "next": "yarr" },
+    "yarr": { "text": "YARR", "next": "leave" },
     "1": { "text": "YARR, MY CURSE IS HALVED AND MY HAPPINESS IS DOUBLED.", "next": "2" },
     "2": { "text": "BLESSINS BE UPON YE", "next": "leave" },
     "leave": { "set": { "etarip:depart": true }, "wait": 1600, "next": "mich" },

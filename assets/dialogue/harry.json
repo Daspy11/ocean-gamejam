@@ -1,16 +1,12 @@
 {
   "name": "suspicious harry",
   "start": [
+    { "has": { "otijom": 1 }, "when": "harry:ok", "node": "after" },
+    { "has": { "otijom": 1 }, "node": "cocktail" },
+    { "has": { "rum": 1 }, "node": "rum" },
     {
       "when": "harry:ok",
       "node": "after"
-    },
-    {
-      "when": "harry:asked",
-      "has": {
-        "otijom": 1
-      },
-      "node": "cocktail"
     },
     {
       "when": "harry:asked",
@@ -25,6 +21,10 @@
     }
   ],
   "nodes": {
+    "rum": {
+      "text": "MATE I AINT DRINKIN RAW SPIRITS. YOU THINK I'M AN ANIMAL?",
+      "next": null
+    },
     "1": {
       "text": "hello",
       "next": "2"
@@ -64,8 +64,12 @@
       "next": null
     },
     "cocktail": {
-      "text": "it's not a pint, but it'll do",
+      "text": "MMM, THAT'S WHAT I NEED",
       "take": "otijom",
+      "next": "sit"
+    },
+    "sit": { "sit": "harry", "wait": 600, "next": "free" },
+    "free": {
       "set": {
         "harry:ok": true
       },

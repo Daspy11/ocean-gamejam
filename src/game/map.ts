@@ -14,7 +14,7 @@ import { npc, type Dir, type Obj, type Tile, type World } from './world'
 // carrots in four rows a tile apart, with a clear tile inside the fence ring at 45..55,15..21 all the
 // way round them; the ring's one gate is at 49,15, with his stool
 // right above it at 49,13. The cave interior is a separate map; its exit returns to 42,18.
-// The seal chest at 48,22 sits between the fence and an L of trees; salt around the shore reaches it.
+// The note chest at 48,22 sits between the fence and an L of trees; salt around the shore reaches it.
 // gallery: `?map=gallery`, the artist's proof sheet. Top, left to right in salt, sand, grass and
 // rock: a 2x2 block (the sheet's 3x3 island), a 3x3 ring (its 2x2 hole) and a checkerboard (the
 // diagonals), so a correct sheet redraws every frame of the 5x3 layout in game. Below it
@@ -183,7 +183,7 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
             { id: 'tree1', kind: 'tree', x: 16, y: 16 },
             { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
             // out on the big island, on the grass the forest leaves clear
-            { id: 'crate3', kind: 'crate', x: 48, y: 22, open: false, item: 'seal' },
+            { id: 'crate3', kind: 'crate', x: 48, y: 22, open: false, dialogue: 'note' },
             Object.assign(npc('albatross', 'albatross', 36, 20, 'down', 'albatross'), {
               wander: { x: 34, y: 19 },
             }),

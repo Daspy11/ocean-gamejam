@@ -1,12 +1,15 @@
 import { EventEmitter } from 'node:events'
+import { readFileSync } from 'node:fs'
 import type Phaser from 'phaser'
 import { afterEach, expect, it, vi } from 'vitest'
-import { createWorld } from '../game/world'
+import { apply } from '../game/actions'
+import { createWorld, type Content } from '../game/world'
 import { load, settings, world } from '../store'
-import { background } from './speech'
+import { background, hearWorld } from './speech'
 
 afterEach(() => {
   settings.music = true
+  settings.sfx = true
 })
 
 function musicScene() {
@@ -21,13 +24,31 @@ function musicScene() {
     }),
   })
   const sound = {
+    mute: false,
+    locked: false,
+    play: vi.fn(),
+    stopByKey: vi.fn(),
     get: (key: string) => clips.get(key),
     add: vi.fn((key: string) => {
-      clips.set(key, music)
-      return music
+      const clip =
+        key === 'music/ambient'
+          ? music
+          : {
+              play: vi.fn(),
+              pause: vi.fn(),
+              resume: vi.fn(),
+              destroy: vi.fn(() => clips.delete(key)),
+            }
+      clips.set(key, clip)
+      return clip
     }),
   }
-  const scene = { sound, game: { events } } as unknown as Phaser.Scene
+  const scene = {
+    sound,
+    events,
+    game: { events },
+    tweens: { add: vi.fn(() => ({ stop: vi.fn() })) },
+  } as unknown as Phaser.Scene
   return { scene, sound, music, events, clips }
 }
 
@@ -76,4 +97,89 @@ it('starts muted when music is disabled', () => {
   settings.music = false
   background(scene)
   expect(sound.add).toHaveBeenCalledWith('music/ambient', expect.objectContaining({ mute: true }))
+})
+
+it.each([true, false])(
+  'replaces ambient during Walter’s plea and restores it after joining: %s',
+  (yes) => {
+    const { scene, sound, music, events, clips } = musicScene()
+    const content: Content = {
+      dialogues: {
+        tarq: JSON.parse(
+          readFileSync(new URL('../../assets/dialogue/tarq.json', import.meta.url), 'utf8'),
+        ),
+      },
+      items: {},
+    }
+    background(scene)
+    hearWorld(scene)
+    events.emit('step', 1500, 1500)
+    world.dialogue = { key: 'tarq', node: 'crab3', choice: 0 }
+    apply(world, { type: 'interact' }, content)
+    events.emit('postupdate')
+    expect(sound.add).toHaveBeenCalledWith('music/heartbreaking', {
+      loop: true,
+      volume: 0,
+      mute: false,
+    })
+    const song = clips.get('music/heartbreaking') as {
+      play: ReturnType<typeof vi.fn>
+      destroy: ReturnType<typeof vi.fn>
+    }
+    events.emit('step', 3000, 1500)
+    expect(music.volume).toBe(0)
+    apply(world, { type: 'tick', dt: 1000 }, content)
+    for (const node of ['crab5', 'crab6', 'crab6a', 'crab6b', 'crab7']) {
+      expect(world.dialogue?.node).toBe(node)
+      events.emit('postupdate')
+      apply(world, { type: 'interact' }, content)
+    }
+    expect(world.dialogue?.node).toBe('ask')
+    if (!yes)
+      for (let i = 0; i < 2; i++) {
+        apply(world, { type: 'move', dir: 'down' }, content)
+        apply(world, { type: 'interact' }, content)
+        events.emit('postupdate')
+      }
+    expect(song.play).toHaveBeenCalledOnce()
+    expect(song.destroy).not.toHaveBeenCalled()
+    if (!yes) apply(world, { type: 'move', dir: 'down' }, content)
+    apply(world, { type: 'interact' }, content)
+    expect(world.dialogue?.node).toBe(yes ? 'yay' : 'bye')
+    events.emit('postupdate')
+    expect(song.destroy).toHaveBeenCalledOnce()
+    events.emit('step', 4500, 1500)
+    expect(music.volume).toBe(0.175)
+  },
+)
+
+it('mutes, pauses, and cleans up Walter’s music on world replacement and shutdown', () => {
+  const { scene, sound, events, clips } = musicScene()
+  settings.music = false
+  settings.sfx = false
+  hearWorld(scene)
+  world.dialogue = { key: 'tarq', node: 'ask', choice: 0 }
+  events.emit('postupdate')
+  expect(sound.add).toHaveBeenCalledWith('music/heartbreaking', {
+    loop: true,
+    volume: 0,
+    mute: true,
+  })
+  const song = clips.get('music/heartbreaking') as {
+    pause: ReturnType<typeof vi.fn>
+    resume: ReturnType<typeof vi.fn>
+    destroy: ReturnType<typeof vi.fn>
+  }
+  events.emit('pause')
+  expect(song.pause).toHaveBeenCalledOnce()
+  events.emit('resume')
+  expect(song.resume).toHaveBeenCalledOnce()
+  load(createWorld())
+  events.emit('postupdate')
+  expect(song.destroy).toHaveBeenCalledOnce()
+  world.dialogue = { key: 'tarq', node: 'ask', choice: 0 }
+  events.emit('postupdate')
+  const next = clips.get('music/heartbreaking') as typeof song
+  events.emit('shutdown')
+  expect(next.destroy).toHaveBeenCalledOnce()
 })

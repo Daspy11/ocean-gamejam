@@ -3,6 +3,8 @@
   "trigger": { "event": "west:four" },
   "start": [{ "node": "1" }],
   "nodes": {
-    "1": { "text": "there's actually nothing that way", "next": null }
+    "1": { "text": "there's actually nothing that way", "next": [{ "when": "had:note", "node": "hunch" }] },
+    "hunch": { "who": "", "text": "i have a hunch", "next": "whatever" },
+    "whatever": { "text": "whatever", "next": null }
   }
 }

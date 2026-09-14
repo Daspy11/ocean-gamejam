@@ -1,5 +1,7 @@
 Mich's voice is cut from the author's `2026_09_12_16_23_00_1.mp3` recording at the repository root. This replaces recording (2), with cuts adjusted for the new recording's noise floor and resampling from 44.1 kHz. Her samples are pitched down 10% at fixed length (`12 * log2(0.9)` semitones), while playback remains 1.8×. This is 10% lower than her previous game voice, with a final pitch 1.62× the original recording. Rebuilding also requires `librosa`.
 
+The sea horse uses `2026_09_13_18_47_51_1.mp3`, cleaned into `seahorse.wav` and `seahorse.json`. The cuts use a higher noise threshold and shorter gap joining to separate all 26 letters. Samples are filtered, balanced in volume, and faded at both ends. Playback starts at 1× with no pitch shift, using the existing 110 ms syllable limit. Rebuild with `python scripts/mich-voice.py seahorse`.
+
 Walter uses `2026_09_12_16_30_26_1.mp3`, replacing recording (7). His `walter.wav` and `walter.json` are filtered, balanced in volume, and faded at each cut, with cuts adjusted for the new recording's shorter gaps and noise floor. Samples are pitched down at fixed length by `12 * log2(1.32 / 2)` semitones, then played at 2×, giving a final pitch 32% above the original recording (10% above his previous pitch). Rebuild with `python scripts/mich-voice.py walter`; this also requires `librosa`.
 
 Tarq uses recording (6), `tarq.wav`, and `tarq.json`, filtered, balanced in volume, and faded at each cut. He starts at 1× playback with no pitch adjustment. Rebuild with `python scripts/mich-voice.py tarq`.

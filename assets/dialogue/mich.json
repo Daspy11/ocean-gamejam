@@ -1,7 +1,28 @@
 {
   "name": "Mich",
+  "hint": "mich",
   "start": [{ "node": "1" }],
   "nodes": {
-    "1": { "text": "don't just stand there, fix the boat idiot", "next": null }
+    "1": { "text": "go get the orb dumbass", "next": null },
+    "3": { "text": "throw the orb into the water dumbass", "next": null },
+    "5": { "text": "crazy that the orb made salt. maybe go make more salt.", "next": null },
+    "6": { "text": "i wonder if there's anything to eat in the little chest over on that island", "next": null },
+    "7": { "text": "you should try putting down that carpet walter gave us to see if it makes our island more beautiful", "next": null },
+    "8": { "text": "you broke our boat. go exploring instead of talking to me", "next": null },
+    "10": { "text": "i can't believe how much of a twig elitist that bird is being", "next": null },
+    "11": { "text": "you should take the twigs back to the bird", "next": null },
+    "12": { "text": "is that a golden egg in your bag? you should put it on our island", "next": null },
+    "13": { "text": "stop asking me. maybe there's someone else you should talk to", "next": null },
+    "14": { "text": "i can't believe you're here talking to me when you didn't even pick all the carrot", "next": null },
+    "15": { "text": "you can't put down carrots here. carrots are mid. give them back to their rightful owner", "next": null },
+    "16": { "text": "can't believe that guy is taking up 3 chairs. maybe if we get him another drink he'll let us take some", "next": null },
+    "17": { "text": "i wonder what that sign over there says. maybe you should go check it out", "next": null },
+    "18": { "text": "you should go look at what the chest up there has inside", "next": null },
+    "19": { "text": "you found a key? go use it then idiot", "next": null },
+    "21": { "text": "nice job dumbass, now go take this rum and turn it into a nice cocktail", "next": null },
+    "22": { "text": "you forgot to grab the cocktail from the bar, idiot", "next": null },
+    "23": { "text": "i wonder who we should give this cocktail to", "next": null },
+    "24": { "text": "nice job placating that guy. now we can get his chairs", "next": null },
+    "26": { "text": "wow you won an award that wasn't an award for being stupid. how about you put it down on our island", "next": null }
   }
 }

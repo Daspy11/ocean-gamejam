@@ -1,6 +1,6 @@
 import type Phaser from 'phaser'
 import { LIFT, hopMs } from '../game/boat'
-import { ITEMS, KINDS, type Dir, type Obj } from '../game/world'
+import { KINDS, type Dir, type Obj } from '../game/world'
 import { settings, world } from '../store'
 
 type Sprite = Phaser.GameObjects.Sprite
@@ -184,6 +184,12 @@ function flip(
 // so he lands like the two in the intro. Tarq, knocked off his carpet, lies where he fell,
 // and the carpet itself comes down out of the sky over its 3 s.
 export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
+  if (o.kind === 'harry')
+    sprite.setFrame(
+      o.satAt === undefined
+        ? 3 - world.objects.filter((c) => c.kind === 'chair' && c.hidden).length
+        : Math.min(3, Math.floor((world.time - o.satAt) / 200)),
+    )
   if (o.kind !== 'npc' && o.thrown !== undefined) {
     const t = Math.min(1, (world.time - o.thrown.at) / 300)
     sprite.setPosition(
@@ -238,10 +244,7 @@ export function drawThrow(sprite: Sprite): void {
   sprite.setVisible(!!f && world.time < f.until)
   if (!t || !f) return
   const elapsed = (world.time - f.at) / 1000
-  sprite.setTexture(
-    t.kind === 'seal' ? 'sprites/items' : `sprites/${t.kind}`,
-    t.kind === 'seal' ? ITEMS.indexOf('seal') : 0,
-  )
+  sprite.setTexture(`sprites/${t.kind}`, 0)
   sprite
     .setOrigin(0.5)
     .setDepth(9100)

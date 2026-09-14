@@ -92,7 +92,7 @@ export default class UI extends Phaser.Scene {
       this.rev = world.rev
       this.sync()
     }
-    const t = world.typing
+    const t = world.closeup?.auto ? undefined : world.typing
     const count = t && !t.done ? revealed(t.text, world.time - t.at) : Infinity
     if (this.voiceLine !== t) {
       stopSpeech(this.speech)
@@ -161,7 +161,7 @@ export default class UI extends Phaser.Scene {
     const open = world.dialogue
     const dialogue = open ? content.dialogues[open.key] : undefined
     const node = open && dialogue ? dialogue.nodes[open.node] : undefined
-    const text = node?.text // a node with no text is an act: no box, the sim runs it and moves on
+    const text = world.closeup?.auto ? undefined : node?.text // acts hold their dialogue offscreen
     for (const part of [this.box, this.who, this.body]) part.setVisible(text !== undefined)
     if (open && dialogue && node && text !== undefined) {
       // a node's own who of '' is the lead speaking, and he goes by 'You'; a dialogue with no name
@@ -206,7 +206,7 @@ export default class UI extends Phaser.Scene {
             x,
             y,
             id === 'glassi' ? 'sprites/glassi' : 'sprites/items',
-            id === 'glassi' ? 0 : ITEMS.indexOf(id),
+            id === 'glassi' ? 0 : ITEMS.indexOf(id) + (ITEMS.indexOf(id) >= 4 ? 1 : 0),
           )
           .setOrigin(0)
           .setScale(2),

@@ -3,13 +3,12 @@ export { createWorld } from './map'
 // The whole game state. Plain data: JSON-safe and structuredClone-able. Coordinates are tiles.
 export type Tile = 'water' | 'salt' | 'sand' | 'grass' | 'charred' | 'farm' | 'rock' // charred: burnt grass, laid by nothing yet
 export type Dir = 'up' | 'down' | 'left' | 'right'
-// every item there is, in icon frame order in sprites/items
+// Every item in icon order; sprites/items skips unused frame 4, and glassi has its own sheet.
 export const ITEMS = [
   'salt',
   'orb',
   'electrolytes',
   'twig',
-  'seal',
   'egg',
   'carrot',
   'certificate',
@@ -72,10 +71,10 @@ export type Obj = {
     }
   // wrecked: it sailed into something, so the bow is stove in. dialogue: what interact reads out, else `boat`
   | { kind: 'boat'; wrecked?: boolean; dialogue?: string }
-  | { kind: 'crate'; open: boolean; item: Item } // `item` is what opening it hands over, once
+  | { kind: 'crate'; open: boolean; item?: Item; dialogue?: string } // opening gives an item or reads a dialogue, once
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
   // suspicious harry: he never walks, so interact just reads his dialogue, like a tree
-  | { kind: 'harry'; dialogue: string }
+  | { kind: 'harry'; dialogue: string; satAt?: number } // lowers his feet over 600 ms, then stays seated
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
   // walked onto rather than into, like a floor, but stepping on it puts the player down at `to`.
@@ -146,6 +145,7 @@ export interface World {
   time: number // sim milliseconds
   interactCue?: number // monotonic cue count; the scene coalesces simultaneous interactions
   chimeCue?: number // menu choices and successful placement on the home island
+  explosionCue?: number // counts extractor explosions so audio survives the object's removal
   rumble: number // the sim time the screen shake ends; the scene jitters the camera until then
   seed: number // the sim's only randomness, an lcg the cannon draws its ball angles from
   width: number
@@ -187,7 +187,7 @@ export interface World {
   typing?: { text: string; at: number; done?: boolean; who?: string } // resolved line, speaker and reveal start
   // the `throw` act in flight: what he is fetching, who it is for, and when it left his hand
   throwing: null | {
-    kind: Obj['kind'] | 'seal'
+    kind: Obj['kind']
     at: string
     object: string
     launchAt?: number // 300 ms to wind up after the fetch path finishes
@@ -215,6 +215,7 @@ export interface World {
     at: number
     since: number
     burst?: null | number
+    auto?: true // an item handover holds its line through zoom, burst and zoom back out
     down?: number
     zoom?: number // how far the burst camera comes in, 7.5x by default
   }

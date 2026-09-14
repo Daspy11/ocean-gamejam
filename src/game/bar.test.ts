@@ -1,8 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, type Content, type World } from './world'
 
-// Etarp's bar on the north island as pirate.json leaves it: the L of counter at 23,2 23,3 22,3 21,3
+// Etarp's bar on the north island as pirate.json leaves it: three counters at 23,3 22,3 21,3
 // with him behind it at 22,2. The dialogue is the shape of etarp.json: rum in, a spin, a drink out.
 const content: Content = {
   dialogues: {
@@ -30,7 +31,6 @@ function atBar(): World {
   const w = createWorld()
   w.objects.push(
     { id: 'etarp', kind: 'npc', sprite: 'etarp', x: 22, y: 2, facing: 'left', dialogue: 'etarp' },
-    { id: 'bar1', kind: 'bar', x: 23, y: 2 },
     { id: 'bar2', kind: 'bar', x: 23, y: 3 },
     { id: 'bar3', kind: 'bar', x: 22, y: 3 },
     { id: 'bar4', kind: 'bar', x: 21, y: 3 },
@@ -50,6 +50,37 @@ function bar3(w: World) {
 }
 
 describe('the bar', () => {
+  it.each([false, true])('returns the i before other bar dialogue, served: %s', (served) => {
+    const c: Content = {
+      dialogues: {
+        etarp: JSON.parse(
+          readFileSync(new URL('../../assets/dialogue/etarp.json', import.meta.url), 'utf8'),
+        ),
+      },
+      items: {},
+    }
+    const w = atBar()
+    w.flags['etarp:bar'] = true
+    w.flags['etarp:served'] = served
+    w.inventory = { glassi: 1, rum: 1 }
+    apply(w, { type: 'interact' }, c)
+    expect(w.typing).toMatchObject({ who: 'You', text: 'we found your i' })
+    apply(w, { type: 'interact' }, c)
+    expect(w.typing).toMatchObject({ who: 'Etarp', text: 'ME I!' })
+    expect(w.inventory.glassi).toBeUndefined()
+    expect(w.flags['name:Etarp']).toBeUndefined()
+    apply(w, { type: 'tick', dt: 4000 }, c)
+    apply(w, { type: 'interact' }, c)
+    expect(w.typing?.text).toBe('BLESSINS BE UPON YOUS')
+    expect(w.flags[`name:${w.typing?.who}`] ?? w.typing?.who).toBe('etarip')
+    expect(w.flags['etarp:i']).toBe(true)
+    expect(w.inventory.rum).toBe(1)
+    apply(w, { type: 'interact' }, c)
+    expect(w.dialogue).toBeNull()
+    apply(w, { type: 'interact' }, c)
+    expect(w.dialogue?.node).toBe(served ? 'after' : 'rum')
+  })
+
   it('is talked across: interact on a bare counter reaches whoever stands behind it', () => {
     const w = atBar()
     apply(w, { type: 'interact' }, content)

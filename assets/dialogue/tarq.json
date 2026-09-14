@@ -3,9 +3,10 @@
   "trigger": { "event": "done:cannon" },
   "start": [{ "when": "tarq:here", "node": "again" }, { "node": "1" }],
   "nodes": {
-    "1": { "wait": 5000, "set": { "tarq:here": true }, "next": "2" },
+    "1": { "rumble": 2000, "set": { "tarq:here": true }, "next": "2" },
     "2": {
-      "spawn": { "id": "flyingcarpet1", "kind": "flyingcarpet", "x": 0, "y": 17 },
+      "spawn": { "id": "flyingcarpet1", "kind": "flyingcarpet", "x": -12, "y": -2 },
+      "spawnRelative": "player",
       "next": "3"
     },
     "3": {
@@ -13,23 +14,24 @@
         "id": "tarq",
         "kind": "npc",
         "sprite": "tarq",
-        "x": 0,
-        "y": 17,
+        "x": -12,
+        "y": -2,
         "facing": "right",
         "dialogue": "tarq",
         "ride": "flyingcarpet1"
       },
+      "spawnRelative": "player",
       "next": "4"
     },
     "4": {
       "walk": {
         "id": "flyingcarpet1",
-        "near": "mich",
-        "retreat": 4,
+        "path": ["right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right", "right"],
         "run": true
       },
-      "next": "5"
+      "next": [{ "when": "etarp:peace", "node": "twist" }, { "node": "5" }]
     },
+    "twist": { "text": "what an epic plot twist", "next": "6" },
     "5": {
       "text": "i was just gonna watch but seriously how did you mess this up so badly",
       "next": "6"
@@ -44,12 +46,9 @@
     "10": { "who": "Mich", "text": "...", "next": "11" },
     "11": { "who": "Mich", "text": "no", "next": "12" },
     "12": { "text": "...", "next": "13" },
-    "13": { "who": "Mich", "text": "...", "next": "14" },
-    "14": { "walk": { "id": "flyingcarpet1", "near": "mich", "retreat": 0 }, "next": "15" },
-    "15": { "text": "give it back", "next": "16" },
-    "16": { "walk": { "id": "mich", "back": 4 }, "next": "17" },
-    "17": { "who": "Mich", "text": "no", "next": "18" },
-    "18": { "walk": { "id": "flyingcarpet1", "near": "mich", "retreat": 0 }, "next": "19" },
+    "13": { "who": "Mich", "text": "...", "next": "15" },
+    "15": { "text": "give it back", "next": "17" },
+    "17": { "who": "Mich", "text": "no", "next": "19" },
     "19": { "text": "pls", "next": "20" },
     "20": {
       "who": "Mich",
@@ -66,14 +65,24 @@
         { "text": "deck chair", "next": "chair" },
         { "text": "egg", "next": "egg" },
         { "text": "certificate", "next": "certificate" },
-        { "text": "carpet", "next": "carpet" },
-        { "text": "stuffed seal", "next": "seal" }
+        { "text": "carpet", "next": "carpet" }
       ]
     },
-    "certificate": { "throw": { "kind": "certificate", "at": "tarq" }, "next": "pick" },
-    "carpet": { "throw": { "kind": "floor", "at": "tarq" }, "next": "pick" },
-    "chair": { "throw": { "kind": "chair", "at": "tarq" }, "next": "pick" },
-    "seal": { "throw": { "kind": "seal", "at": "tarq" }, "next": "pick" },
+    "certificate": { "throw": { "kind": "certificate", "at": "tarq" }, "next": "certificateReply" },
+    "certificateReply": { "text": "your credentials don't scare me nerd", "next": "pick" },
+    "carpet": { "throw": { "kind": "floor", "at": "tarq" }, "next": "carpetReply" },
+    "carpetReply": { "text": "my carpet's magic. your carpet's picnic. loser.", "next": "pick" },
+    "chair": {
+      "throw": { "kind": "chair", "at": "tarq" },
+      "next": [{ "when": "tarq:chair", "node": "chairAgain" }, { "node": "chairReply" }]
+    },
+    "chairReply": {
+      "text": "i could sit and watch this for hours",
+      "set": { "tarq:chair": true },
+      "next": "pick"
+    },
+    "chairAgain": { "text": "did you seriously think that would work the second time?", "next": "chairSeriously" },
+    "chairSeriously": { "text": "no like seriously", "next": "pick" },
     "missed": { "text": "[PLACEHOLDER it bounces off him]", "next": "pick" },
     "egg": { "throw": { "kind": "egg", "at": "tarq" }, "next": "down" },
     "down": { "wait": 1000, "next": "ow" },
@@ -144,10 +153,15 @@
     "board1": { "walk": { "id": "mich", "near": "flyingcarpet1" }, "next": "board2" },
     "board2": { "ride": { "id": "mich", "on": "flyingcarpet1" }, "next": "board3" },
     "board3": { "walk": { "id": "player", "near": "flyingcarpet1" }, "next": "board4" },
-    "board4": { "ride": { "id": "player", "on": "flyingcarpet1" }, "next": "yarr" },
-    "yarr": { "who": "Etarp", "text": "YARR, WE SETTLE THIS NOW", "next": "sea0" },
+    "board4": { "ride": { "id": "player", "on": "flyingcarpet1" }, "next": [{ "when": "etarp:peace", "node": "peaceOff" }, { "node": "yarr" }] },
+    "peaceOff": { "walk": { "id": "flyingcarpet1", "path": ["right", "right", "right"], "run": true }, "next": "off2" },
+    "yarr": {
+      "who": "Etarp",
+      "text": "YARR, WE SETTLE THIS NOW",
+      "next": [{ "when": "seahorse:peace", "node": "off0" }, { "node": "sea0" }]
+    },
     "sea0": {
-      "who": "Sea horse",
+      "who": "dr. sceantist",
       "text": "OH YEAH? LUCKY I BROUGHT MY AUTOCANNON 9001",
       "next": "sea"
     },

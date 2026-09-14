@@ -76,6 +76,7 @@ export function tickMachines(w: World): void {
     }
     if (m.boomAt === undefined || w.time < m.boomAt) continue
     w.objects.splice(w.objects.indexOf(m), 1) // the prototype explodes
+    w.explosionCue = (w.explosionCue ?? 0) + 1
     const pops = w.pops.length
     const had = w.score
     blast(w, m.x, m.y)
