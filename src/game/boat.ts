@@ -64,9 +64,9 @@ export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): vo
     walk.back && o.kind === 'npc'
       ? Array<Dir>(walk.back).fill(opposite[o.facing])
       : to
-        ? findPath(w, o, to, !!near)
+        ? (findPath(w, o, to, !!near) ?? findPath(w, o, to, !!near, true))
         : [...(walk.path ?? [])]
-  o.path = path ?? [] // no way there: he stays put, and does not so much as turn
+  o.path = path ?? [] // no way there, even over props: he stays put, and does not so much as turn
   if (o.kind === 'npc' && path) {
     if (walk.facing) o.face = walk.facing
     let [x, y] = [o.x, o.y]
@@ -91,7 +91,9 @@ export function walkPlayer(w: World, walk: NonNullable<DialogueNode['walk']>): v
   const me: Obj = { id: 'player', kind: 'npc', sprite: 'player', dialogue: '', ...p }
   const near = walk.near === undefined ? undefined : w.objects.find((x) => x.id === walk.near)
   const to = near ?? walk.to
-  const path = to ? findPath(w, me, to, !!near) : [...(walk.path ?? [])]
+  const path = to
+    ? (findPath(w, me, to, !!near) ?? findPath(w, me, to, !!near, true))
+    : [...(walk.path ?? [])]
   p.path = path ?? []
   p.face = walk.facing
   if (path && to) {

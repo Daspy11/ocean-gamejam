@@ -15,7 +15,7 @@ const SHUT = 2400 // ms the spotlight takes to close
 const CREDITS = [
   ['programming', 'Stuart Johnson'],
   ['writing', 'Stuart Johnson'],
-  ['art', 'Michelle Vizina'],
+  ['art', 'Michelle Virzina'],
   ['voice acting', 'stuart johnson, michelle virzina'],
   ['music', 'kevin macleod, serge quadrado'],
 ]
