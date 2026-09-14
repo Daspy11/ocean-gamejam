@@ -201,7 +201,9 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   shrimp who farms carrots on the big island's east side from a stool over the one gate in their
   fence; until he asks for a hand the field only reads out (`carrotfield.json`), handing him all
   twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's chairs
-  earns the certificate and replaces his stool: that node sets `flags['sprite:shrimp']` to
+  earns the certificate and replaces his stool: a chair in the bag gets a yes/no first, no shuts
+  the box with the chair still his, and yes takes it, hands over the certificate and sets
+  `flags['sprite:shrimp']` to
   `shrimpchair`, and a `sprite:<npc id>` flag draws any npc off the sheet it names,
   `assets/dialogue/shrimp.json`), suspicious harry (he/him, lying over three
   chairs on the big island's south shore: his picture is one solid 4x2 object at 40,25, talked

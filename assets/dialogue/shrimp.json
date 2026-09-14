@@ -10,7 +10,7 @@
       "has": {
         "chair": 1
       },
-      "node": "chair"
+      "node": "offer"
     },
     {
       "when": "shrimp:chair",
@@ -70,6 +70,14 @@
       "text": "ey ave somethin for your island eef, eugh, you can elp me find a chair",
       "next": null
     },
+    "offer": {
+      "who": null,
+      "text": "give antoine a chair",
+      "choices": [
+        { "text": "yes", "next": "chair" },
+        { "text": "no", "next": null }
+      ]
+    },
     "chair": {
       "text": "ah, thees is ah, very guod, sank you mozzure",
       "take": "chair",
@@ -78,6 +86,10 @@
         "shrimp:thanked": true,
         "sprite:shrimp": "shrimpchair"
       },
+      "next": "beautiful"
+    },
+    "beautiful": {
+      "text": "thees should make your island more, eugh, beutifol",
       "next": null
     },
     "after": {
