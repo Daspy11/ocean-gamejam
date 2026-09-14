@@ -62,7 +62,7 @@ The current credits still name Michelle Vizina for music. Track source, exact at
 | 21  | Gate unlocking / opening        | Key use and gate removal, once.                                                                                                             |
 | 22  | Cave entrance / exit            | Optional transition cue when stepping through either mouth; surface/ambience changes may be sufficient.                                     |
 | 23  | Carpet placement                | Fabric movement / soft settling when the inventory carpet becomes a floor.                                                                  |
-| 24  | Solid decoration placement      | Golden egg, certificate, deck chair. Shared set-down cue or separate hard object, paper, and wood variants.                                 |
+| 24  | Solid decoration placement      | Golden egg, certificate, chair. Shared set-down cue or separate hard object, paper, and wood variants.                                      |
 | 25  | Chair pickup / moving furniture | Taking Harry's chairs and lifting a placed chair; wooden movement. Can reuse 24 or the generic pickup.                                      |
 
 ## Opening, arrivals, and smaller scenes

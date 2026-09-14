@@ -159,11 +159,11 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   pays with a golden egg, `assets/dialogue/albatross.json`), antoine le shrimp (he/him, a French
   shrimp who farms carrots on the big island's east side from a stool over the one gate in their
   fence; until he asks for a hand the field only reads out (`carrotfield.json`), handing him all
-  twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's deck chairs
+  twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's chairs
   earns the certificate and replaces his stool: that node sets `flags['sprite:shrimp']` to
   `shrimpchair`, and a `sprite:<npc id>` flag draws any npc off the sheet it names,
   `assets/dialogue/shrimp.json`), suspicious harry (he/him, stood over three
-  deck chairs on the big island's south shore at 41..43,26; a chair touched before he has had an
+  chairs on the big island's south shore at 41..43,26; a chair touched before he has had an
   Otijom gets `handsoff.json`, the cocktail sets `harry:ok`, `assets/dialogue/harry.json`), and the sea
   horse (he/him, who swims in from the west at thirty beauty onto the sand at 14,18, a tile in
   from the orb's chest, and puts his smoking desalinator 9000 down on the grass above him at 14,17: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea

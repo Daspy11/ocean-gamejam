@@ -141,7 +141,7 @@ describe('the carrot field', () => {
     expect([w.inventory.certificate, w.flags['shrimp:thanked']]).toEqual([undefined, undefined])
   })
 
-  it('hands over the award for a deck chair, and not before', () => {
+  it('hands over the award for a chair, and not before', () => {
     const w = createWorld()
     w.player = { ...w.player, x: 49, y: 14, facing: 'up' }
     w.flags['shrimp:chair'] = true

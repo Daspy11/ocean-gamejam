@@ -200,11 +200,11 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   pays with a golden egg, `assets/dialogue/albatross.json`), antoine le shrimp (he/him, a French
   shrimp who farms carrots on the big island's east side from a stool over the one gate in their
   fence; until he asks for a hand the field only reads out (`carrotfield.json`), handing him all
-  twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's deck chairs
+  twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's chairs
   earns the certificate and replaces his stool: that node sets `flags['sprite:shrimp']` to
   `shrimpchair`, and a `sprite:<npc id>` flag draws any npc off the sheet it names,
   `assets/dialogue/shrimp.json`), suspicious harry (he/him, lying over three
-  deck chairs on the big island's south shore: his picture is one solid 4x2 object at 40,25, talked
+  chairs on the big island's south shore: his picture is one solid 4x2 object at 40,25, talked
   to from row 24, and the chairs under it stay their own objects on 40, 41..42 and 43, listed
   before him so they draw under him and free in that order as his sheet lets go of them; a chair
   touched before he has had an
