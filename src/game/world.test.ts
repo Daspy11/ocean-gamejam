@@ -146,7 +146,11 @@ describe('objectAt', () => {
     expect(objectAt(createWorld('cave'), 10, 5)?.id).toBe('rum1')
     expect(objectAt(w, 42, 21)?.id).toBe('gate1') // the gate at the foot of the corridor to it
     expect(objectAt(w, 19, 3)?.id).toBe('crate4') // the chest with the key, on the north island
-    expect(objectAt(w, 40, 26)?.id).toBe('harry') // his picture, bottom-left anchored beside his chairs
+    expect(objectAt(w, 40, 25)?.id).toBe('harry') // his picture, 4x2, lying over the chairs
+    expect(objectAt(w, 43, 25)?.id).toBe('harry')
+    expect(objectAt(w, 40, 26)?.id).toBe('chair1') // the chairs come first, so they win their tiles
+    expect(objectAt(w, 41, 26)?.id).toBe('chair2') // both halves of the one painted across 41..42
+    expect(objectAt(w, 42, 26)?.id).toBe('chair2')
     expect(objectAt(w, 43, 26)?.id).toBe('chair3')
   })
 
@@ -263,11 +267,13 @@ describe('the gallery map', () => {
       'g-flyingcarpet',
       'g-flyingcarpet-flying',
       'g-harry',
+      'g-splitchair',
     ])
     // one orb still boiling its water tile, one already sat on the salt it made; harry sits out on
-    // the water too, just because the pad has no room left for his 4x2 picture
+    // the water too, just because the pad has no room left for his 4x2 picture, and his split
+    // chair stands out there beside him
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)
-    expect(wet).toEqual(['g-orb', 'g-harry'])
+    expect(wet).toEqual(['g-orb', 'g-harry', 'g-splitchair'])
     expect(tileAt(w, 12, 20)).toBe('salt')
     expect([w.player.x, w.player.y, w.player.facing]).toEqual([8, 20, 'down'])
     expect(objectAt(w, 8, 20)).toBeUndefined() // nothing standing where the player spawns

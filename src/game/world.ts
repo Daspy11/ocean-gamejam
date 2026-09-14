@@ -74,7 +74,8 @@ export type Obj = {
   | { kind: 'boat'; wrecked?: boolean; dialogue?: string }
   | { kind: 'crate'; open: boolean; item?: Item; dialogue?: string } // opening gives an item or reads a dialogue, once
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
-  // suspicious harry: he never walks, so interact just reads his dialogue, like a tree
+  // suspicious harry: he never walks, so interact just reads his dialogue, like a tree. His 4x2
+  // footprint is his whole picture, lying across the chairs, so nobody walks through him
   | { kind: 'harry'; dialogue: string; satAt?: number } // lowers his feet over 600 ms, then stays seated
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
@@ -86,6 +87,8 @@ export type Obj = {
   | { kind: 'bar'; drink?: boolean }
   | { kind: 'gate' } // locked across the way to the cave: the key opens it, and it is gone
   | { kind: 'chair'; beauty?: number } // picking it back up removes the points it actually added
+  // harry's middle chair, one chair painted across two tiles: interact on either half takes it whole
+  | { kind: 'splitchair' }
   | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
   | { kind: 'fence' } // a post and rail of the ring round his field: nothing to do with it, just solid
   | { kind: 'fencev' } // the same post, drawn for a run of the ring climbing north-south instead
@@ -117,13 +120,14 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
   sign: { w: 1, h: 1, solid: true },
-  harry: { w: 1, h: 1, solid: true },
+  harry: { w: 4, h: 2, solid: true },
   flower: { w: 1, h: 1, solid: true },
   cave: { w: 1, h: 1, solid: false },
   rum: { w: 1, h: 1, solid: true },
   bar: { w: 1, h: 1, solid: true },
   gate: { w: 1, h: 1, solid: true },
   chair: { w: 1, h: 1, solid: true },
+  splitchair: { w: 2, h: 1, solid: true },
   carrot: { w: 1, h: 1, solid: true },
   fence: { w: 1, h: 1, solid: true },
   fencev: { w: 1, h: 1, solid: true },

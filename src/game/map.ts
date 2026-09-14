@@ -206,13 +206,15 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
             { id: 'crate4', kind: 'crate', x: 19, y: 3, open: false, item: 'key' },
             { id: 'crate5', kind: 'crate', x: -3, y: 17, open: false, item: 'glassi' },
             // suspicious harry, reclining over his three deck chairs on the big island's south shore:
-            // one picture of the whole scene, bottom-left anchored so it spans up and right from here
-            // over the chairs below, which stay as their own objects for the pick-up-a-chair mechanic
-            // but draw nothing themselves now that his sheet already shows them
-            { id: 'harry', kind: 'harry', x: 40, y: 26, dialogue: 'harry' },
-            { id: 'chair1', kind: 'chair', x: 41, y: 26, hidden: true },
-            { id: 'chair2', kind: 'chair', x: 42, y: 26, hidden: true },
+            // one picture of the whole scene on a 4x2 footprint. The chairs under it sit on 40, across
+            // 41..42 (one chair painted over two tiles) and 43, and stay their own objects for the
+            // pick-up-a-chair mechanic, but draw nothing themselves while his sheet still shows them.
+            // Listed before him so they draw under him once freed, and in the order his sheet lets
+            // go of them: the west one, the east one, then the one under him
+            { id: 'chair1', kind: 'chair', x: 40, y: 26, hidden: true },
             { id: 'chair3', kind: 'chair', x: 43, y: 26, hidden: true },
+            { id: 'chair2', kind: 'splitchair', x: 41, y: 26, hidden: true },
+            { id: 'harry', kind: 'harry', x: 40, y: 25, dialogue: 'harry' },
           ]
   // the forest and the carrot field are drawn in the map rather than listed: one object per glyph
   rows.forEach((row, y) =>

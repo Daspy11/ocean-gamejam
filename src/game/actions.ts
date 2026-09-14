@@ -1,13 +1,13 @@
 import { enterCave } from './map'
 import { nodeDone, pickBranch, startAct, tickCloseup } from './act'
-import { tickFarewell, tickWalks } from './boat'
+import { startStep, tickFarewell, tickWalks } from './boat'
 import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
 import { beauty, takeItem, tickOrbs, useItem } from './salt'
 import { michHint } from './script'
-import { cueInteract, DIRS, KINDS, objectAt, tileAt } from './world'
+import { cueInteract, DIRS, objectAt, tileAt } from './world'
 import type { Action, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
@@ -17,18 +17,6 @@ export function apply(w: World, a: Action, c: Content): void {
   // the node the box is on, if any: a `clear` act frees him to walk while the scene waits on it
   const cur = w.dialogue ? c.dialogues[w.dialogue.key]?.nodes[w.dialogue.node] : undefined
   const busy = (w.dialogue !== null && !cur?.clear) || w.menu !== null
-  // two call sites: the start from standing and the restart at a tile boundary
-  const startStep = (t: number) => {
-    const [dx, dy] = DIRS[p.facing]
-    const [x, y] = [p.x + dx, p.y + dy]
-    const tile = tileAt(w, x, y)
-    const obj = objectAt(w, x, y)
-    // blocked: stand facing it, and no rev (a held key would otherwise spam it)
-    const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
-    if (!ground || (obj && KINDS[obj.kind].solid)) return
-    p.step = { x, y, t }
-    w.rev++
-  }
   // opens key at node, or at the start the flags pick; `item` fills {item} in the text
   const open = (key: string, node?: string, item?: Item, object?: string) => {
     const dlg = c.dialogues[key]
@@ -143,7 +131,7 @@ export function apply(w: World, a: Action, c: Content): void {
     }
     const ms = p.run ? 144 : 217 // ms per tile: 217 walking (4.6 tiles/s), 144 running
     // 50 ms turn delay: a tapped direction only turns, a held one walks
-    if (!p.step && !busy && p.facing === p.held && w.time - p.turnedAt >= 50) startStep(0)
+    if (!p.step && !busy && p.facing === p.held && w.time - p.turnedAt >= 50) startStep(w, 0)
     if (p.step && !p.ride) {
       p.step.t += a.dt / ms // progress alone is not a visible change, so no rev
       if (p.step.t >= 1) {
@@ -168,7 +156,7 @@ export function apply(w: World, a: Action, c: Content): void {
             p.facing = p.held // already walking, so no turn delay
             w.rev++
           }
-          startStep(leftover / ms) // keeps the speed constant across the boundary
+          startStep(w, leftover / ms) // keeps the speed constant across the boundary
         }
       }
     }
@@ -292,15 +280,15 @@ export function apply(w: World, a: Action, c: Content): void {
     if (obj.id === 'crate4') fire('arrive:north') // salt beside the chest can bypass stepping ashore
     return
   }
-  if (obj?.kind === 'chair' && !w.flags['harry:ok']) {
+  if ((obj?.kind === 'chair' || obj?.kind === 'splitchair') && !w.flags['harry:ok']) {
     cueInteract(w)
     open('handsoff') // harry is watching until he has had his cocktail
     return
   }
-  if (obj?.kind === 'rum' || obj?.kind === 'chair') {
-    w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag
+  if (obj?.kind === 'rum' || obj?.kind === 'chair' || obj?.kind === 'splitchair') {
+    w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag: both halves of a split one
     if (obj.kind === 'chair') beauty(w, -(obj.beauty ?? 5), x, y)
-    gain(obj.kind)
+    gain(obj.kind === 'splitchair' ? 'chair' : obj.kind)
     return
   }
   if (obj?.kind === 'bar') {

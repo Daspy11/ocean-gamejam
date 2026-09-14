@@ -188,7 +188,9 @@ export function inTheAir(sprite: Phaser.GameObjects.Sprite, o: Obj): void {
   if (o.kind === 'harry')
     sprite.setFrame(
       o.satAt === undefined
-        ? 3 - world.objects.filter((c) => c.kind === 'chair' && c.hidden).length
+        ? 3 -
+            world.objects.filter((c) => (c.kind === 'chair' || c.kind === 'splitchair') && c.hidden)
+              .length
         : Math.min(3, Math.floor((world.time - o.satAt) / 200)),
     )
   if (o.kind !== 'npc' && o.thrown !== undefined) {

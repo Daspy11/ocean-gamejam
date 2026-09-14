@@ -32,7 +32,9 @@ it('plays Harry lowering his feet once and keeps him seated after a chair is tak
     apply(w, { type: 'tick', dt: 0 }, { dialogues: {}, items: {} })
     inTheAir(drawn as unknown as Phaser.GameObjects.Sprite, harry)
     expect(drawn.frame).toBe(frame)
-    expect(w.objects.filter((o) => o.kind === 'chair' && o.hidden)).toHaveLength(3 - frame)
+    expect(
+      w.objects.filter((o) => (o.kind === 'chair' || o.kind === 'splitchair') && o.hidden),
+    ).toHaveLength(3 - frame)
   }
   w.objects = w.objects.filter((o) => o.id !== 'chair1')
   w.time = 3000

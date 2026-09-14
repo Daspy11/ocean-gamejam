@@ -43,7 +43,9 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   room in the map's bottom-left corner, and back; a one-tile corridor runs down from the mouth through
   the forest to a locked `gate` at 42,21, which the key from the chest on the north island opens and
   removes). The `rum` bottle in the room is picked up whole, like the orb; so is a `chair`, once
-  `flags['harry:ok']`, and before that it is Harry's `handsoff.json`. A `bar` is talked across: interact
+  `flags['harry:ok']`, and before that it is Harry's `handsoff.json` (his middle one is a
+  `splitchair`, one chair painted across two tiles, that either half picks up whole; its sheet is
+  the real chair art split over the seam, not a placeholder). A `bar` is talked across: interact
   on a bare piece of counter reaches the npc on its far side, and with a drink on it takes the drink
   (`otijom`). A `cannon` is solid and, once a `fire` act lights it, spits a `ball` every 20 ms for
   4 s, each flying straight out to the left of the muzzle in a 30 degree cone and off the map over
@@ -199,8 +201,11 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's deck chairs
   earns the certificate and replaces his stool: that node sets `flags['sprite:shrimp']` to
   `shrimpchair`, and a `sprite:<npc id>` flag draws any npc off the sheet it names,
-  `assets/dialogue/shrimp.json`), suspicious harry (he/him, stood over three
-  deck chairs on the big island's south shore at 41..43,26; a chair touched before he has had an
+  `assets/dialogue/shrimp.json`), suspicious harry (he/him, lying over three
+  deck chairs on the big island's south shore: his picture is one solid 4x2 object at 40,25, talked
+  to from row 24, and the chairs under it stay their own objects on 40, 41..42 and 43, listed
+  before him so they draw under him and free in that order as his sheet lets go of them; a chair
+  touched before he has had an
   Otijom gets `handsoff.json`, the cocktail sets `harry:ok`, `assets/dialogue/harry.json`), and the sea
   horse (he/him, who swims in from the west at fifteen beauty onto the sand at 13,15, the
   tile above the wreck where the orb lay, and puts his smoking desalinator 9000 down on

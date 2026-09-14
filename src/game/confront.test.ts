@@ -8,7 +8,7 @@ import { DIRS, createWorld, npc, objectAt, tileAt, type Content, type Obj } from
 
 it.each([
   [16, 17],
-  [40, 25],
+  [40, 24],
   [-3, 17],
   [22, 3],
 ])('flies Tarq in two rows above the player at %i,%i and holds there for the dialogue', (x, y) => {

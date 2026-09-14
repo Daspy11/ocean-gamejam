@@ -259,9 +259,11 @@ export function tickWalks(w: World, dt: number): void {
   // so the turns bump no rev, only the stop
   for (const o of w.objects) {
     if (o.kind === 'harry' && o.satAt !== undefined) {
-      const chairs = w.objects.filter((c) => c.kind === 'chair' && c.hidden)
+      const chairs = w.objects.filter(
+        (c) => (c.kind === 'chair' || c.kind === 'splitchair') && c.hidden,
+      )
       while (chairs.length > Math.max(0, 3 - Math.floor((w.time - o.satAt) / 200))) {
-        delete chairs.pop()!.hidden // each freed chair now draws separately from Harry's sheet
+        delete chairs.shift()!.hidden // freed as listed: the order his sheet lets go of them
         w.rev++
       }
     }
@@ -326,4 +328,18 @@ export function tickWalks(w: World, dt: number): void {
     }
   }
   tickWander(w, dt)
+}
+
+// the player's next tile on his own feet: from standing, or again at a tile boundary while the key
+// is held. Blocked, he stands facing it, and no rev (a held key would otherwise spam it)
+export function startStep(w: World, t: number): void {
+  const p = w.player
+  const [dx, dy] = DIRS[p.facing]
+  const [x, y] = [p.x + dx, p.y + dy]
+  const tile = tileAt(w, x, y)
+  const obj = objectAt(w, x, y)
+  const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
+  if (!ground || (obj && KINDS[obj.kind].solid)) return
+  p.step = { x, y, t }
+  w.rev++
 }

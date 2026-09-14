@@ -53,6 +53,8 @@ export const gallery = (): Obj[] => [
   // frame 1, the flutter mid-flight: t: 0 so it sits still, only the step forces the frame
   { id: 'g-flyingcarpet-flying', kind: 'flyingcarpet', x: 7, y: 17, step: { x: 7, y: 17, t: 0 } },
   // off to the side like the orbs, since his picture is 4x2, wider than the pad has room for: one
-  // piece of art, bottom-left anchored here, spanning up and right over the chairs it already draws
-  { id: 'g-harry', kind: 'harry', x: 13, y: 21, dialogue: 'harry' },
+  // piece of art on a footprint the same size, with the chairs it draws for itself; and the chair
+  // painted across two tiles that his middle one is once freed
+  { id: 'g-harry', kind: 'harry', x: 13, y: 20, dialogue: 'harry' },
+  { id: 'g-splitchair', kind: 'splitchair', x: 13, y: 18 },
 ]
