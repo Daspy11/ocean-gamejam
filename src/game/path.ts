@@ -92,7 +92,7 @@ function costs(w: World, mover: Obj, through: boolean): number[] {
         : o.kind === 'npc'
           ? 1000
           : KINDS[o.kind].solid
-            ? through
+            ? through && o.kind !== 'tree' // nobody walks through a tree, whatever the story needs
               ? 5000 // dearer than anyone: only a walk with no way round at all goes over a prop
               : Infinity
             : 1
