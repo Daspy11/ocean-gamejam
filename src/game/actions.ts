@@ -129,7 +129,7 @@ export function apply(w: World, a: Action, c: Content): void {
       w.pops = live
       w.rev++
     }
-    if (!tickStep(w, a.dt, !busy, fire)) return // down a cave: nothing else moves this tick
+    if (!tickStep(w, a.dt, !busy, fire, play)) return // down a cave: nothing else moves this tick
     tickWalks(w, a.dt)
     tickThrow(w)
     const act = w.dialogue

@@ -1,0 +1,14 @@
+{
+  "name": "Walter",
+  "trigger": { "event": "haul", "when": "score:on" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "wow what a haul", "next": "2" },
+    "2": { "who": "", "text": "how can you see my inventory, you're a crab", "next": "3" },
+    "3": { "text": "a crab who can smell BEAUTY from a mile away", "next": "4" },
+    "4": {
+      "text": "place your loot on your island by pressing i, selecting the relevant item, then hitting e",
+      "next": null
+    }
+  }
+}

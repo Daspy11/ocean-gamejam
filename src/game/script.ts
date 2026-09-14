@@ -92,6 +92,7 @@ export interface Dialogue {
   // island) · place:<item> (a prize stood on the main island; a chair is place:chair:<n> with n
   // now standing there) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
   // zero) · score:thirty (30 beauty with all three prizes placed) · arrive:north (stepped ashore up north) ·
+  // haul (stepped back onto the main island with a prize still in the bag) ·
   // done:<dialogue key> (that box has just closed)
   trigger?: { event: string; when?: string; unless?: string }
   start: Branch[] // first entry that matches wins

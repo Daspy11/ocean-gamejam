@@ -77,7 +77,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   dialogue path and menu state is testable without Phaser.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open` (a crate opened, or the orb picked up off the sand), `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
-  `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `salt:away` (any item put down off
+  `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `haul` (stepped back onto the main
+  island with a prize still in the bag, `haul.json`), `salt:away` (any item put down off
   the main island), `place:<item>` (a prize stood on the main island, `carpetdown.json`, `eggdown.json`,
   `certdown.json`; a chair is `place:chair:<n>` with n now standing there, `chair1.json`, `chair2.json`), `score:fifteen`, `done:<dialogue key>` (that box has just
   closed), add more in `apply`) and the `when` flag is
@@ -146,7 +147,11 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   the certificate to go down (`flags['placed:<item>']`) is worth whatever multiple of 5 brings
   beauty to 15, so the sea horse comes once everything is down; a chair picked back up takes its 5
   with it. Two chairs standing at home is the limit: a third stays in the bag and Mich opens
-  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). Nothing else in the bag goes anywhere. The map is
+  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). Nothing else in the bag goes anywhere.
+  The three prizes are `PRIZES` in `src/game/salt.ts`, and Walter will not have one carried off:
+  once his scene has run, walking home with one in the bag fires `haul` and a step off the main
+  island is taken back, stopping him dead with `notsofast.json` (`walterStops` in
+  `src/game/step.ts`). A chair is left out of it, since the shrimp is owed one. The map is
   ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
   farmland with a carrot on it, `=` is grass with a fence post on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets

@@ -29,8 +29,12 @@ export function startAct(
       : {
           text: (item ? to.text.replaceAll('{item}', name) : to.text)
             .replaceAll('{score}', `${w.score}`)
-            .replace(/\bpress i\b/gi, `press ${w.controls?.inventory ?? 'I'}`)
-            .replace(/\bpress e\b/gi, `press ${w.controls?.confirm ?? 'E'}`),
+            // a line names the default keys; the device picked at the title decides what he is told
+            .replace(/\b(press|pressing|hitting) (i|e)\b/gi, (_, verb: string, key: string) =>
+              key.toLowerCase() === 'i'
+                ? `${verb} ${w.controls?.inventory ?? 'I'}`
+                : `${verb} ${w.controls?.confirm ?? 'E'}`,
+            ),
           at: w.time,
           who,
         }

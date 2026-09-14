@@ -1,0 +1,7 @@
+{
+  "name": "Walter",
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "NOT SO FAST PARTNER, beautify this island before you leave pls", "next": null }
+  }
+}

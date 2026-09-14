@@ -1,6 +1,10 @@
 import { cueInteract, objectAt, tileAt, tileIndex } from './world'
 import type { Item, Obj, World } from './world'
 
+// the three prizes: handed out purely to be stood on the island, and the last one down settles
+// the score. Walter will not let one leave the island in the bag.
+export const PRIZES: Item[] = ['carpet', 'egg', 'certificate']
+
 // what stands on the ground out of the bag, and the kind of object it stands there as
 const STANDS: Partial<Record<Item, 'floor' | 'egg' | 'certificate' | 'chair'>> = {
   carpet: 'floor',
@@ -104,12 +108,11 @@ export function useItem(
   cueInteract(w, !!w.main[tileIndex(w, x, y)])
   w.inventory[item] = (w.inventory[item] ?? 0) - 1
   // Hold below 30 until all three prizes are down; the last covers any amount spent on bridges.
-  const prizes = ['carpet', 'egg', 'certificate']
   let worth = 5
-  if (prizes.includes(item)) w.flags[`placed:${item}`] = true
-  const ready = prizes.every((p) => w.flags[`placed:${p}`])
+  if (PRIZES.includes(item)) w.flags[`placed:${item}`] = true
+  const ready = PRIZES.every((p) => w.flags[`placed:${p}`])
   if (!ready) worth = Math.min(5, Math.max(0, 29 - w.score))
-  else if (prizes.includes(item)) worth = Math.max(5, Math.ceil((30 - w.score) / 5) * 5)
+  else if (PRIZES.includes(item)) worth = Math.max(5, Math.ceil((30 - w.score) / 5) * 5)
   if (placed.kind === 'chair') placed.beauty = w.main[tileIndex(w, x, y)] ? worth : 0
   beauty(w, worth, x, y) // beauty only ever counts at home
   w.rev++
