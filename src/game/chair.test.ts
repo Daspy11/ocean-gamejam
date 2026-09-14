@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, objectAt, type Content, type World } from './world'
 
-// suspicious harry's deck chairs on row 26 of the south shore, on 40, across 41..42 and on 43,
+// suspicious harry's chairs on row 26 of the south shore, on 40, across 41..42 and on 43,
 // sharing the row with his 4x1 picture: a tile is him until the chair on it is let go of
 const content: Content = {
   dialogues: {
@@ -51,7 +51,7 @@ function belowChair(): World {
   return w
 }
 
-describe('the deck chairs', () => {
+describe('the chairs', () => {
   it.each([
     ['', 'warning'],
     ['harry:warned', '1'],

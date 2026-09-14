@@ -17,7 +17,7 @@ const content: Content = {
       name: '[PLACEHOLDER NPC NAME]',
       start: [
         { when: 'shrimp:thanked', node: 'after' },
-        { when: 'shrimp:chair', has: { chair: 1 }, node: 'chair' },
+        { when: 'shrimp:chair', has: { chair: 1 }, node: 'offer' },
         { when: 'shrimp:chair', node: 'nochair' },
         { when: 'shrimp:asked', has: { carrot: 12 }, node: 'carrots' },
         { node: '1' },
@@ -35,13 +35,23 @@ const content: Content = {
           next: null,
         },
         nochair: { text: '[PLACEHOLDER the farmer wants a chair]', next: null },
+        // the handover is offered first, so a chair is never taken off him unasked
+        offer: {
+          who: null,
+          text: '[PLACEHOLDER give him a chair?]',
+          choices: [
+            { text: '[PLACEHOLDER yes]', next: 'chair' },
+            { text: '[PLACEHOLDER no]', next: null },
+          ],
+        },
         chair: {
           text: '[PLACEHOLDER the farmer is grateful]',
           take: 'chair',
           give: 'certificate',
           set: { 'shrimp:thanked': true },
-          next: null,
+          next: 'beautiful',
         },
+        beautiful: { text: '[PLACEHOLDER the farmer hopes it helps]', next: null },
         after: { text: '[PLACEHOLDER the farmer is grateful]', next: null },
       },
     },
@@ -141,7 +151,7 @@ describe('the carrot field', () => {
     expect([w.inventory.certificate, w.flags['shrimp:thanked']]).toEqual([undefined, undefined])
   })
 
-  it('hands over the award for a deck chair, and not before', () => {
+  it('hands over the award for a chair, and not before', () => {
     const w = createWorld()
     w.player = { ...w.player, x: 49, y: 14, facing: 'up' }
     w.flags['shrimp:chair'] = true
@@ -149,15 +159,41 @@ describe('the carrot field', () => {
     expect(w.dialogue?.node).toBe('nochair')
     apply(w, { type: 'interact' }, content)
 
+    // with a chair in the bag he is asked first, and no ends it there with the chair still his
     w.inventory.chair = 1
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.node).toBe('offer')
+    apply(w, { type: 'move', dir: 'down' }, content)
+    expect(w.dialogue?.choice).toBe(1)
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBeNull()
+    expect([w.inventory.chair, w.inventory.certificate, w.flags['shrimp:thanked']]).toEqual([
+      1,
+      undefined,
+      undefined,
+    ])
+
+    apply(w, { type: 'interact' }, content)
+    expect([w.dialogue?.node, w.dialogue?.choice]).toEqual(['offer', 0])
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.node).toBe('chair')
     expect([w.inventory.chair, w.inventory.certificate]).toEqual([undefined, 1])
     expect(w.flags['shrimp:thanked']).toBe(true)
     expect(w.queue).toEqual([{ key: 'got', item: 'certificate' }]) // the award's box waits its turn
 
+    // the got box cuts in after his thanks, and his last line plays once it shuts
     apply(w, { type: 'interact' }, content)
-    expect(w.dialogue).toEqual({ key: 'got', node: '1', choice: 0, item: 'certificate' })
+    expect(w.dialogue).toEqual({
+      key: 'got',
+      node: '1',
+      choice: 0,
+      item: 'certificate',
+      back: { key: 'shrimp', node: 'beautiful', item: undefined },
+    })
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue?.node).toBe('beautiful')
+    apply(w, { type: 'interact' }, content)
+    expect(w.dialogue).toBeNull()
   })
 
   it('talks to the farmer from the grass below his stool', () => {

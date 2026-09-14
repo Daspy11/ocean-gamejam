@@ -79,7 +79,7 @@ export const SHEETS = {
   'sprites/albatross': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // character sheet; he never gets off his stool, so all sixteen frames are the same seated pose
   'sprites/shrimp': { frameWidth: 16, frameHeight: 24 },
-  // character sheet; the same seated pose on the deck chair he swaps the stool for
+  // character sheet; the same seated pose on the chair he swaps the stool for
   'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },
   'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // 4x4 character layout, facing follows the sea horse; Etarp occupies the upper 24 pixels.
@@ -108,8 +108,8 @@ export const SHEETS = {
   'sprites/rum': { frameWidth: 16, frameHeight: 16 }, // one frame: the bottle, stood on its tile
   'sprites/bar': { frameWidth: 16, frameHeight: 16 }, // 0 a piece of counter · 1 with a cocktail stood on it
   'sprites/gate': { frameWidth: 16, frameHeight: 16 }, // one frame: the locked gate, filling the tile
-  'sprites/chair': { frameWidth: 16, frameHeight: 16 }, // one frame: a deck chair
-  // one frame: a deck chair painted across a 2x1 footprint, its left half on one tile and its right
+  'sprites/chair': { frameWidth: 16, frameHeight: 16 }, // one frame: a chair
+  // one frame: a chair painted across a 2x1 footprint, its left half on one tile and its right
   // half on the next, where harry's sheet has his middle one
   'sprites/splitchair': { frameWidth: 32, frameHeight: 16 },
   'sprites/carrot': { frameWidth: 16, frameHeight: 16 }, // one frame: a carrot growing in the soil

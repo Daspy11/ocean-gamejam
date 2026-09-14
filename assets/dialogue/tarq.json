@@ -61,8 +61,8 @@
       "who": null,
       "text": "choose something to throw",
       "choices": [
-        { "text": "deck chair", "next": "chair" },
-        { "text": "deck chair", "next": "chair" },
+        { "text": "chair", "next": "chair" },
+        { "text": "chair", "next": "chair" },
         { "text": "egg", "next": "egg" },
         { "text": "certificate", "next": "certificate" },
         { "text": "carpet", "next": "carpet" }

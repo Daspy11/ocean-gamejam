@@ -66,7 +66,7 @@ const yarrtender = (w: World) => {
 }
 
 // antoine's carrots handed over and his chair asked for, with a cocktail for harry in the bag, stood north
-// of harry and his deck chairs on the big island's south shore, facing down at him
+// of harry and his chairs on the big island's south shore, facing down at him
 const cocktail = (w: World) => {
   beautyOn(w)
   w.objects = w.objects.filter((o) => o.kind !== 'carrot')

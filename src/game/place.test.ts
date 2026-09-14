@@ -25,7 +25,7 @@ function put(w: World, item: Item, facing: 'left' | 'up' | 'right') {
 }
 
 describe('standing a prize on the ground', () => {
-  it('stands the egg, the certificate and a deck chair in front of him for 5 each', () => {
+  it('stands the egg, the certificate and a chair in front of him for 5 each', () => {
     for (const item of ['egg', 'certificate', 'chair'] as const) {
       const w = home(item)
       apply(w, { type: 'interact' }, content)
@@ -66,7 +66,7 @@ describe('standing a prize on the ground', () => {
     expect([w.score, w.flags['placed:egg']]).toEqual([0, true])
   })
 
-  it('takes a deck chair back up again for the 5 it was worth', () => {
+  it('takes a chair back up again for the 5 it was worth', () => {
     const w = home('chair')
     apply(w, { type: 'interact' }, content) // down at 15,14 for 5
     apply(w, { type: 'interact' }, content) // and straight back into the bag
