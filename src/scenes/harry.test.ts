@@ -19,20 +19,23 @@ it('plays Harry lowering his feet once and keeps him seated after a chair is tak
       return this
     },
   }
-  for (const [time, frame] of [
-    [100, 0],
-    [299, 0],
-    [300, 1],
-    [499, 1],
-    [500, 2],
-    [699, 2],
-    [700, 3],
+  for (const [time, frame, crashes] of [
+    [100, 0, 0],
+    [1099, 0, 0],
+    [1100, 1, 1],
+    [2099, 1, 1],
+    [2100, 2, 2],
+    [2499, 2, 2],
+    [2500, 3, 2], // settling on the middle chair is no crash
   ]) {
     w.time = time
     apply(w, { type: 'tick', dt: 0 }, { dialogues: {}, items: {} })
     inTheAir(drawn as unknown as Phaser.GameObjects.Sprite, harry)
     expect(drawn.frame).toBe(frame)
-    expect(w.objects.filter((o) => o.kind === 'chair' && o.hidden)).toHaveLength(3 - frame)
+    expect(
+      w.objects.filter((o) => (o.kind === 'chair' || o.kind === 'splitchair') && o.hidden),
+    ).toHaveLength(3 - frame)
+    expect(w.explosionCue ?? 0).toBe(crashes)
   }
   w.objects = w.objects.filter((o) => o.id !== 'chair1')
   w.time = 3000

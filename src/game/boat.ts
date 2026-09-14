@@ -64,9 +64,9 @@ export function startWalk(w: World, walk: NonNullable<DialogueNode['walk']>): vo
     walk.back && o.kind === 'npc'
       ? Array<Dir>(walk.back).fill(opposite[o.facing])
       : to
-        ? findPath(w, o, to, !!near)
+        ? (findPath(w, o, to, !!near) ?? findPath(w, o, to, !!near, true))
         : [...(walk.path ?? [])]
-  o.path = path ?? [] // no way there: he stays put, and does not so much as turn
+  o.path = path ?? [] // no way there, even over props: he stays put, and does not so much as turn
   if (o.kind === 'npc' && path) {
     if (walk.facing) o.face = walk.facing
     let [x, y] = [o.x, o.y]
@@ -91,7 +91,9 @@ export function walkPlayer(w: World, walk: NonNullable<DialogueNode['walk']>): v
   const me: Obj = { id: 'player', kind: 'npc', sprite: 'player', dialogue: '', ...p }
   const near = walk.near === undefined ? undefined : w.objects.find((x) => x.id === walk.near)
   const to = near ?? walk.to
-  const path = to ? findPath(w, me, to, !!near) : [...(walk.path ?? [])]
+  const path = to
+    ? (findPath(w, me, to, !!near) ?? findPath(w, me, to, !!near, true))
+    : [...(walk.path ?? [])]
   p.path = path ?? []
   p.face = walk.facing
   if (path && to) {
@@ -259,9 +261,12 @@ export function tickWalks(w: World, dt: number): void {
   // so the turns bump no rev, only the stop
   for (const o of w.objects) {
     if (o.kind === 'harry' && o.satAt !== undefined) {
-      const chairs = w.objects.filter((c) => c.kind === 'chair' && c.hidden)
-      while (chairs.length > Math.max(0, 3 - Math.floor((w.time - o.satAt) / 200))) {
-        delete chairs.pop()!.hidden // each freed chair now draws separately from Harry's sheet
+      const chairs = w.objects.filter(
+        (c) => (c.kind === 'chair' || c.kind === 'splitchair') && c.hidden,
+      )
+      while (chairs.length > 3 - harryFrame(w, o)) {
+        delete chairs.shift()!.hidden // freed as listed: the order his sheet lets go of them
+        if (chairs.length) w.explosionCue = (w.explosionCue ?? 0) + 1 // a leg hits the ground
         w.rev++
       }
     }
@@ -326,4 +331,25 @@ export function tickWalks(w: World, dt: number): void {
     }
   }
   tickWander(w, dt)
+}
+
+// the frame of harry's sheet right now: 0 lying over his chairs; 1 and 2 a leg down each, dropped
+// with a crash 1 s and 2 s after he starts; 3 settled on the middle chair 400 ms after that. The
+// chairs come free under him as the frames go: the west one, the east one, then the one under him
+export function harryFrame(w: World, o: Obj): number {
+  if (o.kind !== 'harry') return 0
+  if (o.satAt === undefined)
+    return (
+      3 -
+      w.objects.filter((c) => (c.kind === 'chair' || c.kind === 'splitchair') && c.hidden).length
+    )
+  const since = w.time - o.satAt
+  return since >= 2400 ? 3 : since >= 2000 ? 2 : since >= 1000 ? 1 : 0
+}
+
+// a `sit` act is over once his feet are down and every chair is out from under him; no such
+// harry is nothing to wait for
+export function sitDone(w: World, id?: string): boolean {
+  const o = w.objects.find((x) => x.id === id)
+  return !o || harryFrame(w, o) === 3
 }

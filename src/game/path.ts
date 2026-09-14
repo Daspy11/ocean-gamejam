@@ -68,7 +68,7 @@ export function tickWander(w: World, dt: number): void {
 }
 
 // what each tile costs `mover` to step onto: 1 for open ground, Infinity for a wall
-function costs(w: World, mover: Obj): number[] {
+function costs(w: World, mover: Obj, through: boolean): number[] {
   const mode =
     mover.kind === 'flyingcarpet' ? 'fly' : mover.kind === 'npc' ? MODES[mover.sprite] : undefined
   const cost = w.tiles.map((t) => {
@@ -92,7 +92,9 @@ function costs(w: World, mover: Obj): number[] {
         : o.kind === 'npc'
           ? 1000
           : KINDS[o.kind].solid
-            ? Infinity
+            ? through && o.kind !== 'tree' // nobody walks through a tree, whatever the story needs
+              ? 5000 // dearer than anyone: only a walk with no way round at all goes over a prop
+              : Infinity
             : 1
     for (let y = o.y; y < o.y + KINDS[o.kind].h; y++)
       for (let x = o.x; x < o.x + KINDS[o.kind].w; x++) raise(x, y, c)
@@ -106,15 +108,18 @@ function costs(w: World, mover: Obj): number[] {
 // A character standing on `to` is not walked onto: the route ends on the closest free tile to him
 // that can be reached, the cheapest among equals, and the caller turns the mover to face him.
 // `onto` lets a goal be stepped on whatever solid thing stands there, for walking up to a boat:
-// the caller drops that last step and keeps its direction as the way to face.
+// the caller drops that last step and keeps its direction as the way to face. `through` is a story
+// walk's last resort once there is no way at all: solid things become very dear tiles rather than
+// walls, so Etarp still gets ashore when the player on the salt beside the chest is the one way.
 export function findPath(
   w: World,
   mover: Obj,
   to: { x: number; y: number },
   onto = false,
+  through = false,
 ): Dir[] | null {
   if (tileAt(w, to.x, to.y) === undefined) return null
-  const cost = costs(w, mover)
+  const cost = costs(w, mover, through)
   const width = w.width
   const start = tileIndex(w, mover.x, mover.y)
   const goal = tileIndex(w, to.x, to.y)

@@ -82,3 +82,23 @@ it.each(['crate2', 'crate3', 'crate5'])('opening %s does not summon Etarp', (id)
   expect(w.flags['fired:pirate']).toBeUndefined()
   expect(w.queue).toEqual([])
 })
+
+it('gets Etarp ashore when the player on the salt at 18,3 and the chest are the only way', () => {
+  const w = createWorld()
+  for (let y = 3; y <= 12; y++) w.tiles[tileIndex(w, 17, y)] = 'salt' // straight up the 17 column
+  w.tiles[tileIndex(w, 18, 3)] = 'salt' // and one tile east to open the chest at 19,3 from
+  Object.assign(w.player, { x: 18, y: 3, facing: 'right' })
+  w.objects.push(
+    { id: 'ship', kind: 'boat', x: 18, y: 8, wrecked: true },
+    { id: 'etarp', kind: 'npc', sprite: 'etarp', dialogue: 'etarp', x: 17, y: 8, facing: 'up' },
+  )
+  w.dialogue = { key: 'pirate', node: '43', choice: 0 }
+  apply(w, { type: 'interact' }, content) // past his line: node 44 walks him to the island's top
+  apply(w, { type: 'tick', dt: 500 }, content)
+  const etarp = w.objects.find((o) => o.id === 'etarp')!
+  expect(etarp.path?.length).toBeGreaterThan(0) // through the player and over the chest, not stuck
+  for (let i = 0; i < 100 && w.dialogue?.node === '44'; i++)
+    apply(w, { type: 'tick', dt: 250 }, content)
+  expect([etarp.x, etarp.y]).toEqual([23, 2])
+  expect(w.dialogue?.node).toBe('47')
+})

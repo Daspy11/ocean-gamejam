@@ -66,7 +66,7 @@ const yarrtender = (w: World) => {
 }
 
 // antoine's carrots handed over and his chair asked for, with a cocktail for harry in the bag, stood north
-// of harry and his deck chairs on the big island's south shore
+// of harry and his chairs on the big island's south shore, facing down at him
 const cocktail = (w: World) => {
   beautyOn(w)
   w.objects = w.objects.filter((o) => o.kind !== 'carrot')
@@ -88,7 +88,9 @@ const placed = (w: World) => {
   w.objects.push({ id: 'floor15-14', kind: 'floor', x: 15, y: 14 })
   w.objects.push({ id: 'egg15-17', kind: 'egg', x: 15, y: 17 })
   w.objects.push({ id: 'certificate17-17', kind: 'certificate', x: 17, y: 17 })
-  w.objects = w.objects.filter((o) => o.kind !== 'carrot' && o.kind !== 'chair')
+  w.objects = w.objects.filter(
+    (o) => o.kind !== 'carrot' && o.kind !== 'chair' && o.kind !== 'splitchair',
+  )
   w.objects.push({ id: 'chair15-18', kind: 'chair', x: 15, y: 18 })
   w.objects.push({ id: 'chair16-18', kind: 'chair', x: 16, y: 18 })
   delete w.inventory.carpet

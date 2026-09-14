@@ -7,7 +7,7 @@ import { shakeTree, tickFlowers, tickTrees } from './tree'
 import { beauty, homeChairs, takeItem, tickOrbs, useItem } from './salt'
 import { michHint } from './script'
 import { tickStep } from './step'
-import { cueInteract, DIRS, objectAt } from './world'
+import { cueInteract, DIRS, objectAt, objectsAt } from './world'
 import type { Action, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
@@ -222,7 +222,10 @@ export function apply(w: World, a: Action, c: Content): void {
 
   if (p.step) return // you only interact while standing
   const [x, y] = [p.x + DIRS[p.facing][0], p.y + DIRS[p.facing][1]]
-  let obj = objectAt(w, x, y)
+  const here = objectsAt(w, x, y)
+  // harry's chairs share his tiles: one he has let go of comes away first, one still under him is him
+  let obj =
+    here.find((o) => !o.hidden && o.kind !== 'harry') ?? here.find((o) => o.kind === 'harry')
   // a bare bar is talked across: whoever stands on the far side of the counter is the one addressed
   if (obj?.kind === 'bar' && !obj.drink) {
     const past = objectAt(w, x + DIRS[p.facing][0], y + DIRS[p.facing][1])
@@ -257,15 +260,10 @@ export function apply(w: World, a: Action, c: Content): void {
     if (obj.id === 'crate4') fire('arrive:north') // salt beside the chest can bypass stepping ashore
     return
   }
-  if (obj?.kind === 'chair' && !w.flags['harry:ok']) {
-    cueInteract(w)
-    open('handsoff') // harry is watching until he has had his cocktail
-    return
-  }
-  if (obj?.kind === 'rum' || obj?.kind === 'chair') {
-    w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag
+  if (obj?.kind === 'rum' || obj?.kind === 'chair' || obj?.kind === 'splitchair') {
+    w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag: both halves of a split one
     if (obj.kind === 'chair') beauty(w, -(obj.beauty ?? 5), x, y)
-    gain(obj.kind)
+    gain(obj.kind === 'splitchair' ? 'chair' : obj.kind)
     return
   }
   if (obj?.kind === 'bar') {

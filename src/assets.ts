@@ -79,7 +79,7 @@ export const SHEETS = {
   'sprites/albatross': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // character sheet; he never gets off his stool, so all sixteen frames are the same seated pose
   'sprites/shrimp': { frameWidth: 16, frameHeight: 24 },
-  // character sheet; the same seated pose on the deck chair he swaps the stool for
+  // character sheet; the same seated pose on the chair he swaps the stool for
   'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },
   'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   // 4x4 character layout, facing follows the sea horse; Etarp occupies the upper 24 pixels.
@@ -95,9 +95,12 @@ export const SHEETS = {
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
-  // on a 1x1 footprint at its bottom-left corner, drawn up and right from that corner: he never
-  // gets up: frames 0..3 lower his feet as he frees the three chairs, one every 200 ms.
-  // Freed chairs draw separately; frame 3 leaves him seated with his feet down.
+  // his whole picture, drawn up from a 4x1 footprint over the row of three chairs he lies on: one
+  // on his first tile, one on his last, and the middle one painted across the two between. He
+  // never gets up: frame 1 drops his left leg with a crash a second after he starts, freeing the
+  // west chair, frame 2 his right a second later, freeing the east one, and 400 ms after that frame
+  // 3 leaves him settled on the middle one, now free too. A freed chair leaves his sheet and draws
+  // on the same pixels from sprites/chair or sprites/splitchair, under him.
   'sprites/harry': { frameWidth: 64, frameHeight: 32 },
   // bottom-anchored on its 1x1 tile, a rock hump standing higher than the ground: 0 the mouth out
   // on the grass · 1 the same hole seen from inside the room
@@ -105,7 +108,10 @@ export const SHEETS = {
   'sprites/rum': { frameWidth: 16, frameHeight: 16 }, // one frame: the bottle, stood on its tile
   'sprites/bar': { frameWidth: 16, frameHeight: 16 }, // 0 a piece of counter · 1 with a cocktail stood on it
   'sprites/gate': { frameWidth: 16, frameHeight: 16 }, // one frame: the locked gate, filling the tile
-  'sprites/chair': { frameWidth: 16, frameHeight: 16 }, // one frame: a deck chair
+  'sprites/chair': { frameWidth: 16, frameHeight: 16 }, // one frame: a chair
+  // one frame: a chair painted across a 2x1 footprint, its left half on one tile and its right
+  // half on the next, where harry's sheet has his middle one
+  'sprites/splitchair': { frameWidth: 32, frameHeight: 16 },
   'sprites/carrot': { frameWidth: 16, frameHeight: 16 }, // one frame: a carrot growing in the soil
   'sprites/machine': { frameWidth: 16, frameHeight: 16 }, // one frame: the desalinator 9000
   'sprites/fence': { frameWidth: 16, frameHeight: 16 }, // one frame: a post with a rail across it

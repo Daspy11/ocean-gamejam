@@ -25,7 +25,7 @@ export const gallery = (): Obj[] => [
   { id: 'g-machine', kind: 'machine', x: 5, y: 19, nextAt: 86400000 },
   npc('g-seahorse', 'seahorse', 7, 19, 'down', 'seahorse'),
   { id: 'g-wreck', kind: 'boat', x: 5, y: 17, wrecked: true }, // the smashed hull frame
-  // the farmer on his stool and on the deck chair he gets for the certificate, and the
+  // the farmer on his stool and on the chair he gets for the certificate, and the
   // two prizes that stand on the ground out of the bag
   npc('g-shrimp', 'shrimp', 8, 17, 'down', 'shrimp'),
   npc('g-shrimpchair', 'shrimpchair', 9, 17, 'down', 'shrimp'),
@@ -33,7 +33,7 @@ export const gallery = (): Obj[] => [
   { id: 'g-certificate', kind: 'certificate', x: 10, y: 19 },
   // the pirate faces the way he is not looking, so this row draws his back
   npc('g-etarp', 'etarp', 4, 18, 'down', 'etarp'),
-  // the bottom row: the bar bare and with a drink on it, the gate, a deck chair, the rum
+  // the bottom row: the bar bare and with a drink on it, the gate, a chair, the rum
   { id: 'g-bar', kind: 'bar', x: 2, y: 21 },
   { id: 'g-bar-drink', kind: 'bar', x: 3, y: 21, drink: true },
   { id: 'g-gate', kind: 'gate', x: 5, y: 21 },
@@ -53,6 +53,8 @@ export const gallery = (): Obj[] => [
   // frame 1, the flutter mid-flight: t: 0 so it sits still, only the step forces the frame
   { id: 'g-flyingcarpet-flying', kind: 'flyingcarpet', x: 7, y: 17, step: { x: 7, y: 17, t: 0 } },
   // off to the side like the orbs, since his picture is 4x2, wider than the pad has room for: one
-  // piece of art, bottom-left anchored here, spanning up and right over the chairs it already draws
-  { id: 'g-harry', kind: 'harry', x: 13, y: 21, dialogue: 'harry' },
+  // piece of art on a footprint the same size, with the chairs it draws for itself; and the chair
+  // painted across two tiles that his middle one is once freed
+  { id: 'g-harry', kind: 'harry', x: 13, y: 20, dialogue: 'harry' },
+  { id: 'g-splitchair', kind: 'splitchair', x: 13, y: 18 },
 ]

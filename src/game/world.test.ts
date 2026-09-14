@@ -4,7 +4,7 @@ import { MAPS } from './map'
 import { apply } from './actions'
 import { findPath } from './path'
 import { walkPlayer } from './boat'
-import { DIRS, KINDS, createWorld, npc, objectAt, tileAt, type Content } from './world'
+import { DIRS, KINDS, createWorld, npc, objectAt, objectsAt, tileAt, type Content } from './world'
 
 describe('createWorld', () => {
   it('requires a salt route around the trees to reach the note chest', () => {
@@ -22,10 +22,23 @@ describe('createWorld', () => {
     const chest = w.objects.find((o) => o.id === 'crate3')!
     for (const [dx, dy] of Object.values(DIRS))
       expect(findPath(w, walker, { x: chest.x + dx, y: chest.y + dy })).toBeNull()
-    expect(findPath(w, walker, { x: 49, y: 24 })).not.toBeNull()
-    Object.assign(w.player, { x: 49, y: 24 })
+    // the trees stepped down onto the sand at 48..49,24 leave the chest in view but push the salt
+    // route out a row: down off the grass at 47,24 and along the shore to the grass at 53,22
+    expect(findPath(w, walker, { x: 47, y: 24 })).not.toBeNull()
+    Object.assign(w.player, { x: 47, y: 24 })
     w.inventory.orb = 1
-    for (const dir of ['right', 'right', 'right', 'right', 'up'] as const) {
+    const route = [
+      'down',
+      'right',
+      'right',
+      'right',
+      'up',
+      'right',
+      'right',
+      'right',
+      'up',
+    ] as const
+    for (const dir of route) {
       w.player.facing = dir
       const x = w.player.x + DIRS[dir][0]
       const y = w.player.y + DIRS[dir][1]
@@ -146,8 +159,12 @@ describe('objectAt', () => {
     expect(objectAt(createWorld('cave'), 10, 5)?.id).toBe('rum1')
     expect(objectAt(w, 42, 21)?.id).toBe('gate1') // the gate at the foot of the corridor to it
     expect(objectAt(w, 19, 3)?.id).toBe('crate4') // the chest with the key, on the north island
-    expect(objectAt(w, 40, 26)?.id).toBe('harry') // his picture, bottom-left anchored beside his chairs
+    expect(objectAt(w, 40, 25)).toBeUndefined() // the row above harry is walked on
+    expect(objectAt(w, 40, 26)?.id).toBe('chair1') // the chairs are listed before him on their row
+    expect(objectAt(w, 41, 26)?.id).toBe('chair2') // both halves of the one painted across 41..42
+    expect(objectAt(w, 42, 26)?.id).toBe('chair2')
     expect(objectAt(w, 43, 26)?.id).toBe('chair3')
+    expect(objectsAt(w, 42, 26).map((o) => o.id)).toEqual(['chair2', 'harry']) // his 4x1 picture
   })
 
   it('finds the wrecked boat on both of its tiles', () => {
@@ -263,11 +280,13 @@ describe('the gallery map', () => {
       'g-flyingcarpet',
       'g-flyingcarpet-flying',
       'g-harry',
+      'g-splitchair',
     ])
     // one orb still boiling its water tile, one already sat on the salt it made; harry sits out on
-    // the water too, just because the pad has no room left for his 4x2 picture
+    // the water too, just because the pad has no room left for his 4x2 picture, and his split
+    // chair stands out there beside him
     const wet = w.objects.filter((o) => tileAt(w, o.x, o.y) === 'water').map((o) => o.id)
-    expect(wet).toEqual(['g-orb', 'g-harry'])
+    expect(wet).toEqual(['g-orb', 'g-harry', 'g-splitchair'])
     expect(tileAt(w, 12, 20)).toBe('salt')
     expect([w.player.x, w.player.y, w.player.facing]).toEqual([8, 20, 'down'])
     expect(objectAt(w, 8, 20)).toBeUndefined() // nothing standing where the player spawns

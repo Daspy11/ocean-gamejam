@@ -74,7 +74,8 @@ export type Obj = {
   | { kind: 'boat'; wrecked?: boolean; dialogue?: string }
   | { kind: 'crate'; open: boolean; item?: Item; dialogue?: string } // opening gives an item or reads a dialogue, once
   | { kind: 'sign'; dialogue: string } // interact reads it: the text is a dialogue with no speaker
-  // suspicious harry: he never walks, so interact just reads his dialogue, like a tree
+  // suspicious harry: he never walks, so interact just reads his dialogue, like a tree. His 4x1
+  // footprint is the row of chairs he lies over, shared with them: interact sorts out which
   | { kind: 'harry'; dialogue: string; satAt?: number } // lowers his feet over 600 ms, then stays seated
   // planted by a cutscene: blooming starts at bloomAt, and 1500 ms later it is white and worth 10 beauty
   | { kind: 'flower'; bloomAt?: number; white?: boolean }
@@ -86,6 +87,8 @@ export type Obj = {
   | { kind: 'bar'; drink?: boolean }
   | { kind: 'gate' } // locked across the way to the cave: the key opens it, and it is gone
   | { kind: 'chair'; beauty?: number } // picking it back up removes the points it actually added
+  // harry's middle chair, one chair painted across two tiles: interact on either half takes it whole
+  | { kind: 'splitchair' }
   | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
   | { kind: 'fence' } // a post and rail of the ring round his field: nothing to do with it, just solid
   | { kind: 'fencev' } // the same post, drawn for a run of the ring climbing north-south instead
@@ -117,13 +120,14 @@ export const KINDS: Record<Obj['kind'], { w: number; h: number; solid: boolean }
   boat: { w: 2, h: 1, solid: true },
   crate: { w: 1, h: 1, solid: true },
   sign: { w: 1, h: 1, solid: true },
-  harry: { w: 1, h: 1, solid: true },
+  harry: { w: 4, h: 1, solid: true },
   flower: { w: 1, h: 1, solid: true },
   cave: { w: 1, h: 1, solid: false },
   rum: { w: 1, h: 1, solid: true },
   bar: { w: 1, h: 1, solid: true },
   gate: { w: 1, h: 1, solid: true },
   chair: { w: 1, h: 1, solid: true },
+  splitchair: { w: 2, h: 1, solid: true },
   carrot: { w: 1, h: 1, solid: true },
   fence: { w: 1, h: 1, solid: true },
   fencev: { w: 1, h: 1, solid: true },
@@ -146,7 +150,9 @@ export interface World {
   time: number // sim milliseconds
   interactCue?: number // monotonic cue count; the scene coalesces simultaneous interactions
   chimeCue?: number // menu choices and successful placement on the home island
-  explosionCue?: number // counts extractor explosions so audio survives the object's removal
+  // counts crashes, the extractor going up and each of harry's legs coming down, so the audio
+  // survives the object's removal
+  explosionCue?: number
   rumble: number // the sim time the screen shake ends; the scene jitters the camera until then
   seed: number // the sim's only randomness, an lcg the cannon draws its ball angles from
   width: number
@@ -263,11 +269,16 @@ export function tileAt(w: World, x: number, y: number): Tile | undefined {
   return w.tiles[tileIndex(w, x, y)]
 }
 
+const covers = (o: Obj, x: number, y: number) =>
+  x >= o.x && x < o.x + KINDS[o.kind].w && y >= o.y && y < o.y + KINDS[o.kind].h
+
 export function objectAt(w: World, x: number, y: number): Obj | undefined {
-  return w.objects.find((o) => {
-    const k = KINDS[o.kind]
-    return x >= o.x && x < o.x + k.w && y >= o.y && y < o.y + k.h
-  })
+  return w.objects.find((o) => covers(o, x, y))
+}
+
+// everything on a tile, in list order: harry and the chairs under him share theirs
+export function objectsAt(w: World, x: number, y: number): Obj[] {
+  return w.objects.filter((o) => covers(o, x, y))
 }
 
 // every npc in the two lists below: who he is, the sheet he is drawn from, where he stands and
@@ -280,3 +291,17 @@ export const npc = (
   facing: Dir,
   dialogue: string,
 ): Obj => ({ id, kind: 'npc', sprite, x, y, facing, dialogue })
+
+// the player's next tile on his own feet: from standing, or again at a tile boundary while the key
+// is held. Blocked, he stands facing it, and no rev (a held key would otherwise spam it)
+export function startStep(w: World, t: number): void {
+  const p = w.player
+  const [dx, dy] = DIRS[p.facing]
+  const [x, y] = [p.x + dx, p.y + dy]
+  const tile = tileAt(w, x, y)
+  const obj = objectAt(w, x, y)
+  const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
+  if (!ground || (obj && KINDS[obj.kind].solid)) return
+  p.step = { x, y, t }
+  w.rev++
+}

@@ -1,23 +1,9 @@
 import { enterCave } from './map'
-import { DIRS, KINDS, objectAt, tileAt } from './world'
+import { objectAt, startStep, tileAt } from './world'
 import type { World } from './world'
 
 // The player's grid walk, RPG Maker style: a step is the tile ahead plus progress 0..1, and a held
 // key runs straight into the next one at the boundary.
-
-// begin a step onto the tile he faces, t of the way along already. Blocked: stand facing it, and
-// no rev (a held key would otherwise spam it).
-function startStep(w: World, t: number): void {
-  const p = w.player
-  const [dx, dy] = DIRS[p.facing]
-  const [x, y] = [p.x + dx, p.y + dy]
-  const tile = tileAt(w, x, y)
-  const obj = objectAt(w, x, y)
-  const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
-  if (!ground || (obj && KINDS[obj.kind].solid)) return
-  p.step = { x, y, t }
-  w.rev++
-}
 
 // dt ms of walking, when `free` (no box or bag holding him); `fire` gets the events of the tile he
 // arrives on. False when a cave mouth has moved him to another area, and the tick is over.

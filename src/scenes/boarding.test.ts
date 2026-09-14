@@ -147,13 +147,7 @@ describe('the shipped ending dialogue', () => {
     expect(w.dialogue?.node).toBe('pick')
     expect(arrived).toBeDefined()
     const offered = choices(w, content.dialogues.tarq.nodes.pick, content.dialogues.tarq)
-    expect(offered.map((c) => c.text)).toEqual([
-      'deck chair',
-      'deck chair',
-      'egg',
-      'certificate',
-      'carpet',
-    ])
+    expect(offered.map((c) => c.text)).toEqual(['chair', 'chair', 'egg', 'certificate', 'carpet'])
     expect(new Set(offered.map((c) => c.object)).size).toBe(5)
     for (let i = 0; i < 4; i++) apply(w, { type: 'move', dir: 'down' }, content)
     apply(w, { type: 'interact' }, content)

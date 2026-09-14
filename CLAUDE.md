@@ -43,7 +43,9 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   room in the map's bottom-left corner, and back; a one-tile corridor runs down from the mouth through
   the forest to a locked `gate` at 42,21, which the key from the chest on the north island opens and
   removes). The `rum` bottle in the room is picked up whole, like the orb; so is a `chair`, once
-  `flags['harry:ok']`, and before that it is Harry's `handsoff.json`. A `bar` is talked across: interact
+  `flags['harry:ok']`, and before that the tile is Harry himself (his middle one is a
+  `splitchair`, one chair painted across two tiles, that either half picks up whole; its sheet is
+  the real chair art split over the seam, not a placeholder). A `bar` is talked across: interact
   on a bare piece of counter reaches the npc on its far side, and with a drink on it takes the drink
   (`otijom`). A `cannon` is solid and, once a `fire` act lights it, spits a `ball` every 20 ms for
   4 s, each flying straight out to the left of the muzzle in a 30 degree cone and off the map over
@@ -115,8 +117,10 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   too, by `player.ride`. A walk with `to` finds its way by A* (`src/game/path.ts`): who can cross what is
   `MODES` there, keyed by sprite (a flyer is stopped only by another flyer, a swimmer by rock, solid
   objects and anyone on the ground, a walker by water too); another character is crossed only when
-  there is no other way, the player being the one to push past first; and no way at all means he
-  stays put and the act is over; somebody standing on the tile means he ends on the closest free
+  there is no other way, the player being the one to push past first; no way at all is tried once
+  more with solid objects, trees excepted, as very dear tiles rather than walls (`through`: the
+  player stood on the salt at 18,3 with the chest beyond him is the one way onto the north island,
+  and Etarp must still get to his bar); and still no way means he stays put and the act is over; somebody standing on the tile means he ends on the closest free
   tile he can reach and turns to face him; `facing` turns him that way once he is there. A walk
   with `push` shoves an object along: it goes the step ahead of him the whole way, round every
   corner and through anything, swings out on his last step to where he will be facing, and is
@@ -198,12 +202,19 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   pays with a golden egg, `assets/dialogue/albatross.json`), antoine le shrimp (he/him, a French
   shrimp who farms carrots on the big island's east side from a stool over the one gate in their
   fence; until he asks for a hand the field only reads out (`carrotfield.json`), handing him all
-  twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's deck chairs
-  earns the certificate and replaces his stool: that node sets `flags['sprite:shrimp']` to
+  twelve across his gate (a `has` branch of his own file that spends them) gets his thanks and a request for a chair, and one of Harry's chairs
+  earns the certificate and replaces his stool: a chair in the bag gets a yes/no first, no shuts
+  the box with the chair still his, and yes takes it, hands over the certificate and sets
+  `flags['sprite:shrimp']` to
   `shrimpchair`, and a `sprite:<npc id>` flag draws any npc off the sheet it names,
-  `assets/dialogue/shrimp.json`), suspicious harry (he/him, stood over three
-  deck chairs on the big island's south shore at 41..43,26; a chair touched before he has had an
-  Otijom gets `handsoff.json`, the cocktail sets `harry:ok`, `assets/dialogue/harry.json`), and the sea
+  `assets/dialogue/shrimp.json`), suspicious harry (he/him, lying over three
+  chairs on the big island's south shore: his picture is one solid 4x1 object on the chairs'
+  own row, 40..43,26, drawn over them, and the chairs stay their own objects on 40, 41..42 and 43;
+  interact on any of those tiles takes a chair he has let go of and otherwise talks to him, so
+  `handsoff.json` no longer plays; the cocktail's `sit` act drops a leg with a crash (the
+  `explosionCue`) at 1 s and 2 s, freeing the west and then the east chair, and settles him on the
+  middle one at 2.4 s, the box shut until then (`harryFrame` in `src/game/boat.ts`); that sets
+  `harry:ok`, `assets/dialogue/harry.json`), and the sea
   horse (he/him, who swims in from the west at fifteen beauty onto the sand at 13,15, the
   tile above the wreck where the orb lay, and puts his smoking desalinator 9000 down on
   the sand above him at 13,14: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea

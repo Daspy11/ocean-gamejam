@@ -91,11 +91,11 @@ export const character = ({ hair, skin, shirt }) =>
 // all four rows share one picture; the walk columns lift alternate legs a pixel so the walk reads.
 // The shrimp farmer, in the same 4x4 character layout. He never gets off his seat, so every frame
 // is the same seated pose: a pink curl on a brown stool, feet clear of the ground, or on the red
-// deck chair once he has one, the chair sheet's picture sat in the lower 16 rows of the frame
-export const shrimp = (deckchair = false) => {
+// chair once he has one, the chair sheet's picture sat in the lower 16 rows of the frame
+export const shrimp = (hasChair = false) => {
   const pink = '#e2808f'
   const wood = '#7a5a3a'
-  const seat = deckchair
+  const seat = hasChair
     ? chair.map(([x, y, w, h, c]) => [x, y + 8, w, h, c])
     : [
         [5, 18, 2, 6, wood], // stool legs
@@ -229,7 +229,7 @@ export const gate = [
   [1, 10, 14, 2, '#7a5a3a'],
 ]
 
-// a deck chair: canvas back and seat on two wooden legs; also its own icon in the items sheet
+// a chair: canvas back and seat on two wooden legs; also its own icon in the items sheet
 export const chair = [
   [3, 1, 10, 7, '#c04040'],
   [2, 8, 12, 4, '#c04040'],
@@ -307,7 +307,7 @@ export const signpost = [
   [2, 2, 12, 7, '#a08050'],
 ]
 
-// suspicious harry, reclining across however many of his three deck chairs are still there: not a
+// suspicious harry, reclining across however many of his three chairs are still there: not a
 // walk cycle, one 64x32 picture per chair count. 0 all three · 1 two left · 2 one left · 3 none
 const harryBody = [10, 8, 44, 16, '#c8c0b8']
 const harryChairs = [
