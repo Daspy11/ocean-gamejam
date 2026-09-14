@@ -264,8 +264,9 @@ export function tickWalks(w: World, dt: number): void {
       const chairs = w.objects.filter(
         (c) => (c.kind === 'chair' || c.kind === 'splitchair') && c.hidden,
       )
-      while (chairs.length > Math.max(0, 3 - Math.floor((w.time - o.satAt) / 200))) {
+      while (chairs.length > 3 - harryFrame(w, o)) {
         delete chairs.shift()!.hidden // freed as listed: the order his sheet lets go of them
+        if (chairs.length) w.explosionCue = (w.explosionCue ?? 0) + 1 // a leg hits the ground
         w.rev++
       }
     }
@@ -332,16 +333,23 @@ export function tickWalks(w: World, dt: number): void {
   tickWander(w, dt)
 }
 
-// the player's next tile on his own feet: from standing, or again at a tile boundary while the key
-// is held. Blocked, he stands facing it, and no rev (a held key would otherwise spam it)
-export function startStep(w: World, t: number): void {
-  const p = w.player
-  const [dx, dy] = DIRS[p.facing]
-  const [x, y] = [p.x + dx, p.y + dy]
-  const tile = tileAt(w, x, y)
-  const obj = objectAt(w, x, y)
-  const ground = tile !== undefined && tile !== 'water' && tile !== 'rock' // and off the map
-  if (!ground || (obj && KINDS[obj.kind].solid)) return
-  p.step = { x, y, t }
-  w.rev++
+// the frame of harry's sheet right now: 0 lying over his chairs; 1 and 2 a leg down each, dropped
+// with a crash 1 s and 2 s after he starts; 3 settled on the middle chair 400 ms after that. The
+// chairs come free under him as the frames go: the west one, the east one, then the one under him
+export function harryFrame(w: World, o: Obj): number {
+  if (o.kind !== 'harry') return 0
+  if (o.satAt === undefined)
+    return (
+      3 -
+      w.objects.filter((c) => (c.kind === 'chair' || c.kind === 'splitchair') && c.hidden).length
+    )
+  const since = w.time - o.satAt
+  return since >= 2400 ? 3 : since >= 2000 ? 2 : since >= 1000 ? 1 : 0
+}
+
+// a `sit` act is over once his feet are down and every chair is out from under him; no such
+// harry is nothing to wait for
+export function sitDone(w: World, id?: string): boolean {
+  const o = w.objects.find((x) => x.id === id)
+  return !o || harryFrame(w, o) === 3
 }

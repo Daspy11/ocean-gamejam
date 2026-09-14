@@ -43,7 +43,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   room in the map's bottom-left corner, and back; a one-tile corridor runs down from the mouth through
   the forest to a locked `gate` at 42,21, which the key from the chest on the north island opens and
   removes). The `rum` bottle in the room is picked up whole, like the orb; so is a `chair`, once
-  `flags['harry:ok']`, and before that it is Harry's `handsoff.json` (his middle one is a
+  `flags['harry:ok']`, and before that the tile is Harry himself (his middle one is a
   `splitchair`, one chair painted across two tiles, that either half picks up whole; its sheet is
   the real chair art split over the seam, not a placeholder). A `bar` is talked across: interact
   on a bare piece of counter reaches the npc on its far side, and with a drink on it takes the drink
@@ -204,11 +204,13 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   earns the certificate and replaces his stool: that node sets `flags['sprite:shrimp']` to
   `shrimpchair`, and a `sprite:<npc id>` flag draws any npc off the sheet it names,
   `assets/dialogue/shrimp.json`), suspicious harry (he/him, lying over three
-  deck chairs on the big island's south shore: his picture is one solid 4x2 object at 40,25, talked
-  to from row 24, and the chairs under it stay their own objects on 40, 41..42 and 43, listed
-  before him so they draw under him and free in that order as his sheet lets go of them; a chair
-  touched before he has had an
-  Otijom gets `handsoff.json`, the cocktail sets `harry:ok`, `assets/dialogue/harry.json`), and the sea
+  deck chairs on the big island's south shore: his picture is one solid 4x1 object on the chairs'
+  own row, 40..43,26, drawn over them, and the chairs stay their own objects on 40, 41..42 and 43;
+  interact on any of those tiles takes a chair he has let go of and otherwise talks to him, so
+  `handsoff.json` no longer plays; the cocktail's `sit` act drops a leg with a crash (the
+  `explosionCue`) at 1 s and 2 s, freeing the west and then the east chair, and settles him on the
+  middle one at 2.4 s, the box shut until then (`harryFrame` in `src/game/boat.ts`); that sets
+  `harry:ok`, `assets/dialogue/harry.json`), and the sea
   horse (he/him, who swims in from the west at fifteen beauty onto the sand at 13,15, the
   tile above the wreck where the orb lay, and puts his smoking desalinator 9000 down on
   the sand above him at 13,14: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea

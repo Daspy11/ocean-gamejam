@@ -1,4 +1,4 @@
-import { mount, rideDone, startSpin, startWalk, walkPlayer } from './boat'
+import { mount, rideDone, sitDone, startSpin, startWalk, walkPlayer } from './boat'
 import { fireDone, startFire } from './cannon'
 import { armMachine, putBy } from './machine'
 import { startThrow, throwDone } from './throw'
@@ -276,7 +276,8 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
   if (node.ride) return rideDone(w, node.ride)
   if (node.throw) return throwDone(w)
   if (node.fly !== undefined || node.land !== undefined) return treeDone(w, node)
-  if (node.wait !== undefined) return w.time >= (d.until ?? 0)
+  // a sit node's wait holds on past its time until his feet are down and the chairs are all free
+  if (node.wait !== undefined) return w.time >= (d.until ?? 0) && sitDone(w, node.sit)
   if (node.rumble !== undefined) return w.time >= Math.max(w.rumble, d.until ?? 0)
   return true // a spawn lands the moment the node opens, and a node with no act at all is over too
 }

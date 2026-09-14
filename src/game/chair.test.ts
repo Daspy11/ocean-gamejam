@@ -4,7 +4,7 @@ import { apply } from './actions'
 import { createWorld, objectAt, type Content, type World } from './world'
 
 // suspicious harry's deck chairs on row 26 of the south shore, on 40, across 41..42 and on 43,
-// under his 4x2 picture at 40,25: he is talked to from row 24, the chairs from row 27
+// sharing the row with his 4x1 picture: a tile is him until the chair on it is let go of
 const content: Content = {
   dialogues: {
     got: {
@@ -34,6 +34,7 @@ const content: Content = {
           text: '[PLACEHOLDER thanks]',
           take: 'otijom',
           set: { 'harry:ok': true },
+          sit: 'harry',
           next: null,
         },
         after: { text: '[PLACEHOLDER after]', next: null },
@@ -68,7 +69,7 @@ describe('the deck chairs', () => {
     for (const rum of [0, 1])
       for (const otijom of [0, 1]) {
         const w = belowChair()
-        Object.assign(w.player, { x: 40, y: 24, facing: 'down' })
+        Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
         if (flag) w.flags[flag] = true
         w.inventory = { rum, otijom }
         apply(w, { type: 'interact' }, c)
@@ -94,7 +95,7 @@ describe('the deck chairs', () => {
         items: {},
       }
       const w = belowChair()
-      Object.assign(w.player, { x: 40, y: 24, facing: 'down' })
+      Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
       if (flag) w.flags[flag] = true
       w.inventory = { otijom: 1, rum: 1 }
       apply(w, { type: 'interact' }, c)
@@ -113,17 +114,22 @@ describe('the deck chairs', () => {
         w.objects
           .filter((o) => (o.kind === 'chair' || o.kind === 'splitchair') && o.hidden)
           .map((o) => o.id)
-      apply(w, { type: 'tick', dt: 199 }, c)
+      apply(w, { type: 'tick', dt: 999 }, c) // the box's 600 ms wait is up, but he has not moved
       expect(hidden()).toEqual(['chair1', 'chair3', 'chair2'])
-      apply(w, { type: 'tick', dt: 1 }, c) // the west one first, as his sheet lets go of it
+      expect(w.dialogue?.node).toBe('sit')
+      expect(w.explosionCue).toBeUndefined()
+      apply(w, { type: 'tick', dt: 1 }, c) // his left leg comes down with a crash, off the west one
       expect(hidden()).toEqual(['chair3', 'chair2'])
-      apply(w, { type: 'tick', dt: 200 }, c) // then the east one
+      expect(w.explosionCue).toBe(1)
+      apply(w, { type: 'tick', dt: 1000 }, c) // then his right, off the east one
       expect(hidden()).toEqual(['chair2'])
-      apply(w, { type: 'tick', dt: 199 }, c)
+      expect(w.explosionCue).toBe(2)
+      apply(w, { type: 'tick', dt: 399 }, c)
       expect(hidden()).toEqual(['chair2'])
       expect(w.flags['harry:ok']).toBeUndefined()
-      apply(w, { type: 'tick', dt: 1 }, c) // and last the one under him, painted across two tiles
+      apply(w, { type: 'tick', dt: 1 }, c) // and he settles on the one under him, quietly
       expect(hidden()).toEqual([])
+      expect(w.explosionCue).toBe(2)
       apply(w, { type: 'tick', dt: 0 }, c)
       expect(w.flags['harry:ok']).toBe(true)
       expect(w.dialogue).toBeNull()
@@ -151,7 +157,7 @@ describe('the deck chairs', () => {
         ),
       }
       const w = belowChair()
-      if (first === 'harry') Object.assign(w.player, { x: 40, y: 24, facing: 'down' })
+      if (first === 'harry') Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
       apply(w, { type: 'interact' }, c)
       for (const [who, text] of [
         ['suspicious harry', 'GET YER HANDS OFF THOSE CHAIRS'],
@@ -167,34 +173,51 @@ describe('the deck chairs', () => {
       }
       expect(w.flags['harry:warned']).toBe(true)
       for (let i = 0; i < 10 && w.dialogue; i++) apply(w, { type: 'interact' }, c)
-      Object.assign(w.player, { x: 41, y: 27, facing: 'up' })
-      apply(w, { type: 'interact' }, c)
-      expect(w.dialogue?.key).toBe('handsoff')
-      apply(w, { type: 'interact' }, c)
-      expect(w.dialogue).toBeNull()
-      Object.assign(w.player, { x: 40, y: 24, facing: 'down' })
-      apply(w, { type: 'interact' }, c)
-      expect(w.dialogue?.node).toBe(first === 'chair' ? '1' : 'again')
+      expect(w.flags['harry:asked']).toBe(true) // the one talk runs on into the ask, from either tile
+      for (const at of [
+        { x: 41, y: 27, facing: 'up' as const },
+        { x: 40, y: 25, facing: 'down' as const },
+      ]) {
+        Object.assign(w.player, at)
+        apply(w, { type: 'interact' }, c)
+        expect(w.dialogue?.node).toBe('again')
+        apply(w, { type: 'interact' }, c)
+        expect(w.dialogue).toBeNull()
+      }
     },
   )
 
-  it("are harry's until he says so: interact only gets you shouted at", () => {
+  it("are harry's until he says so: a chair still under him is him", () => {
     const w = belowChair()
     apply(w, { type: 'interact' }, content)
-    expect(w.dialogue?.key).toBe('handsoff')
-    expect(w.objects.some((o) => o.id === 'chair1')).toBe(true)
+    expect(w.dialogue).toMatchObject({ key: 'harry', node: '1' })
+    expect(w.objects.some((o) => o.id === 'chair2')).toBe(true)
     expect(w.inventory.chair).toBeUndefined()
+  })
+
+  it('comes away before he is talked to, once he has let go of the one on that tile', () => {
+    const w = belowChair()
+    delete w.objects.find((o) => o.id === 'chair1')!.hidden // only the west one so far
+    Object.assign(w.player, { x: 40, y: 25, facing: 'down' })
+    apply(w, { type: 'interact' }, content)
+    expect(w.inventory.chair).toBe(1)
+    expect(w.objects.some((o) => o.id === 'chair1')).toBe(false)
+    expect(w.dialogue?.key).toBe('got')
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'interact' }, content) // the tile is his again, with the chair gone
+    expect(w.dialogue).toMatchObject({ key: 'harry', node: '1' })
   })
 
   it('come away one per interact once he has had his cocktail', () => {
     const w = createWorld()
-    w.player = { ...w.player, x: 40, y: 24, facing: 'down' } // his picture starts at 40,25
+    w.player = { ...w.player, x: 40, y: 25, facing: 'down' } // over the west chair, still under him
     w.flags['harry:asked'] = true
     w.inventory.otijom = 1
     apply(w, { type: 'interact' }, content)
     expect(w.dialogue?.node).toBe('cocktail')
     expect([w.inventory.otijom, w.flags['harry:ok']]).toEqual([undefined, true])
     apply(w, { type: 'interact' }, content) // dismiss it
+    apply(w, { type: 'tick', dt: 2400 }, content) // his feet down and the chairs out from under him
 
     w.player = { ...w.player, x: 41, y: 27, facing: 'up' } // the left half of the one across 41..42
     apply(w, { type: 'interact' }, content)
@@ -206,6 +229,7 @@ describe('the deck chairs', () => {
   it('takes the split chair whole from its right half too, and the others from their own tiles', () => {
     const w = createWorld()
     w.flags['harry:ok'] = true
+    for (const o of w.objects) if (o.kind === 'chair' || o.kind === 'splitchair') delete o.hidden
     w.player = { ...w.player, x: 42, y: 27, facing: 'up' }
     apply(w, { type: 'interact' }, content)
     expect(w.objects.some((o) => o.id === 'chair2')).toBe(false)

@@ -95,11 +95,12 @@ export const SHEETS = {
   'sprites/crate': { frameWidth: 16, frameHeight: 16 }, // 0 closed · 1 open
   'sprites/flower': { frameWidth: 16, frameHeight: 16 }, // 0 the flower · 1 gone white
   'sprites/sign': { frameWidth: 16, frameHeight: 16 }, // 1x1 footprint: a post with a board
-  // his whole picture on a 4x2 footprint, lying across three chairs on the bottom row: one on the
-  // first tile, one on the last, and the middle one painted across the two between. He never gets
-  // up: frames 0..3 lower his feet as he frees the chairs, one every 200 ms, in that order (west,
-  // east, then the one under him). A freed chair leaves his sheet and draws on the same pixels
-  // from sprites/chair or sprites/splitchair; frame 3 leaves him seated with his feet down.
+  // his whole picture, drawn up from a 4x1 footprint over the row of three chairs he lies on: one
+  // on his first tile, one on his last, and the middle one painted across the two between. He
+  // never gets up: frame 1 drops his left leg with a crash a second after he starts, freeing the
+  // west chair, frame 2 his right a second later, freeing the east one, and 400 ms after that frame
+  // 3 leaves him settled on the middle one, now free too. A freed chair leaves his sheet and draws
+  // on the same pixels from sprites/chair or sprites/splitchair, under him.
   'sprites/harry': { frameWidth: 64, frameHeight: 32 },
   // bottom-anchored on its 1x1 tile, a rock hump standing higher than the ground: 0 the mouth out
   // on the grass · 1 the same hole seen from inside the room

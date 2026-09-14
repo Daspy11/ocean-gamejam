@@ -145,7 +145,7 @@ export interface DialogueNode {
   fly?: string // id of a tree: it lifts off and is gone 1500 ms later
   land?: string // id of a tree: it comes down out of the sky over 1500 ms
   spin?: string // id of an npc: he whirls round and ends facing the way he was, 10 turns by default
-  sit?: string // Harry lowers his feet off the chairs over 600 ms
+  sit?: string // Harry lowers his feet off the chairs; the node's `wait` holds until he has
   face?: { id: string; dir: Dir } // turns an npc on the spot, for one riding something and unable to walk
   ride?: { id: string; on: string } // he gets on what it names, npc or player, and is carried by it
   // the player fetches the first object of that kind and hucks it at the npc `at`, `src/game/throw.ts`

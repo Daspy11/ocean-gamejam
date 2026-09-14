@@ -66,7 +66,7 @@ const yarrtender = (w: World) => {
 }
 
 // antoine's carrots handed over and his chair asked for, with a cocktail for harry in the bag, stood north
-// of harry's picture on the big island's south shore, facing down at it
+// of harry and his deck chairs on the big island's south shore, facing down at him
 const cocktail = (w: World) => {
   beautyOn(w)
   w.objects = w.objects.filter((o) => o.kind !== 'carrot')
@@ -78,7 +78,7 @@ const cocktail = (w: World) => {
     'had:otijom': true,
     'harry:asked': true,
   })
-  w.player = { ...w.player, x: 40, y: 24, facing: 'down' }
+  w.player = { ...w.player, x: 40, y: 25, facing: 'down' }
 }
 
 // everything the bag ever puts down, stood on the island: the carpet, the golden egg and the

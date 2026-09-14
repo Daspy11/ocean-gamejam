@@ -4,7 +4,7 @@ import { MAPS } from './map'
 import { apply } from './actions'
 import { findPath } from './path'
 import { walkPlayer } from './boat'
-import { DIRS, KINDS, createWorld, npc, objectAt, tileAt, type Content } from './world'
+import { DIRS, KINDS, createWorld, npc, objectAt, objectsAt, tileAt, type Content } from './world'
 
 describe('createWorld', () => {
   it('requires a salt route around the trees to reach the note chest', () => {
@@ -146,12 +146,12 @@ describe('objectAt', () => {
     expect(objectAt(createWorld('cave'), 10, 5)?.id).toBe('rum1')
     expect(objectAt(w, 42, 21)?.id).toBe('gate1') // the gate at the foot of the corridor to it
     expect(objectAt(w, 19, 3)?.id).toBe('crate4') // the chest with the key, on the north island
-    expect(objectAt(w, 40, 25)?.id).toBe('harry') // his picture, 4x2, lying over the chairs
-    expect(objectAt(w, 43, 25)?.id).toBe('harry')
-    expect(objectAt(w, 40, 26)?.id).toBe('chair1') // the chairs come first, so they win their tiles
+    expect(objectAt(w, 40, 25)).toBeUndefined() // the row above harry is walked on
+    expect(objectAt(w, 40, 26)?.id).toBe('chair1') // the chairs are listed before him on their row
     expect(objectAt(w, 41, 26)?.id).toBe('chair2') // both halves of the one painted across 41..42
     expect(objectAt(w, 42, 26)?.id).toBe('chair2')
     expect(objectAt(w, 43, 26)?.id).toBe('chair3')
+    expect(objectsAt(w, 42, 26).map((o) => o.id)).toEqual(['chair2', 'harry']) // his 4x1 picture
   })
 
   it('finds the wrecked boat on both of its tiles', () => {

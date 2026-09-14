@@ -312,8 +312,9 @@ export default class Island extends Phaser.Scene {
     }
     this.objects = world.objects.map((o) => {
       const feet = (o.y + KINDS[o.kind].h) * 16 // depth is the bottom of the footprint, so tall art overlaps
-      let frame = 0 // frame 0 unless the kind has some state to show
-      if (o.kind === 'crate') frame = o.open ? 1 : 0
+      // flat things lie behind; harry sits over the chairs on his own row
+      const lift = o.kind === 'harry' ? 0.5 : o.kind === 'floor' || o.kind === 'embedded' ? -1 : 0
+      let frame = o.kind === 'crate' && o.open ? 1 : 0 // frame 0 unless the kind has some state to show
       if (o.kind === 'boat' && o.wrecked) frame = 1 // the stove-in hull
       if (o.kind === 'flower' && o.white) frame = 1
       if ((o.kind === 'bar' && o.drink) || (o.kind === 'cave' && o.inside)) frame = 1 // cocktail up, or the room-side mouth
@@ -325,7 +326,7 @@ export default class Island extends Phaser.Scene {
         .sprite(o.x * 16, feet, `sprites/${sheet}`, frame)
         .setOrigin(0, 1)
         .setVisible(!o.hidden) // drawn into somebody else's sheet instead: harry's three chairs
-        .setDepth(o.kind === 'floor' || o.kind === 'embedded' ? feet - 1 : feet) // flat things lie behind
+        .setDepth(feet + lift)
     })
     this.trees = []
     world.objects.forEach((o, i) => {

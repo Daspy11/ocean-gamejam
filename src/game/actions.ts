@@ -1,13 +1,13 @@
 import { enterCave } from './map'
 import { nodeDone, pickBranch, startAct, tickCloseup } from './act'
-import { startStep, tickFarewell, tickWalks } from './boat'
+import { tickFarewell, tickWalks } from './boat'
 import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
 import { beauty, takeItem, tickOrbs, useItem } from './salt'
 import { michHint } from './script'
-import { cueInteract, DIRS, objectAt, tileAt } from './world'
+import { cueInteract, DIRS, objectAt, objectsAt, startStep, tileAt } from './world'
 import type { Action, Content, DialogueNode, Item, World } from './world'
 
 const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' } as const
@@ -245,7 +245,10 @@ export function apply(w: World, a: Action, c: Content): void {
 
   if (p.step) return // you only interact while standing
   const [x, y] = [p.x + DIRS[p.facing][0], p.y + DIRS[p.facing][1]]
-  let obj = objectAt(w, x, y)
+  const here = objectsAt(w, x, y)
+  // harry's chairs share his tiles: one he has let go of comes away first, one still under him is him
+  let obj =
+    here.find((o) => !o.hidden && o.kind !== 'harry') ?? here.find((o) => o.kind === 'harry')
   // a bare bar is talked across: whoever stands on the far side of the counter is the one addressed
   if (obj?.kind === 'bar' && !obj.drink) {
     const past = objectAt(w, x + DIRS[p.facing][0], y + DIRS[p.facing][1])
@@ -278,11 +281,6 @@ export function apply(w: World, a: Action, c: Content): void {
     if (obj.item) gain(obj.item)
     fire('crate:open') // fired after the got box, so Mich's line queues up behind it
     if (obj.id === 'crate4') fire('arrive:north') // salt beside the chest can bypass stepping ashore
-    return
-  }
-  if ((obj?.kind === 'chair' || obj?.kind === 'splitchair') && !w.flags['harry:ok']) {
-    cueInteract(w)
-    open('handsoff') // harry is watching until he has had his cocktail
     return
   }
   if (obj?.kind === 'rum' || obj?.kind === 'chair' || obj?.kind === 'splitchair') {
