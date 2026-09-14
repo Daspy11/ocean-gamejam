@@ -114,8 +114,10 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   too, by `player.ride`. A walk with `to` finds its way by A* (`src/game/path.ts`): who can cross what is
   `MODES` there, keyed by sprite (a flyer is stopped only by another flyer, a swimmer by rock, solid
   objects and anyone on the ground, a walker by water too); another character is crossed only when
-  there is no other way, the player being the one to push past first; and no way at all means he
-  stays put and the act is over; somebody standing on the tile means he ends on the closest free
+  there is no other way, the player being the one to push past first; no way at all is tried once
+  more with solid objects as very dear tiles rather than walls (`through`: the player stood on the
+  salt at 18,3 with the chest beyond him is the one way onto the north island, and Etarp must still
+  get to his bar); and still no way means he stays put and the act is over; somebody standing on the tile means he ends on the closest free
   tile he can reach and turns to face him; `facing` turns him that way once he is there. A walk
   with `push` shoves an object along: it goes the step ahead of him the whole way, round every
   corner and through anything, swings out on his last step to where he will be facing, and is
