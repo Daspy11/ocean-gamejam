@@ -11,5 +11,6 @@
   "rum": { "name": "bottle of rum" },
   "otijom": { "name": "Otijom" },
   "chair": { "name": "deck chair" },
-  "glassi": { "name": "glass i" }
+  "glassi": { "name": "glass i" },
+  "note": { "name": "note" }
 }

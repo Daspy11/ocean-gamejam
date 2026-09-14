@@ -82,6 +82,10 @@ export const SHEETS = {
   // character sheet; the same seated pose on the deck chair he swaps the stool for
   'sprites/shrimpchair': { frameWidth: 16, frameHeight: 24 },
   'sprites/seahorse': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
+  // 4x4 character layout, facing follows the sea horse; Etarp occupies the upper 24 pixels.
+  'sprites/etarpseahorse': { frameWidth: 16, frameHeight: 48 },
+  // Same stack with the bottom 8 pixels removed; bottom anchor is the waterline.
+  'sprites/etarpseahorseswim': { frameWidth: 16, frameHeight: 40 },
   'sprites/tarq': { frameWidth: 16, frameHeight: 24 }, // character sheet, same layout as player
   'sprites/orb': { frameWidth: 16, frameHeight: 16 }, // one frame: the bare orb
   'sprites/smoke': { frameWidth: 16, frameHeight: 16 }, // 3 frames cycled over an orb still boiling its tile

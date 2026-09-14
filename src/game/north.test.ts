@@ -15,6 +15,26 @@ const content: Content = {
   items: {},
 }
 
+it.each([false, true])('only returns an orb that Etarp actually plundered: held %s', (held) => {
+  let w = createWorld()
+  w.inventory.orb = held ? 1 : 0
+  if (held) w.objects = w.objects.filter((o) => o.id !== 'orb1')
+  w.flags['had:orb'] = true
+  w.dialogue = { key: 'pirate', node: '30', choice: 0 }
+  const lines: string[] = []
+  for (let i = 0; i < 100 && w.dialogue?.node !== '40'; i++) {
+    const node = content.dialogues.pirate.nodes[w.dialogue!.node]
+    if (w.typing) lines.push(w.typing.text)
+    apply(w, node.text === undefined ? { type: 'tick', dt: 500 } : { type: 'interact' }, content)
+    if (w.dialogue?.node === '30a') w = JSON.parse(JSON.stringify(w))
+  }
+  expect(lines).toContain('etarp plunders your orb')
+  expect(lines.includes('you got the orb back')).toBe(held)
+  expect(w.inventory.orb ?? 0).toBe(held ? 1 : 0)
+  expect(w.objects.filter((o) => o.kind === 'orb')).toHaveLength(held ? 0 : 1)
+  expect(w.dialogue?.node).toBe('40')
+})
+
 it('queues Etarp behind the key pickup when the north chest is opened from salt', () => {
   const w = createWorld()
   expect(tileAt(w, 18, 3)).toBe('water')

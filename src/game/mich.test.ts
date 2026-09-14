@@ -5,7 +5,7 @@ import { createWorld, tileIndex, type Content, type World } from './world'
 
 const content: Content = {
   dialogues: Object.fromEntries(
-    ['mich', 'albatross', 'shrimp', 'sign'].map((key) => [
+    ['mich', 'albatross', 'shrimp', 'sign', 'walter'].map((key) => [
       key,
       JSON.parse(
         readFileSync(new URL(`../../assets/dialogue/${key}.json`, import.meta.url), 'utf8'),
@@ -71,8 +71,8 @@ describe('Mich points to an outstanding task', () => {
       },
     ],
     [
-      'enough twigs even before meeting the bird',
-      '11',
+      'enough twigs before meeting the bird',
+      '8',
       (w) => {
         w.inventory.twig = 10
       },
@@ -181,6 +181,7 @@ describe('Mich points to an outstanding task', () => {
 
   it('prioritises ready trades over decorating and collection', () => {
     const w = exploring()
+    w.flags['talked:albatross'] = true
     Object.assign(w.inventory, { twig: 10, carpet: 1, egg: 1, certificate: 1 })
     w.flags['shrimp:asked'] = true
     expect(hint(w)).toBe('11')
@@ -269,5 +270,16 @@ describe('Mich points to an outstanding task', () => {
     expect(hint(w)).toBe('12')
     expect(w.inventory).toEqual(before)
     expect(w.flags['fired:mich']).toBeUndefined()
+  })
+
+  it.each([false, true])('Walter remembers whether the tree left: %s', (gone) => {
+    const w = exploring()
+    w.flags['tree:gone'] = gone
+    apply(w, { type: 'talk', key: 'walter' }, content)
+    expect(w.typing?.text).toBe(
+      gone
+        ? "i'm lucky i have a hat since you're so rude to trees"
+        : content.dialogues.walter.nodes['1'].text,
+    )
   })
 })

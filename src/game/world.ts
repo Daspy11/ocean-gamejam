@@ -18,6 +18,7 @@ export const ITEMS = [
   'otijom',
   'chair',
   'glassi',
+  'note',
 ] as const
 export type Item = (typeof ITEMS)[number]
 
@@ -84,7 +85,7 @@ export type Obj = {
   // a piece of Etarp's counter: talked across, and with a drink on it interact takes the drink
   | { kind: 'bar'; drink?: boolean }
   | { kind: 'gate' } // locked across the way to the cave: the key opens it, and it is gone
-  | { kind: 'chair' } // one of the deck chairs: picked up whole once suspicious harry has allowed it
+  | { kind: 'chair'; beauty?: number } // picking it back up removes the points it actually added
   | { kind: 'carrot' } // one of the shrimp's crop: interact pulls it up and the tile is bare
   | { kind: 'fence' } // a post and rail of the ring round his field: nothing to do with it, just solid
   | { kind: 'fencev' } // the same post, drawn for a run of the ring climbing north-south instead

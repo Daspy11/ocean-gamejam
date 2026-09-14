@@ -23,7 +23,12 @@ function setup(electrolytes: number) {
   for (let y = 3; y <= 13; y++) w.tiles[tileIndex(w, 20, y)] = 'salt'
   Object.assign(w.player, { x: 16, y: 17, facing: 'left' })
   w.inventory.electrolytes = electrolytes
-  w.score = 15
+  w.score = 30
+  w.objects.push(
+    { id: 'rug', kind: 'floor', x: 15, y: 18 },
+    { id: 'egg', kind: 'egg', x: 16, y: 18 },
+    { id: 'award', kind: 'certificate', x: 17, y: 18 },
+  )
   w.flags['score:on'] = true
   apply(w, { type: 'tick', dt: 16 }, content)
   return w
@@ -65,7 +70,7 @@ describe('the electrolyte extractor introduction', () => {
       apply(w, { type: 'interact' }, content)
     }
     expect(lines).toEqual([
-      'FIFTEEN BEAUTY???',
+      'THIRTY BEAUTY???',
       'i wish i could appreciate it but i feel terrible',
       'holy HELL i need electrolytes',
       "can't you just drink seawater for that?",
@@ -79,7 +84,7 @@ describe('the electrolyte extractor introduction', () => {
     expect(w.typing?.text).toBe('NOOOOOOO my electrolyte extractor')
     expect(w.objects.some((o) => o.kind === 'machine')).toBe(false)
     expect(tileAt(w, 6, 14)).toBe('salt')
-    expect(w.score).toBeLessThan(15)
+    expect(w.score).toBeLessThan(30)
     reach(w, 'seahorse', 'offer')
     expect(w.inventory.electrolytes).toBe(1)
     expect(content.dialogues.seahorse.nodes.offer.choices?.map((c) => c.text)).toEqual([

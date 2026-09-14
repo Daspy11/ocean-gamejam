@@ -183,7 +183,15 @@ export function createWorld(map: keyof typeof MAPS = 'island'): World {
             { id: 'tree1', kind: 'tree', x: 16, y: 16 },
             { id: 'sign1', kind: 'sign', x: 25, y: 16, dialogue: 'sign' },
             // out on the big island, on the grass the forest leaves clear
-            { id: 'crate3', kind: 'crate', x: 48, y: 22, open: false, dialogue: 'note' },
+            {
+              id: 'crate3',
+              kind: 'crate',
+              x: 48,
+              y: 22,
+              open: false,
+              item: 'note',
+              dialogue: 'note',
+            },
             Object.assign(npc('albatross', 'albatross', 36, 20, 'down', 'albatross'), {
               wander: { x: 34, y: 19 },
             }),

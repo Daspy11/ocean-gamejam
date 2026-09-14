@@ -68,7 +68,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open`, `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
   `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `salt:away` (any item put down off
-  the main island), `score:fifteen`, `done:<dialogue key>` (that box has just
+  the main island), `score:thirty`, `done:<dialogue key>` (that box has just
   closed), add more in `apply`) and the `when` flag is
   truthy and the `unless` flag is not (`negative.json` is dead once the sea horse has been met); it
   sets `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`, or the
@@ -118,8 +118,9 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `floor`), the golden `egg`, the `certificate` or a deck `chair` on bare ground, and the bag shuts
   so he can see it land. Each is worth 5 at home, except that the last of the carpet, the egg and
   the certificate to go down (`flags['placed:<item>']`) is worth whatever multiple of 5 brings
-  beauty to 15, so the sea horse comes once everything is down; a chair picked back up takes its 5
-  with it. Nothing else in the bag goes anywhere. The map is
+  beauty to at least 30, so the sea horse comes once everything is down. Until then placements
+  cannot raise beauty past 29; a chair picked back up takes only the beauty it actually added.
+  Using the note in the bag replays its text; nothing else in the bag goes anywhere. The map is
   ASCII in `src/game/map.ts` (64x44; `^` is rock, `T` is grass with a big-island tree on it, `F` is
   farmland with a carrot on it, `=` is grass with a fence post on it); edit it by hand.
 - Score is `world.score` (beauty), shown in the HUD only once `flags['score:on']` (Walter's scene sets
@@ -132,7 +133,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   sea and waits for a press before the first line) → Island,
   which launches UI. `/?scene=island` skips straight to gameplay; tests and dev use it. In dev, pressing
   P three times quickly opens the debug menu (`src/scenes/Debug.ts`: gallery flip, free twigs, and a
-  jump to any story beat — the beginning, the orb, beauty is on, ten twigs, fifteen beauty, rum for
+  jump to any story beat — the beginning, the orb, beauty is on, ten twigs, thirty beauty, rum for
   the yarrtender, a cocktail for harry, etarp's cannon, tarq flies in). A jump
   builds a fresh world and fast-forwards it with flags, bag, score and where he stands, so whatever
   cutscene was running goes with the world it ran in. Add a beat: one row in `STATES`.
@@ -164,7 +165,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   `assets/dialogue/shrimp.json`), suspicious harry (he/him, stood over three
   deck chairs on the big island's south shore at 41..43,26; a chair touched before he has had an
   Otijom gets `handsoff.json`, the cocktail sets `harry:ok`, `assets/dialogue/harry.json`), and the sea
-  horse (he/him, who swims in from the west at fifteen beauty onto the sand at 14,18, a tile in
+  horse (he/him, who swims in from the west at thirty beauty onto the sand at 14,18, a tile in
   from the orb's chest, and puts his smoking desalinator 9000 down on the grass above him at 14,17: it eats a beauty every 2 s, and after five of them it explodes, crusts over every sea
   tile in a disc seven out from it and cuts the box straight to the node its `cut` names, wherever the conversation
   had got to, `src/game/machine.ts` and `assets/dialogue/seahorse.json`), and Lord Tarqualius

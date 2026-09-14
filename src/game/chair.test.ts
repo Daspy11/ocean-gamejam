@@ -55,7 +55,7 @@ describe('the deck chairs', () => {
     ['harry:warned', '1'],
     ['harry:asked', 'again'],
     ['harry:ok', 'after'],
-  ])('rejects rum alone without spending it, at stage %s', (flag, normal) => {
+  ])('prioritises the introduction and only then rejects rum, at stage %s', (flag, normal) => {
     const c: Content = {
       dialogues: {
         harry: JSON.parse(
@@ -71,12 +71,12 @@ describe('the deck chairs', () => {
         if (flag) w.flags[flag] = true
         w.inventory = { rum, otijom }
         apply(w, { type: 'interact' }, c)
-        if (rum && !otijom) {
+        if (rum && !otijom && flag === 'harry:asked') {
           expect(w.typing?.text).toBe("MATE I AINT DRINKIN RAW SPIRITS. YOU THINK I'M AN ANIMAL?")
           apply(w, { type: 'interact' }, c)
           expect(w.dialogue).toBeNull()
-          expect(w.flags['harry:ok']).toBe(flag === 'harry:ok' ? true : undefined)
-        } else expect(w.dialogue?.node).toBe(otijom && flag !== 'harry:ok' ? 'cocktail' : normal)
+          expect(w.flags['harry:ok']).toBeUndefined()
+        } else expect(w.dialogue?.node).toBe(otijom && flag === 'harry:asked' ? 'cocktail' : normal)
         expect(w.inventory.rum).toBe(rum)
       }
   })
@@ -97,6 +97,12 @@ describe('the deck chairs', () => {
       if (flag) w.flags[flag] = true
       w.inventory = { otijom: 1, rum: 1 }
       apply(w, { type: 'interact' }, c)
+      if (flag !== 'harry:asked') {
+        for (let i = 0; i < 20 && w.dialogue; i++) apply(w, { type: 'interact' }, c)
+        expect(w.flags['harry:asked']).toBe(true)
+        expect(w.inventory.otijom).toBe(1)
+        apply(w, { type: 'interact' }, c)
+      }
       expect(w.typing?.text).toBe("MMM, THAT'S WHAT I NEED")
       expect(w.inventory.otijom).toBeUndefined()
       expect(w.inventory.rum).toBe(1)

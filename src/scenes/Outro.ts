@@ -36,7 +36,8 @@ export default class Outro extends Phaser.Scene {
     super('outro')
   }
 
-  create() {
+  create({ music }: { music?: Phaser.Sound.BaseSound } = {}) {
+    this.events.once('shutdown', () => music?.destroy())
     this.card = -1
     this.text = []
     this.ready = -1
@@ -51,6 +52,7 @@ export default class Outro extends Phaser.Scene {
 
     // the spotlight closes on the party, and the names come up on the black it leaves behind
     this.hole = this.make.graphics({ x: 0, y: 0 })
+    this.hole.fillStyle(0xffffff).fillCircle(MID, EYE, 480)
     const black = this.add.rectangle(0, 0, 640, 360, 0x000000).setOrigin(0).setDepth(100)
     const mask = this.hole.createGeometryMask()
     mask.setInvertAlpha(true) // black everywhere the circle is not

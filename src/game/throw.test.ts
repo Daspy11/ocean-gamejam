@@ -136,6 +136,19 @@ describe('the throw act', () => {
     expect([w.throwing, w.dialogue?.node]).toEqual([null, 'end'])
   })
 
+  it('throws an inaccessible egg from where the player is standing and still knocks Tarq down', () => {
+    const w = scene({ id: 'remote-egg', kind: 'egg', x: -3, y: 17 })
+    const from = { x: w.player.x, y: w.player.y }
+    apply(w, { type: 'talk', key: 'egg' }, content)
+    expect(w.player.path?.length ?? 0).toBe(0)
+    run(w, 6000)
+    expect(w.player).toMatchObject(from)
+    expect(at(w, 'remote-egg')).toBeUndefined()
+    expect(at(w, 'tarq')).toMatchObject({ flat: true })
+    expect(at(w, 'tarq')).not.toHaveProperty('ride')
+    expect(w.dialogue?.node).toBe('end')
+  })
+
   it('walks the player where a cutscene sends him, and carries him once he is aboard', () => {
     const w = scene({ id: 'sign9', kind: 'sign', x: 16, y: 17, dialogue: 'sign' })
     apply(w, { type: 'talk', key: 'board' }, content)

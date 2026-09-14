@@ -48,6 +48,7 @@ export function deck(on?: Obj, who = ''): [number, number] {
       on.sprite,
     )
     const [dx, dy] = hopOff(on, up, swing)
+    if (who === 'etarp' && on.sprite === 'seahorse') return [swing + dx, up - dy + 24]
     return [swing + dx + 1, up - dy + 15]
   }
   const [swing, up] = float(on)

@@ -7,7 +7,7 @@ const content: Content = {
   dialogues: {
     seahorse: {
       name: '[PLACEHOLDER NPC NAME]',
-      trigger: { event: 'score:fifteen' },
+      trigger: { event: 'score:thirty' },
       start: [{ node: '1' }],
       nodes: {
         '1': {
@@ -37,21 +37,31 @@ const content: Content = {
   items: {},
 }
 
-// fifteen beauty, then the ticks that bring him in under the chest and open his first line (a tick
+// Thirty beauty, then the ticks that bring him in under the chest and open his first line (a tick
 // only ever finishes one step, so at 250 ms a tick his run is no quicker here)
 function arrived(): World {
   const w = createWorld()
-  w.objects = w.objects.filter((o) => o.id !== 'orb1') // in the bag long before beauty reads 15
-  w.score = 15
+  w.objects = w.objects.filter((o) => o.id !== 'orb1')
+  w.objects.push(
+    { id: 'rug', kind: 'floor', x: 15, y: 18 },
+    { id: 'egg', kind: 'egg', x: 16, y: 18 },
+    { id: 'award', kind: 'certificate', x: 17, y: 18 },
+  )
+  w.score = 30
   for (let n = 0; n < 10; n++) apply(w, { type: 'tick', dt: 250 }, content)
   return w
 }
 
 describe('the sea horse', () => {
-  it('comes up out of the sea the first time beauty reads 15', () => {
+  it('comes up out of the sea at 30 with all three prizes placed', () => {
     const w = createWorld()
     w.objects = w.objects.filter((o) => o.id !== 'orb1') // his landing tile, and long since picked up
-    w.score = 15
+    w.objects.push(
+      { id: 'rug', kind: 'floor', x: 15, y: 18 },
+      { id: 'egg', kind: 'egg', x: 16, y: 18 },
+      { id: 'award', kind: 'certificate', x: 17, y: 18 },
+    )
+    w.score = 30
     apply(w, { type: 'tick', dt: 16 }, content)
     expect(w.flags['fired:seahorse']).toBe(true)
     expect(w.dialogue?.key).toBe('seahorse')
@@ -88,7 +98,7 @@ describe('the desalinator 9000', () => {
     expect(w.dialogue?.node).toBe('5') // his line about it, with nothing yet arming the thing
 
     for (let n = 0; n < 6; n++) apply(w, { type: 'tick', dt: 2000 }, content)
-    expect([w.score, w.dialogue?.node]).toEqual([9, '5']) // six of them off the fifteen he had
+    expect([w.score, w.dialogue?.node]).toEqual([24, '5']) // six off the thirty he had
     expect(w.objects.some((o) => o.kind === 'machine')).toBe(true) // and no nearer going off
   })
 
@@ -111,7 +121,7 @@ describe('the desalinator 9000', () => {
     expect(tileAt(w, 6, 14)).toBe('salt') // the last tile inside the circle, out west
     expect(tileAt(w, 20, 14)).toBe('salt') // and east, off the island's far shore
     expect(tileAt(w, 5, 14)).toBe('water') // and not a tile further
-    expect(w.score).toBeLessThan(0) // what it ate, plus a beauty for every tile of new crust
+    expect(w.score).toBeLessThan(30) // what it ate, plus the new crust
     expect(w.rumble).toBeGreaterThan(w.time)
     apply(w, { type: 'tick', dt: 2000 }, content)
     expect(w.explosionCue).toBe(1)

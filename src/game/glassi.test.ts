@@ -19,6 +19,23 @@ const content: Content = {
 }
 
 describe('the glass i', () => {
+  it('keeps the note in the bag and rereads it without granting another copy', () => {
+    let w = createWorld()
+    Object.assign(w.player, { x: 49, y: 22, facing: 'left' })
+    apply(w, { type: 'interact' }, content)
+    for (let i = 0; i < 10 && w.dialogue; i++) apply(w, { type: 'interact' }, content)
+    expect(w.inventory).toMatchObject({ note: 1 })
+    w = JSON.parse(JSON.stringify(w))
+    for (let read = 0; read < 2; read++) {
+      apply(w, { type: 'menu' }, content)
+      apply(w, { type: 'interact' }, content)
+      expect(w.menu).toBeNull()
+      expect(w.dialogue).toMatchObject({ key: 'note', node: '2' })
+      expect(w.typing?.text).toBe('the note reads:')
+      for (let i = 0; i < 10 && w.dialogue; i++) apply(w, { type: 'interact' }, content)
+      expect(w.inventory).toMatchObject({ note: 1 })
+    }
+  })
   it.each([false, true])('answers the west warning only after finding the note: %s', (found) => {
     let w = createWorld()
     if (found) {

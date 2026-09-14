@@ -9,7 +9,7 @@ export function michHint(w: World): string {
     return '5'
   if (bag.orb && !f['fired:firstsalt'] && !f['score:on']) return '3'
   if (!f['had:electrolytes'] && !f['score:on']) return '6'
-  if (!f['albatross:egg'] && (bag.twig ?? 0) >= 10) return '11'
+  if (f['talked:albatross'] && !f['albatross:egg'] && (bag.twig ?? 0) >= 10) return '11'
   if (f['shrimp:asked'] && !f['shrimp:chair'] && !f['shrimp:thanked'] && (bag.carrot ?? 0) >= 12)
     return '15'
   if (bag.otijom && !f['harry:ok']) return '23'
@@ -90,7 +90,7 @@ export interface Dialogue {
   // given) is not; sets flags['fired:<key>'].
   // events: crate:open (a crate, or the orb picked up off the sand) · menu:close · salt:spawn · salt:place · salt:away (a block laid off the main
   // island) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
-  // zero) · score:fifteen (beauty has first reached 15) · arrive:north (stepped ashore up north) ·
+  // zero) · score:thirty (30 beauty with all three prizes placed) · arrive:north (stepped ashore up north) ·
   // done:<dialogue key> (that box has just closed)
   trigger?: { event: string; when?: string; unless?: string }
   start: Branch[] // first entry that matches wins

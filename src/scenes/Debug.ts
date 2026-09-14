@@ -76,12 +76,13 @@ const cocktail = (w: World) => {
     'shrimp:chair': true,
     'had:carrot': true,
     'had:otijom': true,
+    'harry:asked': true,
   })
   w.player = { ...w.player, x: 40, y: 25, facing: 'down' }
 }
 
 // everything the bag ever puts down, stood on the island: the carpet, the golden egg and the
-// certificate are what add up to fifteen beauty, so by then all three are down. One of Harry's deck
+// certificate are what add up to thirty beauty, so by then all three are down. One of Harry's deck
 // chairs has gone to the shrimp for that certificate, and he is sat on it.
 const placed = (w: World) => {
   w.objects.push({ id: 'floor15-14', kind: 'floor', x: 15, y: 14 })
@@ -116,7 +117,7 @@ const afterSeahorse = (w: World) => {
   placed(w)
   w.objects.push(npc('seahorse', 'seahorse', 13, 15, 'right', 'seahorse'))
   blast(w, 13, 14)
-  w.score = 15
+  w.score = 30
   Object.assign(w.flags, { 'seahorse:met': true, 'fired:seahorse': true })
   w.player = { ...w.player, x: 16, y: 15, facing: 'left' } // in the line of fire, so Walter waves him out
 }
@@ -179,19 +180,19 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
     talk: 'pirate',
   },
   {
-    label: 'fifteen beauty',
+    label: 'thirty beauty',
     at: (w) => {
       beautyOn(w)
       yarrtender(w) // Etarp, his bar and his bridge home are all there by now, with rum in the bag
-      placed(w) // and the carpet, the egg and the certificate are down, which is what got it to 15
-      w.score = 15 // the next tick brings the sea horse in from the west, under the chest
+      placed(w) // and the carpet, the egg and the certificate are down, which is what got it to 30
+      w.score = 30 // the next tick brings the sea horse in from the west, under the chest
       w.player = { ...w.player, x: 16, y: 17, facing: 'left' }
     },
   },
   {
-    label: 'fifteen beauty: saved electrolytes',
+    label: 'thirty beauty: saved electrolytes',
     at: (w) => {
-      STATES.find((s) => s.label === 'fifteen beauty')!.at!(w)
+      STATES.find((s) => s.label === 'thirty beauty')!.at!(w)
       w.inventory.electrolytes = 1
       delete w.flags['ate:electrolytes']
     },
@@ -199,7 +200,7 @@ const STATES: { label: string; at?: (w: World) => void; talk?: string }[] = [
   {
     label: 'good ending: both gifts',
     at: (w) => {
-      STATES.find((s) => s.label === 'fifteen beauty: saved electrolytes')!.at!(w)
+      STATES.find((s) => s.label === 'thirty beauty: saved electrolytes')!.at!(w)
       w.inventory.glassi = 1
       w.flags['had:glassi'] = true
       const crate = w.objects.find((o) => o.id === 'crate5')

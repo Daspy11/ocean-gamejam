@@ -327,3 +327,15 @@ export const heart = (x, y) => {
   const lobes = (x - 5.5) ** 2 + (y - 6) ** 2 < 11 || (x - 10.5) ** 2 + (y - 6) ** 2 < 11
   return lobes || (y >= 6 && y <= 13 && Math.abs(x - 8) <= 13 - y) ? '#d63a6a' : null
 }
+
+export const etarp = character({ hair: '#101010', skin: '#c8c0b8', shirt: '#b03030' })
+export const etarpseahorse = Array.from({ length: 16 }, () => [
+  [4, 0, 8, 8, '#c8c0b8'],
+  [3, 8, 10, 10, '#b03030'],
+  [4, 18, 3, 6, '#b03030'],
+  [9, 18, 3, 6, '#b03030'],
+  [4, 24, 8, 8, '#2a6f6f'],
+  [3, 32, 10, 10, '#2a6f6f'],
+  [4, 42, 3, 6, '#2a6f6f'],
+  [9, 42, 3, 6, '#2a6f6f'],
+])

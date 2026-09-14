@@ -129,7 +129,11 @@ export function apply(w: World, a: Action, c: Content): void {
     tickCannons(w)
     if (tickFarewell(w)) fire('etarip:alongside')
     if (w.score < 0) fire('score:negative') // fires once, whenever beauty first reads below zero
-    if (w.score >= 15) fire('score:fifteen') // and once, the first time it reads 15
+    if (
+      w.score >= 30 &&
+      ['floor', 'egg', 'certificate'].every((kind) => w.objects.some((o) => o.kind === kind))
+    )
+      fire('score:thirty')
     if (tickTrees(w)) fire('tree:near') // the promised tree, rested and back within three tiles
     tickCloseup(w)
     const live = w.pops.filter((pop) => w.time - pop.at < 1500) // a pop floats for 1500 ms
@@ -227,12 +231,18 @@ export function apply(w: World, a: Action, c: Content): void {
     }
     // interact uses the slot the cursor is on, on the tile in front of him
     const slot = a.type === 'interact' && slots[m.cursor]
+    if (slot && slot[0] === 'note') {
+      w.menu = null
+      open('note')
+      return
+    }
     const did =
       slot && useItem(w, slot[0] as Item, p.x + DIRS[p.facing][0], p.y + DIRS[p.facing][1])
     if (!did) return
     w.menu = null // out of the bag, so he can see what he just did with it
     cueInteract(w, true)
     if (did !== 'used') fire(`salt:${did}`)
+    fire('menu:close')
     return
   }
 
@@ -289,7 +299,7 @@ export function apply(w: World, a: Action, c: Content): void {
   }
   if (obj?.kind === 'rum' || obj?.kind === 'chair') {
     w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag
-    if (obj.kind === 'chair') beauty(w, -5, x, y) // the 5 it was worth stood at home goes with it
+    if (obj.kind === 'chair') beauty(w, -(obj.beauty ?? 5), x, y)
     gain(obj.kind)
     return
   }

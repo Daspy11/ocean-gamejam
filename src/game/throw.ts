@@ -54,7 +54,11 @@ export function tickThrow(w: World): void {
   if (!t.flight) {
     const source = sources(w, t.kind).find((o) => o.id === t.object)
     const him = w.objects.find((o) => o.id === t.at)
-    if (!source || !him || Math.abs(p.x - source.x) + Math.abs(p.y - source.y) > 1) {
+    if (
+      !source ||
+      !him ||
+      (t.kind !== 'egg' && Math.abs(p.x - source.x) + Math.abs(p.y - source.y) > 1)
+    ) {
       w.throwing = null // it went somewhere between the act opening and him getting there
       return
     }

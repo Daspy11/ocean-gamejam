@@ -220,11 +220,12 @@ describe('the flight out', () => {
       },
     }
     const music = { play: vi.fn(), destroy: vi.fn() }
+    const sea = sprite()
     const scene = {
       sound: { add: vi.fn(() => music) },
       cameras: { main: camera },
       scene: { launch: vi.fn(), stop: vi.fn() },
-      add: { tileSprite: sprite, image: sprite },
+      add: { tileSprite: () => sea, image: sprite },
       tweens: { add: vi.fn() },
       events: { on: vi.fn(), once: vi.fn() },
     }
@@ -247,7 +248,7 @@ describe('the flight out', () => {
     expect(fade).toMatchObject({ volume: 0.6, delay: 1500, duration: 1700 })
     const tick = scene.events.on.mock.calls[0][1] as (now: number, dt: number) => void
     const positions: number[] = []
-    for (let time = 100; time <= 18000; time += 100) {
+    for (let time = 100; time <= 21200; time += 100) {
       // Island redraws the base poses before the departure callback applies its offsets.
       rug.setPosition(512, 264)
       mich.setPosition(503, 254)
@@ -256,16 +257,17 @@ describe('the flight out', () => {
       tick(time, 100)
       expect(player.frame).toBe(time <= 7200 || time > 15000 ? 9 : 5)
       expect([walter.x - mich.x, walter.y - mich.y]).toEqual([1, -15])
-      if (time >= 15600) positions.push((rug.x - camera.midPoint.x) * camera.zoom)
+      if (time >= 15600 && time <= 18000) positions.push((rug.x - camera.midPoint.x) * camera.zoom)
       if (time < 18000) expect(scene.scene.launch).not.toHaveBeenCalled()
     }
     expect(positions[1] - positions[0]).toBeLessThan(positions[5] - positions[4])
+    expect(sea.x).toBeLessThanOrEqual(camera.midPoint.x - 320 / camera.zoom)
     expect(positions.at(-1)).toBeGreaterThan(640 / 2 + 32 * camera.zoom)
-    expect(scene.scene.launch).toHaveBeenCalledWith('outro')
+    expect(scene.scene.launch).toHaveBeenCalledExactlyOnceWith('outro', { music })
     expect(scene.scene.stop).not.toHaveBeenCalledWith('ui')
     expect(music.destroy).not.toHaveBeenCalled()
     scene.events.once.mock.calls[0][1]()
-    expect(music.destroy).toHaveBeenCalledOnce()
+    expect(music.destroy).not.toHaveBeenCalled()
   })
 
   it('keeps the changing score visible while the HUD fades over four seconds', () => {

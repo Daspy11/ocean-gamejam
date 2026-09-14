@@ -1,7 +1,8 @@
 {
   "name": "Walter",
-  "start": [{ "node": "1" }],
+  "start": [{ "when": "tree:gone", "node": "hat" }, { "node": "1" }],
   "nodes": {
+    "hat": { "text": "i'm lucky i have a hat since you're so rude to trees", "next": null },
     "1": {
       "text": "im gonna go chill under this tree. if you make the island more beautiful then you might attract someone who can help you fix your boat",
       "next": null

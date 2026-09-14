@@ -205,8 +205,14 @@ export default class UI extends Phaser.Scene {
           .image(
             x,
             y,
-            id === 'glassi' ? 'sprites/glassi' : 'sprites/items',
-            id === 'glassi' ? 0 : ITEMS.indexOf(id) + (ITEMS.indexOf(id) >= 4 ? 1 : 0),
+            id === 'note'
+              ? 'sprites/certificate'
+              : id === 'glassi'
+                ? 'sprites/glassi'
+                : 'sprites/items',
+            id === 'glassi' || id === 'note'
+              ? 0
+              : ITEMS.indexOf(id) + (ITEMS.indexOf(id) >= 4 ? 1 : 0),
           )
           .setOrigin(0)
           .setScale(2),

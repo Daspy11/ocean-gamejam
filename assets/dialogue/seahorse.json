@@ -1,6 +1,6 @@
 {
   "name": "dr. sceantist",
-  "trigger": { "event": "score:fifteen" },
+  "trigger": { "event": "score:thirty" },
   "start": [{ "when": "seahorse:met", "node": "again" }, { "node": "1" }],
   "nodes": {
     "1": {
@@ -17,7 +17,7 @@
       "next": "2"
     },
     "2": { "walk": { "id": "seahorse", "to": { "x": 13, "y": 15 }, "run": true }, "next": "3" },
-    "3": { "text": "FIFTEEN BEAUTY???", "next": "terrible" },
+    "3": { "text": "THIRTY BEAUTY???", "next": "terrible" },
     "terrible": { "text": "i wish i could appreciate it but i feel terrible", "next": "4" },
     "4": { "text": "holy HELL i need electrolytes", "next": "5" },
     "5": { "who": "Mich", "text": "can't you just drink seawater for that?", "next": "6" },

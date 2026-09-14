@@ -59,10 +59,10 @@ describe('createWorld', () => {
       apply(w, { type: 'interact' }, c)
     }
     expect(w.dialogue).toBeNull()
-    expect(w.inventory).toEqual({ orb: 1 })
+    expect(w.inventory).toEqual({ orb: 1, note: 1 })
     apply(w, { type: 'interact' }, c)
     expect(w.dialogue).toBeNull()
-    expect(w.inventory).toEqual({ orb: 1 })
+    expect(w.inventory).toEqual({ orb: 1, note: 1 })
   })
 
   it('takes the grid size from the rows of the map it is given', () => {

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { createWorld, type Content, type World } from './world'
@@ -62,5 +63,58 @@ describe('a next that branches on flags', () => {
       apply(w, { type: 'tick', dt: 250 }, content)
       expect(w.dialogue?.node).toBe(x ? 'a' : 'b')
     }
+  })
+})
+
+describe('the inventory tutorial', () => {
+  const c: Content = {
+    items: {},
+    dialogues: Object.fromEntries(
+      ['inventory1', 'inventory2'].map((key) => [
+        key,
+        JSON.parse(
+          readFileSync(new URL(`../../assets/dialogue/${key}.json`, import.meta.url), 'utf8'),
+        ),
+      ]),
+    ),
+  }
+
+  it.each(['', 'used:orb', 'fired:firstsalt'])(
+    'only teaches throwing before the orb was used: %s',
+    (flag) => {
+      const w = createWorld()
+      w.flags['fired:crate'] = true
+      if (flag) w.flags[flag] = true
+      w.inventory.orb = 1
+      apply(w, { type: 'menu' }, c)
+      apply(w, { type: 'menu' }, c)
+      const lines: string[] = []
+      for (let i = 0; i < 10 && w.dialogue; i++) {
+        if (w.typing) lines.push(w.typing.text)
+        apply(w, w.typing ? { type: 'interact' } : { type: 'tick', dt: 16 }, c)
+      }
+      expect(w.flags['name:orb']).toBe("tarq's Orb Of Endless Burning")
+      expect(lines.includes('try throwing it in the sea')).toBe(!flag)
+      expect(lines.includes('so what am i meant to do with this now')).toBe(!flag)
+    },
+  )
+
+  it('notices the menu closing when its orb is used and skips the now-obsolete instruction', () => {
+    const w = createWorld()
+    w.flags['fired:crate'] = true
+    w.inventory.orb = 1
+    Object.assign(w.player, { x: 14, y: 13, facing: 'left' })
+    apply(w, { type: 'menu' }, c)
+    apply(w, { type: 'interact' }, c)
+    expect(w.menu).toBeNull()
+    expect(w.flags['used:orb']).toBe(true)
+    expect(w.dialogue?.key).toBe('inventory1')
+    const lines: string[] = []
+    for (let i = 0; i < 10 && w.dialogue; i++) {
+      if (w.typing) lines.push(w.typing.text)
+      apply(w, w.typing ? { type: 'interact' } : { type: 'tick', dt: 16 }, c)
+    }
+    expect(lines).not.toContain('try throwing it in the sea')
+    expect(w.flags['fired:inventory2']).toBeUndefined()
   })
 })

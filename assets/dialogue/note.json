@@ -1,6 +1,6 @@
 {
   "name": "",
-  "start": [{ "node": "1" }],
+  "start": [{ "when": "had:note", "node": "2" }, { "node": "1" }],
   "nodes": {
     "1": { "text": "you found a note", "open": "crate3", "set": { "had:note": true }, "next": "2" },
     "2": { "text": "the note reads:", "next": "3" },

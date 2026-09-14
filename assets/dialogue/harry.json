@@ -1,13 +1,12 @@
 {
   "name": "suspicious harry",
   "start": [
-    { "has": { "otijom": 1 }, "when": "harry:ok", "node": "after" },
-    { "has": { "otijom": 1 }, "node": "cocktail" },
-    { "has": { "rum": 1 }, "node": "rum" },
     {
       "when": "harry:ok",
       "node": "after"
     },
+    { "has": { "otijom": 1 }, "when": "harry:asked", "node": "cocktail" },
+    { "has": { "rum": 1 }, "when": "harry:asked", "node": "rum" },
     {
       "when": "harry:asked",
       "node": "again"

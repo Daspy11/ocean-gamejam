@@ -117,8 +117,11 @@ describe('Etarip on the way out', () => {
         player.setPosition(521, 254)
         tick(w.time, dt)
       }
-      const boat = pictures.find((p) => p.key === (peace ? 'sprites/seahorse' : 'sprites/boat'))!.s
-      const etarp = pictures.find((p) => p.key === 'sprites/etarp')!.s
+      const boat = pictures.find(
+        (p) => p.key === (peace ? 'sprites/etarpseahorseswim' : 'sprites/boat'),
+      )!.s
+      const etarp = pictures.find((p) => p.key === 'sprites/etarp')?.s
+      expect(!!etarp).toBe(!peace)
       expect(pictures.some((p) => p.key === (peace ? 'sprites/boat' : 'sprites/seahorse'))).toBe(
         false,
       )
@@ -129,9 +132,11 @@ describe('Etarip on the way out', () => {
         if (w.farewell?.phase === 'alongside') expect(boat.x - deck.x).toBeCloseTo(-48)
         expect(player.frame).toBe(w.farewell?.phase === 'alongside' ? 5 : 9)
         if (w.farewell?.phase === 'alongside') expect(mich.frame).toBe(5)
-        expect(etarp.visible).toBe(boat.visible)
-        expect([etarp.x - boat.x, etarp.y - boat.y]).toEqual(peace ? [1, -15] : [8, -5])
-        expect(etarp.depth > boat.depth).toBe(peace)
+        if (etarp) {
+          expect(etarp.visible).toBe(boat.visible)
+          expect([etarp.x - boat.x, etarp.y - boat.y]).toEqual([8, -5])
+          expect(etarp.depth).toBeLessThan(boat.depth)
+        }
         expect(pictures.some((p) => p.key === 'sprites/heart')).toBe(false)
       }
       expect(arrivals[1] - arrivals[0]).toBeGreaterThan(arrivals.at(-1)! - arrivals.at(-2)!)
@@ -158,7 +163,7 @@ describe('Etarip on the way out', () => {
       apply(w, { type: 'interact' }, c)
       for (let i = 0; i < 200; i++) frame(100)
       expect(pictures.filter((p) => p.key === 'sprites/heart')).toHaveLength(2)
-      expect(scene.scene.launch).toHaveBeenCalledWith('outro')
+      expect(scene.scene.launch).toHaveBeenCalledWith('outro', { music: expect.any(Object) })
       expect(player.frame).toBe(9)
     },
   )

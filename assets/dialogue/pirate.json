@@ -59,17 +59,18 @@
       "text": "AFTER ME CURSE I THOUGHT I COULD FINALLY BE A PIRATE WITHOUT PEOPLE MAKING FUN OF ME FOR BEING A PIRATE NAMED PIRATE",
       "next": "30"
     },
-    "30": { "text": "NOW LET ME PLUNDER THAT ORB", "next": "30a" },
-    "30a": { "who": null, "text": "etarp plunders your orb", "take": "orb", "next": "31" },
+    "30": { "text": "NOW LET ME PLUNDER THAT ORB", "next": [{ "has": { "orb": 1 }, "node": "plunder" }, { "node": "30a" }] },
+    "plunder": { "take": "orb", "set": { "etarp:orb": true }, "next": "30a" },
+    "30a": { "who": null, "text": "etarp plunders your orb", "next": "31" },
     "31": { "walk": { "id": "etarp", "near": "ship" }, "next": "32" },
     "32": { "wait": 1000, "next": "33" },
     "33": { "text": "YARR, ME BOAT", "next": "34" },
     "34": { "who": "Mich", "text": "yeah we have the same problem", "next": "35" },
     "35": { "who": "Mich", "text": "i guess you're stuck here with us now", "next": "36" },
-    "36": { "text": "yarr...", "next": "37" },
+    "36": { "text": "yarr...", "next": [{ "when": "etarp:orb", "node": "37" }, { "node": "40" }] },
     "37": { "text": "fine i guess you can have this back", "next": "38" },
     "38": { "walk": { "id": "etarp", "near": "player" }, "next": "39" },
-    "39": { "who": null, "give": "orb", "text": "you got the orb back", "next": "40" },
+    "39": { "who": null, "give": "orb", "set": { "etarp:orb": false }, "text": "you got the orb back", "next": "40" },
     "40": {
       "text": "yarr... if i'm stuck here, maybe i should return to me ole' yarrtending ways",
       "next": "41"

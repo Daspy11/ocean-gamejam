@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { apply } from '../game/actions'
 import { mount, tickWalks } from '../game/boat'
 import { choices } from '../game/throw'
@@ -7,6 +7,9 @@ import { blast } from '../game/machine'
 import { createWorld, npc, type Content, type Obj, type World } from '../game/world'
 import { load, world } from '../store'
 import { deck, spring } from './crash'
+import Island from './Island'
+
+vi.mock('phaser', () => ({ default: { Scene: vi.fn() } }))
 
 function pose(a: World['player'] | (Obj & { kind: 'npc' }), who: string) {
   const on = world.objects.find((o) => o.id === a.ride)
@@ -35,7 +38,7 @@ describe('drawing the ending jumps', () => {
       tickWalks(w, 0)
       const [hx, hy] = pose(horse, 'seahorse')
       const [ex, ey] = pose(etarp, 'etarp')
-      expect([ex - hx, ey - hy]).toEqual([1, -15])
+      expect([ex - hx, ey - hy]).toEqual([0, -24])
     }
   })
 
@@ -71,6 +74,44 @@ describe('drawing the ending jumps', () => {
     }
     expect(pose(w.player, 'player')[0] - pose(mich, 'mich')[0]).toBe(18)
   })
+})
+
+it('switches to the full stacked sheet only when Etarp lands, including after loading', () => {
+  const w = createWorld()
+  const horse = npc('seahorse', 'seahorse', 13, 15, 'right', '')
+  const etarp = npc('etarp', 'etarp', 14, 15, 'left', '')
+  w.objects = [etarp, horse]
+  load(w)
+  const pictures = Array.from({ length: 4 }, () => ({
+    originY: 1,
+    setPosition: vi.fn().mockReturnThis(),
+    setDepth: vi.fn().mockReturnThis(),
+    setFrame: vi.fn().mockReturnThis(),
+    setTexture: vi.fn().mockReturnThis(),
+    setVisible: vi.fn().mockReturnThis(),
+  }))
+  const scene = new Island()
+  Object.assign(scene, { objects: pictures, player: pictures[2], shadow: pictures[3] })
+  const draw = () => (scene as unknown as { drawActors: () => void }).drawActors()
+  mount(w, { id: 'etarp', on: 'seahorse' })
+  for (const time of [0, 175, 349]) {
+    w.time = time
+    draw()
+    expect(pictures[0].setVisible).toHaveBeenLastCalledWith(true)
+    expect(pictures[1].setTexture).not.toHaveBeenCalledWith('sprites/etarpseahorse')
+  }
+  w.time = 350
+  tickWalks(w, 350)
+  draw()
+  expect(pictures[0].setVisible).toHaveBeenLastCalledWith(false)
+  expect(pictures[1].setVisible).toHaveBeenLastCalledWith(true)
+  expect(pictures[1].setTexture).toHaveBeenLastCalledWith('sprites/etarpseahorse')
+  expect(pictures[1].setPosition).toHaveBeenLastCalledWith(208, 256)
+  expect(pictures[1].setFrame).toHaveBeenLastCalledWith(9)
+  load(JSON.parse(JSON.stringify(w)))
+  draw()
+  expect(pictures[0].setVisible).toHaveBeenLastCalledWith(false)
+  expect(pictures[1].setTexture).toHaveBeenLastCalledWith('sprites/etarpseahorse')
 })
 
 describe('the shipped ending dialogue', () => {

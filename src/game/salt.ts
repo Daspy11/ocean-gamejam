@@ -1,5 +1,5 @@
 import { cueInteract, objectAt, tileAt, tileIndex } from './world'
-import type { Item, World } from './world'
+import type { Item, Obj, World } from './world'
 
 // what stands on the ground out of the bag, and the kind of object it stands there as
 const STANDS: Partial<Record<Item, 'floor' | 'egg' | 'certificate' | 'chair'>> = {
@@ -22,7 +22,7 @@ export function takeItem(w: World, item: Item, n: number): void {
 export function beauty(w: World, n: number, x: number, y: number): void {
   if (!w.main[tileIndex(w, x, y)]) return
   w.score += n
-  if (w.flags['score:on']) w.pops.push({ x, y, text: n > 0 ? `+${n}` : `${n}`, at: w.time })
+  if (n && w.flags['score:on']) w.pops.push({ x, y, text: n > 0 ? `+${n}` : `${n}`, at: w.time })
 }
 
 // The island grows by the orb boiling a sea tile into salt, and by salt in hand filling one in.
@@ -73,6 +73,7 @@ export function useItem(
   }
   if (item === 'orb') {
     if (tile !== 'water') return null
+    w.flags['used:orb'] = true
     w.inventory.orb = (w.inventory.orb ?? 0) - 1
     cueInteract(w)
     // 2 s to boil, and where it was thrown from so the scene can arc it over
@@ -91,18 +92,18 @@ export function useItem(
   if (!kind) return null // nothing else in the bag goes anywhere yet
   const ground = tile !== undefined && tile !== 'water' && tile !== 'rock'
   if (!ground || objectAt(w, x, y)) return null
-  w.objects.push({ id: `${kind}${x}-${y}`, kind, x, y })
+  const placed: Obj = { id: `${kind}${x}-${y}`, kind, x, y }
+  w.objects.push(placed)
   cueInteract(w, !!w.main[tileIndex(w, x, y)])
   w.inventory[item] = (w.inventory[item] ?? 0) - 1
-  // 5 each, but the last of the carpet, the egg and the certificate to go down is worth whatever
-  // brings beauty up to 15 in fives: that is everything there is, and 15 brings the sea horse
+  // Hold below 30 until all three prizes are down; the last covers any amount spent on bridges.
   const prizes = ['carpet', 'egg', 'certificate']
   let worth = 5
-  if (prizes.includes(item)) {
-    w.flags[`placed:${item}`] = true
-    if (prizes.every((p) => w.flags[`placed:${p}`]))
-      worth = Math.max(5, Math.ceil((15 - w.score) / 5) * 5)
-  }
+  if (prizes.includes(item)) w.flags[`placed:${item}`] = true
+  const ready = prizes.every((p) => w.flags[`placed:${p}`])
+  if (!ready) worth = Math.min(5, Math.max(0, 29 - w.score))
+  else if (prizes.includes(item)) worth = Math.max(5, Math.ceil((30 - w.score) / 5) * 5)
+  if (placed.kind === 'chair') placed.beauty = w.main[tileIndex(w, x, y)] ? worth : 0
   beauty(w, worth, x, y) // beauty only ever counts at home
   w.rev++
   // laid out at sea it is worth nothing, and Walter says so

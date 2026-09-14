@@ -32,11 +32,15 @@ export function flyOut(
     ease: 'Sine.easeInOut',
     onStart: () => music.play(),
   }) // the ambient loop finishes fading out before this track begins
-  // The island keeps running beneath the credits; restarting or a debug jump shuts it down.
-  scene.events.once('shutdown', () => music.destroy())
+  let credits = false
+  // Once handed over, the credits own the same playing loop through their shutdown.
+  scene.events.once('shutdown', () => {
+    if (!credits) music.destroy()
+  })
   const rug = world.objects.find((o) => o.kind === 'flyingcarpet')
   if (!rug) {
-    scene.scene.launch('outro') // a debug jump straight to the names: there is nothing to fly
+    credits = true
+    scene.scene.launch('outro', { music }) // a debug jump straight to the names
     return true
   }
   // the two of them lean a couple of pixels in as they pluck up the courage, and whoever is up on
@@ -74,7 +78,7 @@ export function flyOut(
   // the tilemap stops at the east shore, so lay sea under everything for them to fly out over
   const east = ((world.left ?? 0) + world.width) * 16
   const sea = scene.add
-    .tileSprite(east, 0, 7000, world.height * 16, 'tiles/water')
+    .tileSprite(east, 0, 640, world.height * 16, 'tiles/water')
     .setOrigin(0)
     .setDepth(-1000)
 
@@ -82,11 +86,19 @@ export function flyOut(
   const escort = world.flags['etarp:i']
     ? [
         scene.add
-          .image(0, 0, together ? 'sprites/seahorse' : 'sprites/boat', together ? 9 : 0)
+          .image(0, 0, together ? 'sprites/etarpseahorseswim' : 'sprites/boat', together ? 9 : 0)
           .setOrigin(0, 1)
           .setDepth(together ? 8997 : 8999)
           .setVisible(false),
-        scene.add.image(0, 0, 'sprites/etarp', 9).setOrigin(0, 1).setDepth(8998).setVisible(false),
+        ...(!together
+          ? [
+              scene.add
+                .image(0, 0, 'sprites/etarp', 9)
+                .setOrigin(0, 1)
+                .setDepth(8998)
+                .setVisible(false),
+            ]
+          : []),
       ]
     : []
 
@@ -124,7 +136,13 @@ export function flyOut(
     [RIDE + 5400, () => hop(her, 2)],
     [RIDE + 5800, (aboard) => heart(aboard[1].s, aboard[0].s)],
     [RIDE + 7800, () => (face = SIDE)],
-    [RIDE + 10800, () => scene.scene.launch('outro')], // the names, over the flight
+    [
+      RIDE + 10800,
+      () => {
+        credits = true
+        scene.scene.launch('outro', { music })
+      },
+    ],
   ]
 
   let [t, x, done, held] = [0, 0, 0, 0]
@@ -155,18 +173,12 @@ export function flyOut(
     for (const { s, seat } of aboard)
       if (seat === her) s.setFrame(visit?.phase === 'alongside' ? LOOK : SIDE)
     const deck = aboard[0].s
-    sea.x = Math.max(east, Math.floor((deck.x - 400) / 16) * 16)
     const visible = !!visit && ['approach', 'alongside', 'leave'].includes(visit.phase)
     const progress = visit ? Math.min(1, (world.time - visit.at) / 1600) : 0
     const behind = visit?.phase === 'approach' ? 212 * (1 - progress) ** 3 : 0
     const ahead = visit?.phase === 'leave' ? 300 * progress ** 2 : 0
     escort.forEach((s, i) =>
-      s
-        .setVisible(visible)
-        .setPosition(
-          deck.x - 48 - behind + ahead + i * (together ? 1 : 8),
-          deck.y + 10 - i * (together ? 15 : 5),
-        ),
+      s.setVisible(visible).setPosition(deck.x - 48 - behind + ahead + i * 8, deck.y + 10 - i * 5),
     )
     // the scene has drawn the shade at full size under the carpet's tile: it runs along under
     // them over the island, over the trees, and there is nothing to fall on past the shore
@@ -176,9 +188,10 @@ export function flyOut(
       .setAlpha(0.35 * Math.max(0, Math.min(1, (east - deck.x) / 160)))
     for (const h of hearts) h.s.setPosition(deck.x + h.x, deck.y + h.y).setAlpha(h.a)
     const settle = 1 - p * p * (3 - 2 * p)
-    cam
-      .setZoom(zoom)
-      .centerOn(deck.x - away + 8 + cameraOffset.x * settle, deck.y - 6 + cameraOffset.y * settle)
+    const cameraX = deck.x - away + 8 + cameraOffset.x * settle
+    cam.setZoom(zoom).centerOn(cameraX, deck.y - 6 + cameraOffset.y * settle)
+    // Cover the camera after the crew dash ahead; whole tiles preserve the ocean's texture phase.
+    sea.x = Math.max(east, Math.floor((cameraX - 320 / zoom - 16) / 16) * 16)
     while (done < beats.length && storyTime - OUT >= beats[done][0]) beats[done++][1](aboard)
   }
   scene.events.on('postupdate', tick) // after the scene has drawn the world it is leaving behind

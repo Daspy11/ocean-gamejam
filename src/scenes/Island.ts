@@ -252,12 +252,19 @@ export default class Island extends Phaser.Scene {
     const c = world.closeup
     const star =
       c && c.down === undefined && world.time - c.since >= 1000 ? this.closeupOf() : undefined
+    const rider = world.objects.find(
+      (o) => o.id === 'etarp' && o.kind === 'npc' && o.ride === 'seahorse' && !o.hop,
+    )
+    const stacked = rider && world.objects.some((o) => o.id === 'seahorse' && o.kind === 'npc')
     world.objects.forEach((o, i) => {
       const sprite = this.objects[i]
       if (!sprite) return
       if (o.kind === 'npc') {
         const on = world.objects.find((r) => r.id === o.ride) // a rider shares its tile
-        drawActor(sprite, o, o.sprite, on).setVisible(o !== star)
+        if (o.id === 'seahorse' && stacked) sprite.setTexture('sprites/etarpseahorse')
+        drawActor(sprite, o, o.sprite, on).setVisible(
+          o !== star && !o.hidden && !(stacked && o === rider),
+        )
       }
       // a boat under sail, a carpet in the air or a cannon being shoved moves like an actor, but
       // its frame is its own state, set by sync()

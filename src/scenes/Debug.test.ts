@@ -124,8 +124,8 @@ describe('debug story jumps', () => {
   })
 
   it.each([
-    'fifteen beauty',
-    'fifteen beauty: saved electrolytes',
+    'thirty beauty',
+    'thirty beauty: saved electrolytes',
     'good ending: both gifts',
     "etarp's cannon",
     'tarq flies in',

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
+import { makeSalt, useItem } from './salt'
 import { createWorld, objectAt, type Content, type Item, type World } from './world'
 
 const content: Content = { dialogues: {}, items: {} }
@@ -34,28 +35,28 @@ describe('standing a prize on the ground', () => {
     }
   })
 
-  it('makes the last of the carpet, the egg and the certificate worth enough for 15', () => {
-    // four blocks of salt in the hole: -4, then 5 and 5, and the certificate has to be 10
+  it('makes the last of the carpet, the egg and the certificate worth enough for 30', () => {
+    // The last prize covers bridge costs, rounded up to the next five.
     const w = home('carpet', -4)
     apply(w, { type: 'interact' }, content)
     put(w, 'egg', 'up')
     expect(w.score).toBe(6)
     put(w, 'certificate', 'right')
-    expect(w.score).toBe(16)
-    expect(w.pops.at(-1)).toMatchObject({ x: 17, y: 14, text: '+10' })
+    expect(w.score).toBe(31)
+    expect(w.pops.at(-1)).toMatchObject({ x: 17, y: 14, text: '+25' })
   })
 
   it('does that whichever of the three comes last, and never less than 5', () => {
     const w = home('egg')
     apply(w, { type: 'interact' }, content)
     put(w, 'certificate', 'up')
-    put(w, 'carpet', 'right') // exactly 15 from 10: the plain 5 already does it
-    expect(w.score).toBe(15)
+    put(w, 'carpet', 'right')
+    expect(w.score).toBe(30)
     const rich = home('certificate', 20)
     apply(rich, { type: 'interact' }, content)
     put(rich, 'carpet', 'up')
     put(rich, 'egg', 'right')
-    expect(rich.score).toBe(35)
+    expect(rich.score).toBe(34)
   })
 
   it('counts a prize as placed wherever it went down, though only home is worth anything', () => {
@@ -70,5 +71,88 @@ describe('standing a prize on the ground', () => {
     apply(w, { type: 'interact' }, content) // down at 15,14 for 5
     apply(w, { type: 'interact' }, content) // and straight back into the bag
     expect([objectAt(w, 15, 14), w.inventory.chair, w.score]).toEqual([undefined, 1, 0])
+  })
+
+  it('caps a chair before the last prize, and refunds only its actual beauty on pickup', () => {
+    const w = home('chair', 28)
+    apply(w, { type: 'interact' }, content)
+    expect(w.score).toBe(29)
+    expect(objectAt(w, 15, 14)).toMatchObject({ kind: 'chair', beauty: 1 })
+    apply(w, { type: 'interact' }, content)
+    expect(w.score).toBe(28)
+    apply(w, { type: 'menu' }, content)
+    apply(w, { type: 'interact' }, content)
+    expect(w.score).toBe(29)
+  })
+
+  it.each([
+    ['carpet', 'egg', 'certificate'],
+    ['carpet', 'certificate', 'egg'],
+    ['egg', 'carpet', 'certificate'],
+    ['egg', 'certificate', 'carpet'],
+    ['certificate', 'egg', 'carpet'],
+    ['certificate', 'carpet', 'egg'],
+  ] as const)('requires every prize in order %s, %s, %s, even with extra chairs', (...order) => {
+    for (const start of [-100, -2, 8, 20, 28]) {
+      const w = home(order[0], start)
+      const c: Content = {
+        items: {},
+        dialogues: {
+          seahorse: {
+            name: '',
+            trigger: { event: 'score:thirty' },
+            start: [{ node: '1' }],
+            nodes: { '1': { text: '[PLACEHOLDER arrival]' } },
+          },
+        },
+      }
+      apply(w, { type: 'interact' }, c)
+      put(w, order[1], 'up')
+      w.inventory.chair = 3
+      for (const x of [15, 16, 17]) {
+        useItem(w, 'chair', x, 18)
+        apply(w, { type: 'tick', dt: 16 }, c)
+        expect(w.score).toBeLessThan(30)
+        expect(w.dialogue).toBeNull()
+      }
+      put(w, order[2], 'right')
+      apply(w, { type: 'tick', dt: 16 }, c)
+      expect(w.score).toBeGreaterThanOrEqual(30)
+      expect(w.score).toBeLessThan(35)
+      expect(w.dialogue?.key).toBe('seahorse')
+      expect(w.objects.some((o) => o.kind === 'egg')).toBe(true)
+    }
+  })
+
+  it('keeps the short eastern bridge route below the threshold with just carpet and egg', () => {
+    const w = home('carpet', 10)
+    for (const x of [21, 22, 28, 29, 30, 31]) makeSalt(w, x, 16)
+    expect(w.score).toBe(8)
+    apply(w, { type: 'interact' }, content)
+    put(w, 'egg', 'up')
+    expect(w.score).toBe(18)
+  })
+
+  it('cannot start the finale from a high score with its egg still in the bag', () => {
+    const w = home('egg', 30)
+    w.menu = null
+    w.objects.push(
+      { id: 'rug', kind: 'floor', x: 15, y: 17 },
+      { id: 'award', kind: 'certificate', x: 16, y: 18 },
+    )
+    const c: Content = {
+      items: {},
+      dialogues: {
+        seahorse: {
+          name: '',
+          trigger: { event: 'score:thirty' },
+          start: [{ node: '1' }],
+          nodes: { '1': { text: '[PLACEHOLDER arrival]' } },
+        },
+      },
+    }
+    apply(w, { type: 'tick', dt: 16 }, c)
+    expect(w.dialogue).toBeNull()
+    expect(w.flags['fired:seahorse']).toBeUndefined()
   })
 })
