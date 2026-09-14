@@ -22,10 +22,23 @@ describe('createWorld', () => {
     const chest = w.objects.find((o) => o.id === 'crate3')!
     for (const [dx, dy] of Object.values(DIRS))
       expect(findPath(w, walker, { x: chest.x + dx, y: chest.y + dy })).toBeNull()
-    expect(findPath(w, walker, { x: 49, y: 24 })).not.toBeNull()
-    Object.assign(w.player, { x: 49, y: 24 })
+    // the trees stepped down onto the sand at 48..49,24 leave the chest in view but push the salt
+    // route out a row: down off the grass at 47,24 and along the shore to the grass at 53,22
+    expect(findPath(w, walker, { x: 47, y: 24 })).not.toBeNull()
+    Object.assign(w.player, { x: 47, y: 24 })
     w.inventory.orb = 1
-    for (const dir of ['right', 'right', 'right', 'right', 'up'] as const) {
+    const route = [
+      'down',
+      'right',
+      'right',
+      'right',
+      'up',
+      'right',
+      'right',
+      'right',
+      'up',
+    ] as const
+    for (const dir of route) {
       w.player.facing = dir
       const x = w.player.x + DIRS[dir][0]
       const y = w.player.y + DIRS[dir][1]
