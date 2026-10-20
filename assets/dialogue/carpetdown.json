@@ -4,8 +4,8 @@
   "start": [{ "node": "1" }],
   "nodes": {
     "1": { "text": "is that a picnic blanket", "next": "2" },
-    "2": { "who": "Walter", "text": "no it's a fancy carpet", "next": "3" },
-    "3": { "text": "...a fancy carpet in the shape and color of a picnic blanket", "next": "4" },
+    "2": { "who": "Walter", "text": "no it's a fashionable carpet", "next": "3" },
+    "3": { "text": "...a fashionable carpet in the shape and color of a picnic blanket", "next": "4" },
     "4": { "who": "Walter", "text": "yes", "next": "5" },
     "5": { "text": "nice", "next": null }
   }
