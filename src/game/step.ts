@@ -56,9 +56,11 @@ export function tickStep(
   const on = tileAt(w, p.x, p.y) // the north island is the only land this far up the map
   if (p.y <= 5 && (on === 'sand' || on === 'grass')) fire('arrive:north')
   if (p.x >= 32 && p.y < 28 && (on === 'sand' || on === 'grass')) fire('arrive:big')
-  // home with loot still in the bag: Walter smells it and says what it is for
-  if (away && w.main[tileIndex(w, p.x, p.y)] && PRIZES.some((i) => (w.inventory[i] ?? 0) > 0))
-    fire('haul')
+  // home with loot still in the bag: Walter smells it and says what it is for. Not over the carpet
+  // alone, which he has only just handed over and explained, nor once a prize is down and he knows
+  const loot = PRIZES.some((i) => i !== 'carpet' && (w.inventory[i] ?? 0) > 0)
+  const placed = PRIZES.some((i) => w.flags[`placed:${i}`])
+  if (away && w.main[tileIndex(w, p.x, p.y)] && loot && !placed) fire('haul')
   const west = (w.left ?? 0) < 0 && p.y >= 12 && p.y <= 21
   if (west && p.x <= 9) fire('west:four')
   if (p.held && free && w.dialogue === box) {

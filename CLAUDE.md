@@ -78,7 +78,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
 - Scripting is data too. A dialogue file may declare `trigger: { event, when? }` and plays once when the
   sim emits that event (`crate:open` (a crate opened, or the orb picked up off the sand), `menu:close`, `salt:spawn`, `salt:place`, `talk:<npc id>`,
   `tree:shake:<n>`, `tree:near`, `score:negative`, `arrive:north`, `haul` (stepped back onto the main
-  island with a prize still in the bag, `haul.json`), `salt:away` (any item put down off
+  island with a prize other than the carpet in the bag and none placed yet, `haul.json`), `salt:away` (any item put down off
   the main island), `place:<item>` (a prize stood on the main island, `carpetdown.json`, `eggdown.json`,
   `certdown.json`; a chair is `place:chair:<n>` with n now standing there, `chair1.json`, `chair2.json`),
   `place:prize` (any of the three stood at home, Walter's thank-you in `thanks.json`), `score:fifteen`, `done:<dialogue key>` (that box has just

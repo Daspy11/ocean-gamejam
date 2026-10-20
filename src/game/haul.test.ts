@@ -120,6 +120,23 @@ describe('loot on the island', () => {
     expect(w.dialogue).toBeNull()
   })
 
+  it('says nothing over the carpet alone, or once a prize is down', () => {
+    const carpet = bridged(23, 'left')
+    carpet.inventory = { carpet: 1 } // Walter has only just handed it over
+    walk(carpet, 'left')
+    expect(carpet.dialogue).toBeNull()
+
+    const both = bridged(23, 'left')
+    both.inventory = { carpet: 1, egg: 1 }
+    walk(both, 'left')
+    expect(both.dialogue?.key).toBe('haul')
+
+    const down = bridged(23, 'left')
+    down.flags['placed:carpet'] = true
+    walk(down, 'left')
+    expect(down.dialogue).toBeNull()
+  })
+
   it('says nothing when he comes home empty-handed or before Walter is about', () => {
     const empty = bridged(23, 'left')
     empty.inventory = {}
