@@ -16,8 +16,8 @@ const CREDITS = [
   ['programming', 'Stuart Johnson'],
   ['writing', 'Stuart Johnson'],
   ['art', 'Michelle Virzina'],
-  ['voice acting', 'stuart johnson, michelle virzina'],
-  ['music', 'kevin macleod, serge quadrado'],
+  ['voice acting', 'Stuart Johnson, Michelle Virzina'],
+  ['music', 'Kevin MacLeod, Serge Quadrado'],
 ]
 
 // the send-off after the names, a card at a time. Written by the author; do not reword.

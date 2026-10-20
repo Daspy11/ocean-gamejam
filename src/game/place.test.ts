@@ -66,6 +66,37 @@ describe('standing a prize on the ground', () => {
     expect([w.score, w.flags['placed:egg']]).toEqual([0, true])
   })
 
+  it('picks the last prize back up off the big island, so it can still settle the score at home', () => {
+    const w = home('carpet')
+    apply(w, { type: 'interact' }, content)
+    put(w, 'certificate', 'up')
+    w.player = { ...w.player, x: 33, y: 16 } // the big island
+    put(w, 'egg', 'right')
+    expect([w.score, objectAt(w, 34, 16)?.kind]).toEqual([10, 'egg'])
+    apply(w, { type: 'interact' }, content) // back into the bag
+    expect([objectAt(w, 34, 16), w.inventory.egg, w.flags['placed:egg']]).toEqual([
+      undefined,
+      1,
+      undefined,
+    ])
+    w.player = { ...w.player, x: 16, y: 14 }
+    put(w, 'egg', 'right')
+    expect(w.score).toBe(30)
+  })
+
+  it('leaves a prize at home, or anywhere once the sea horse has been, where it stands', () => {
+    const w = home('egg')
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'interact' }, content)
+    expect(objectAt(w, 15, 14)?.kind).toBe('egg')
+    const late = home('egg')
+    late.player = { ...late.player, x: 33, y: 16, facing: 'right' }
+    apply(late, { type: 'interact' }, content)
+    late.flags['fired:seahorse'] = true
+    apply(late, { type: 'interact' }, content)
+    expect(objectAt(late, 34, 16)?.kind).toBe('egg')
+  })
+
   it('takes a chair back up again for the 5 it was worth', () => {
     const w = home('chair')
     apply(w, { type: 'interact' }, content) // down at 15,14 for 5

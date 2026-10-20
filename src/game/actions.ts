@@ -4,7 +4,7 @@ import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
-import { beauty, homeChairs, PRIZES, takeItem, tickOrbs, useItem } from './salt'
+import { beauty, homeChairs, liftStray, PRIZES, takeItem, tickOrbs, useItem } from './salt'
 import { michHint } from './script'
 import { tickStep } from './step'
 import { cueInteract, DIRS, objectAt, objectsAt } from './world'
@@ -268,6 +268,11 @@ export function apply(w: World, a: Action, c: Content): void {
     w.objects.splice(w.objects.indexOf(obj), 1) // carried off whole, into the bag: both halves of a split one
     if (obj.kind === 'chair') beauty(w, -(obj.beauty ?? 5), x, y)
     gain(obj.kind === 'splitchair' ? 'chair' : obj.kind)
+    return
+  }
+  const stray = liftStray(w, obj, x, y)
+  if (stray) {
+    gain(stray)
     return
   }
   if (obj?.kind === 'bar') {

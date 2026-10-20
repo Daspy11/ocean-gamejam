@@ -63,6 +63,18 @@ export function homeChairs(w: World): number {
   return w.objects.filter((o) => o.kind === 'chair' && w.main[tileIndex(w, o.x, o.y)]).length
 }
 
+// a prize put down off the main island is worth nothing there, so it comes back up into the bag, or the
+// last one laid out at sea would leave beauty short of 30 for good. Not once the sea horse has been:
+// the egg is wanted on the ground for Tarq. The item it lifted, or null.
+export function liftStray(w: World, o: Obj | undefined, x: number, y: number): Item | null {
+  const item = o?.kind === 'floor' ? 'carpet' : (o?.kind as Item | undefined)
+  if (!o || !item || !PRIZES.includes(item)) return null
+  if (w.main[tileIndex(w, x, y)] || w.flags['fired:seahorse']) return null
+  w.objects.splice(w.objects.indexOf(o), 1)
+  delete w.flags[`placed:${item}`] // so the last one down at home still settles the score
+  return item
+}
+
 // using one out of the bag on the tile at x,y: salt and the orb go in the sea, a carpet goes down on
 // bare ground. 'used' is "it happened, with nothing to say about it"; 'chairs' is a third chair
 // staying in the bag; null is "nothing happened".

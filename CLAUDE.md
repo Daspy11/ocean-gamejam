@@ -148,7 +148,10 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   the certificate to go down (`flags['placed:<item>']`) is worth whatever multiple of 5 brings
   beauty to 15, so the sea horse comes once everything is down; a chair picked back up takes its 5
   with it. Two chairs standing at home is the limit: a third stays in the bag and Mich opens
-  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). Nothing else in the bag goes anywhere.
+  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). A prize put down off the main
+  island is worth nothing there and interact picks it back up, clearing its `placed:` flag, until the
+  sea horse has come (`liftStray`), so the last one laid at sea cannot strand beauty short of 30.
+  Nothing else in the bag goes anywhere.
   The three prizes are `PRIZES` in `src/game/salt.ts`, and Walter will not have one carried off:
   once his scene has run, walking home with one in the bag fires `haul` and a step off the main
   island is taken back, stopping him dead with `notsofast.json` (`walterStops` in
