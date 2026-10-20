@@ -113,7 +113,7 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   asks (7.5x by default, and a second close-up on the same npc punches straight to its own zoom), a `burst` act
   then shakes him white and apart into stars for 2 s, and `closeup: null` eases it back out
   over 1 s (`down`), Walter's entry in `flower.json`), `clear` (the box hides and the player is free to walk; the act
-  is over once he stands outside its rect), and `gone`, which
+  is over once he stands outside its rect, or once props and people wall him in, `boxedIn`), and `gone`, which
   just holds until the object it names has left the world. The box hides, the act runs, and the node
   advances itself. A walk naming `player` walks the player himself, the same A* and the same steps,
   with his path on `world.player` (`walkPlayer` in `src/game/boat.ts`); he is carried the same way
@@ -123,7 +123,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   there is no other way, the player being the one to push past first; no way at all is tried once
   more with solid objects, trees excepted, as very dear tiles rather than walls (`through`: the
   player stood on the salt at 18,3 with the chest beyond him is the one way onto the north island,
-  and Etarp must still get to his bar); and still no way means he stays put and the act is over; somebody standing on the tile means he ends on the closest free
+  and Etarp must still get to his bar; that retry also lets a walker left standing in the sea wade
+  out, which is how Etarp gets ashore when his ship never ran aground); and still no way means he stays put and the act is over; somebody standing on the tile means he ends on the closest free
   tile he can reach and turns to face him; `facing` turns him that way once he is there. A walk
   with `push` shoves an object along: it goes the step ahead of him the whole way, round every
   corner and through anything, swings out on his last step to where he will be facing, and is
@@ -149,9 +150,11 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   the certificate to go down (`flags['placed:<item>']`) is worth whatever multiple of 5 brings
   beauty to 15, so the sea horse comes once everything is down; a chair picked back up takes its 5
   with it. Two chairs standing at home is the limit: a third stays in the bag and Mich opens
-  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). A prize put down off the main
-  island is worth nothing there and interact picks it back up, clearing its `placed:` flag, until the
-  sea horse has come (`liftStray`), so the last one laid at sea cannot strand beauty short of 30.
+  `chair3.json` every time (`homeChairs` in `src/game/salt.ts`). Until the sea horse has come, interact
+  picks a prize back up, at home or away, with the beauty it added and its `placed:` flag
+  (`liftPrize`), so neither one laid out at sea nor an egg and a certificate walling him in can strand
+  the story. The orb and salt are never thrown under something standing in the sea (a boat would
+  sit on the orb for good).
   Nothing else in the bag goes anywhere.
   The three prizes are `PRIZES` in `src/game/salt.ts`, and Walter will not have one carried off:
   once his scene has run, walking home with one in the bag fires `haul` and a step off the main

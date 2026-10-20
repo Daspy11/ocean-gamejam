@@ -4,7 +4,7 @@ import { tickCannons } from './cannon'
 import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
-import { beauty, homeChairs, liftStray, PRIZES, takeItem, tickOrbs, useItem } from './salt'
+import { beauty, homeChairs, liftPrize, PRIZES, takeItem, tickOrbs, useItem } from './salt'
 import { michHint, shutAgo } from './script'
 import { tickStep } from './step'
 import { cueInteract, DIRS, objectAt, objectsAt } from './world'
@@ -272,9 +272,9 @@ export function apply(w: World, a: Action, c: Content): void {
     gain(obj.kind === 'splitchair' ? 'chair' : obj.kind)
     return
   }
-  const stray = liftStray(w, obj, x, y)
-  if (stray) {
-    gain(stray)
+  const prize = liftPrize(w, obj, x, y)
+  if (prize) {
+    gain(prize)
     return
   }
   if (obj?.kind === 'bar') {

@@ -95,9 +95,9 @@ export type Obj = {
   // the desalinator 9000: it eats a beauty every 2 s from wherever it lands until a `boom` act
   // sets `boomAt`, which is when it goes up
   | { kind: 'machine'; nextAt?: number; boomAt?: number }
-  | { kind: 'floor' } // laid on the ground out of the bag: he walks over it, and it is worth 5 beauty
-  | { kind: 'egg' } // the golden egg, stood on the ground out of the bag: solid, and worth 5 at home
-  | { kind: 'certificate' } // the shrimp welfare award, the same
+  | { kind: 'floor'; beauty?: number } // laid on the ground out of the bag: he walks over it, and it is worth 5 beauty
+  | { kind: 'egg'; beauty?: number } // the golden egg, stood on the ground out of the bag: solid, and worth 5 at home
+  | { kind: 'certificate'; beauty?: number } // the shrimp welfare award, the same
   // Etarp's cannon: `firing` for its 4 s of noise, `shot` counting the balls, which names them
   // `right` points it east instead of west: the sea horse's, aimed back up the island at Etarp
   | { kind: 'cannon'; firing?: Firing; right?: boolean }
@@ -242,6 +242,27 @@ export type { Branch, Content, Dialogue, DialogueNode, Rect } from './script'
 // is the player stood inside this rect of tiles
 export const inside = (w: World, r: Rect) =>
   w.player.x >= r.x && w.player.x < r.x + r.w && w.player.y >= r.y && w.player.y < r.y + r.h
+
+// walled in by props and people, he cannot be waited on to walk out of this rect of tiles
+export function boxedIn(w: World, r: Rect): boolean {
+  const todo = [[w.player.x, w.player.y]]
+  const seen = new Set([`${w.player.x},${w.player.y}`])
+  for (let next = todo.pop(); next; next = todo.pop()) {
+    const [x, y] = next
+    if (x < r.x || x >= r.x + r.w || y < r.y || y >= r.y + r.h) return false
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const [nx, ny] = [x + dx, y + dy]
+      const tile = tileAt(w, nx, ny)
+      const obj = objectAt(w, nx, ny)
+      if (seen.has(`${nx},${ny}`) || tile === undefined || tile === 'water' || tile === 'rock')
+        continue
+      if (obj && KINDS[obj.kind].solid) continue
+      seen.add(`${nx},${ny}`)
+      todo.push([nx, ny])
+    }
+  }
+  return true
+}
 
 export const DIRS: Record<Dir, [number, number]> = {
   up: [0, -1],

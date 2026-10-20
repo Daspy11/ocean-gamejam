@@ -256,6 +256,22 @@ describe('asking him out of the way', () => {
     apply(w, { type: 'move', dir: null }, content)
   })
 
+  it('stops waiting on him once props and people wall him in where he stands', () => {
+    // the rect's 2x2 corner, sea to the west and north, an egg east and a chair south
+    const w = room(
+      ['~~~~', '~###', '~###', '~###'],
+      [
+        { id: 'e', kind: 'egg', x: 2, y: 1 },
+        { id: 'c', kind: 'chair', x: 1, y: 2 },
+      ],
+    )
+    w.player = { ...w.player, x: 1, y: 1, facing: 'right' }
+    apply(w, { type: 'talk', key: 'duck' }, content)
+    apply(w, { type: 'interact' }, content)
+    apply(w, { type: 'tick', dt: 50 }, content)
+    expect(w.dialogue?.node).toBe('end')
+  })
+
   it('is not said at all to somebody already clear of it', () => {
     const w = room(['####', '####', '####', '####'])
     apply(w, { type: 'talk', key: 'duck' }, content) // stood in the far corner

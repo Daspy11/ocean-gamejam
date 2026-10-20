@@ -3,7 +3,7 @@ import { fireDone, startFire } from './cannon'
 import { armMachine, putBy } from './machine'
 import { startThrow, throwDone } from './throw'
 import { startTree, treeDone } from './tree'
-import { cueInteract, inside } from './world'
+import { boxedIn, cueInteract, inside } from './world'
 import { revealed } from './script'
 import type { Branch, Content, DialogueNode, Item, Obj, World } from './world'
 
@@ -263,7 +263,7 @@ function actDone(w: World, d: NonNullable<World['dialogue']>, node: DialogueNode
   }
   if (node.boom !== undefined) return !w.objects.some((o) => o.id === node.boom)
   if (node.fire !== undefined) return fireDone(w, node.fire)
-  if (node.clear) return !inside(w, node.clear)
+  if (node.clear) return !inside(w, node.clear) || boxedIn(w, node.clear)
   // the 500 ms fade for a single frame, and 400 ms a frame after that; a burst's zoom takes 1 s
   if (node.closeup === null) return true
   if (node.closeup !== undefined)

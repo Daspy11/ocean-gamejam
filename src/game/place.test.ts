@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { apply } from './actions'
 import { homeChairs, makeSalt, useItem } from './salt'
-import { createWorld, objectAt, type Content, type Item, type World } from './world'
+import { createWorld, objectAt, tileAt, type Content, type Item, type World } from './world'
 
 const content: Content = { dialogues: {}, items: {} }
 
@@ -84,17 +84,34 @@ describe('standing a prize on the ground', () => {
     expect(w.score).toBe(30)
   })
 
-  it('leaves a prize at home, or anywhere once the sea horse has been, where it stands', () => {
+  it('takes a prize back up at home with the beauty it added, so it can never wall him in', () => {
     const w = home('egg')
     apply(w, { type: 'interact' }, content)
+    expect(w.score).toBe(5)
     apply(w, { type: 'interact' }, content)
-    expect(objectAt(w, 15, 14)?.kind).toBe('egg')
+    expect([objectAt(w, 15, 14), w.inventory.egg, w.score, w.flags['placed:egg']]).toEqual([
+      undefined,
+      1,
+      0,
+      undefined,
+    ])
+  })
+
+  it('leaves every prize where it stands once the sea horse has been', () => {
     const late = home('egg')
-    late.player = { ...late.player, x: 33, y: 16, facing: 'right' }
     apply(late, { type: 'interact' }, content)
     late.flags['fired:seahorse'] = true
     apply(late, { type: 'interact' }, content)
-    expect(objectAt(late, 34, 16)?.kind).toBe('egg')
+    expect(objectAt(late, 15, 14)?.kind).toBe('egg')
+  })
+
+  it('will not throw the orb or lay salt under a boat, where it could never be picked up', () => {
+    const w = home('orb')
+    expect([tileAt(w, 12, 16), objectAt(w, 12, 16)?.kind]).toEqual(['water', 'boat']) // the wreck
+    expect(useItem(w, 'orb', 12, 16)).toBe(null)
+    w.inventory.salt = 1
+    expect(useItem(w, 'salt', 12, 16)).toBe(null)
+    expect([w.inventory.orb, w.inventory.salt]).toEqual([1, 1])
   })
 
   it('takes a chair back up again for the 5 it was worth', () => {

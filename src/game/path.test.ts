@@ -38,6 +38,17 @@ const go = (to: { x: number; y: number }) => scene({ id: 'a', to })
 const upTo = (near: string) => scene({ id: 'a', near })
 
 describe('finding a way', () => {
+  it('wades a walker left out in the sea back to land, as a last resort only', () => {
+    // the shortest way to 4,0 is along the top row, but he wades the fewest tiles he can to shore
+    const w = room(['~~~~.', '~~~~.', '.....'], [who('etarp', 0, 0)])
+    w.player = { ...w.player, x: 4, y: 2 }
+    expect(findPath(w, a(w), { x: 4, y: 0 })).toBe(null)
+    expect(findPath(w, a(w), { x: 4, y: 0 }, false, true)?.[0]).toBe('down')
+    const dry = room(['.~~~.', '.~~~.'], [who('etarp', 0, 0)])
+    dry.player = { ...dry.player, x: 0, y: 1 }
+    expect(findPath(dry, a(dry), { x: 4, y: 0 }, false, true)).toBe(null) // ashore, never into it
+  })
+
   it('takes the shortest way round a wall', () => {
     const w = room(['.....', '.^^^.', '.....'], [who('mich', 0, 1)])
     w.player = { ...w.player, x: 4, y: 2 }

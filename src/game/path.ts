@@ -71,9 +71,11 @@ export function tickWander(w: World, dt: number): void {
 function costs(w: World, mover: Obj, through: boolean): number[] {
   const mode =
     mover.kind === 'flyingcarpet' ? 'fly' : mover.kind === 'npc' ? MODES[mover.sprite] : undefined
+  // a ship that never ran aground leaves Etarp in the sea: as a last resort he wades, dearly
+  const wade = through && tileAt(w, mover.x, mover.y) === 'water' ? 5000 : Infinity
   const cost = w.tiles.map((t) => {
-    if (mode === 'fly') return 1
-    return t === 'rock' || (t === 'water' && mode !== 'swim') ? Infinity : 1
+    if (mode === 'fly' || (t === 'water' && mode === 'swim')) return 1
+    return t === 'rock' ? Infinity : t === 'water' ? wade : 1
   })
   const raise = (x: number, y: number, c: number) => {
     const i = tileIndex(w, x, y)

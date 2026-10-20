@@ -63,14 +63,15 @@ export function homeChairs(w: World): number {
   return w.objects.filter((o) => o.kind === 'chair' && w.main[tileIndex(w, o.x, o.y)]).length
 }
 
-// a prize put down off the main island is worth nothing there, so it comes back up into the bag, or the
-// last one laid out at sea would leave beauty short of 30 for good. Not once the sea horse has been:
-// the egg is wanted on the ground for Tarq. The item it lifted, or null.
-export function liftStray(w: World, o: Obj | undefined, x: number, y: number): Item | null {
-  const item = o?.kind === 'floor' ? 'carpet' : (o?.kind as Item | undefined)
-  if (!o || !item || !PRIZES.includes(item)) return null
-  if (w.main[tileIndex(w, x, y)] || w.flags['fired:seahorse']) return null
+// a prize comes back up into the bag with the beauty it added, or one laid out at sea, or one walling
+// him in, would strand the story for good. Not once the sea horse has been: the egg is wanted on the
+// ground for Tarq. The item it lifted, or null.
+export function liftPrize(w: World, o: Obj | undefined, x: number, y: number): Item | null {
+  if (o?.kind !== 'floor' && o?.kind !== 'egg' && o?.kind !== 'certificate') return null
+  if (w.flags['fired:seahorse']) return null
+  const item = o.kind === 'floor' ? 'carpet' : o.kind
   w.objects.splice(w.objects.indexOf(o), 1)
+  beauty(w, -(o.beauty ?? 0), x, y)
   delete w.flags[`placed:${item}`] // so the last one down at home still settles the score
   return item
 }
@@ -86,15 +87,15 @@ export function useItem(
 ): 'place' | 'away' | 'used' | 'chairs' | null {
   const tile = tileAt(w, x, y)
   if ((w.inventory[item] ?? 0) < 1) return null
+  // a boat on the tile would sit on the orb for good: interact on it reads the boat out
+  if ((item === 'salt' || item === 'orb') && (tile !== 'water' || objectAt(w, x, y))) return null
   if (item === 'salt') {
-    if (tile !== 'water') return null
     const joined = makeSalt(w, x, y) // paving the sea over costs beauty, but only near home
     cueInteract(w, joined)
     w.inventory.salt = (w.inventory.salt ?? 0) - 1
     return joined ? 'place' : 'away'
   }
   if (item === 'orb') {
-    if (tile !== 'water') return null
     w.flags['used:orb'] = true
     w.inventory.orb = (w.inventory.orb ?? 0) - 1
     cueInteract(w)
@@ -115,7 +116,7 @@ export function useItem(
   const ground = tile !== undefined && tile !== 'water' && tile !== 'rock'
   if (!ground || objectAt(w, x, y)) return null
   if (kind === 'chair' && homeChairs(w) >= 2) return 'chairs'
-  const placed: Obj = { id: `${kind}${x}-${y}`, kind, x, y }
+  const placed: Obj & { beauty?: number } = { id: `${kind}${x}-${y}`, kind, x, y }
   w.objects.push(placed)
   cueInteract(w, !!w.main[tileIndex(w, x, y)])
   w.inventory[item] = (w.inventory[item] ?? 0) - 1
@@ -125,7 +126,7 @@ export function useItem(
   const ready = PRIZES.every((p) => w.flags[`placed:${p}`])
   if (!ready) worth = Math.min(5, Math.max(0, 29 - w.score))
   else if (PRIZES.includes(item)) worth = Math.max(5, Math.ceil((30 - w.score) / 5) * 5)
-  if (placed.kind === 'chair') placed.beauty = w.main[tileIndex(w, x, y)] ? worth : 0
+  placed.beauty = w.main[tileIndex(w, x, y)] ? worth : 0
   beauty(w, worth, x, y) // beauty only ever counts at home
   w.rev++
   // laid out at sea it is worth nothing, and Walter says so
