@@ -1,5 +1,15 @@
 import { tileAt, type Dir, type Item, type Obj, type World } from './world'
 
+// the boxes whose 20 s since shutting ran out this tick, for a nudge to a player who has not moved on
+export function shutAgo(w: World, dt: number): string[] {
+  return Object.keys(w.flags)
+    .filter((f) => {
+      const due = Number(w.flags[f]) + 20000
+      return f.startsWith('shut:') && due <= w.time && due > w.time - dt
+    })
+    .map((f) => f.slice(5))
+}
+
 // These node numbers match the author's hint list; ready trades beat further collecting.
 export function michHint(w: World): string {
   const f = w.flags
@@ -93,7 +103,7 @@ export interface Dialogue {
   // now standing there) · talk:<npc id> · tree:shake:<n> · tree:near · score:negative (beauty has gone below
   // zero) · score:thirty (30 beauty with all three prizes placed) · arrive:north (stepped ashore up north) ·
   // haul (stepped back onto the main island with a prize other than the carpet in the bag, none placed) ·
-  // done:<dialogue key> (that box has just closed)
+  // done:<dialogue key> (that box has just closed) · later:<dialogue key> (20 s since it closed)
   trigger?: { event: string; when?: string; unless?: string }
   start: Branch[] // first entry that matches wins
   nodes: Record<string, DialogueNode>

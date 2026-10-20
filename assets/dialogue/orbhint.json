@@ -1,0 +1,11 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "later:landing", "unless": "had:orb" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "you know how to pick up things, right?", "next": "2" },
+    "2": { "who": "", "text": "...", "next": "3" },
+    "3": { "text": "walk up to them and press e", "next": "4" },
+    "4": { "who": "", "text": "i knew that", "next": null }
+  }
+}

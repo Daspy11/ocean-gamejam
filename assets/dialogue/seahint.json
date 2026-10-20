@@ -1,0 +1,8 @@
+{
+  "name": "Mich",
+  "trigger": { "event": "later:inventory1", "unless": "used:orb" },
+  "start": [{ "node": "1" }],
+  "nodes": {
+    "1": { "text": "if i were you, i would try walking up to the water and pressing e", "next": null }
+  }
+}

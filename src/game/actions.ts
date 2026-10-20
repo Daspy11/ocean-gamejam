@@ -5,7 +5,7 @@ import { tickMachines } from './machine'
 import { choices, tickThrow } from './throw'
 import { shakeTree, tickFlowers, tickTrees } from './tree'
 import { beauty, homeChairs, liftStray, PRIZES, takeItem, tickOrbs, useItem } from './salt'
-import { michHint } from './script'
+import { michHint, shutAgo } from './script'
 import { tickStep } from './step'
 import { cueInteract, DIRS, objectAt, objectsAt } from './world'
 import type { Action, Content, DialogueNode, Item, World } from './world'
@@ -70,6 +70,7 @@ export function apply(w: World, a: Action, c: Content): void {
     w.typing = undefined
     w.closeup = null // a close-up only ever lasts the box it went up under
     w.rev++
+    w.flags[`shut:${d.key}`] = w.time // when, so later:<key> can nudge him 20 s on
     fire(`done:${d.key}`) // the box is shut: a scene waiting on this one can start now
     // whatever was already queued waits its turn again if that event opened a box ahead of it
     const queued = !w.dialogue && w.queue.shift()
@@ -111,6 +112,7 @@ export function apply(w: World, a: Action, c: Content): void {
 
   if (a.type === 'tick') {
     w.time += a.dt
+    for (const key of shutAgo(w, a.dt)) fire(`later:${key}`)
     if (tickOrbs(w)) fire('salt:spawn')
     tickFlowers(w)
     tickMachines(w)

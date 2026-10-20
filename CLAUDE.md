@@ -82,7 +82,8 @@ placeholder/   AI stand-ins, produced only by scripts/placeholders.mjs.
   the main island), `place:<item>` (a prize stood on the main island, `carpetdown.json`, `eggdown.json`,
   `certdown.json`; a chair is `place:chair:<n>` with n now standing there, `chair1.json`, `chair2.json`),
   `place:prize` (any of the three stood at home, Walter's thank-you in `thanks.json`), `score:fifteen`, `done:<dialogue key>` (that box has just
-  closed), add more in `apply`) and the `when` flag is
+  closed), `later:<dialogue key>` (20 s since it closed: Mich's nudges in `orbhint.json` and
+  `seahint.json`), add more in `apply`) and the `when` flag is
   truthy and the `unless` flag is not (`negative.json` is dead once the sea horse has been met); it
   sets `flags['fired:<key>']`. A `start` or `next` entry may also need items: `has: { twig: 10 }`, or the
   player stood in a rect of tiles: `in: { x, y, w, h }`.
